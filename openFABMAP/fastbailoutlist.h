@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------
-Copyright 2011 Arren Glover
+Copyright 2011 Arren Glover [aj.glover@qut.edu.au]
 
-This file is part of OpenFABMAP.
+This file is part of OpenFABMAP. http://code.google.com/p/openfabmap/
 
 OpenFABMAP is free software: you can redistribute it and/or modify it under 
 the terms of the GNU General Public License as published by the Free Software 
@@ -14,10 +14,10 @@ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
 details.
 
 For published work which uses all or part of OpenFABMAP, please cite:
-http://eprints.qut.edu.au/31569/1/c31569.pdf
+http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1
 
 Original Algorithm by Mark Cummins and Paul Newman:
-http://www.robots.ox.ac.uk/~mobile/wikisite/pmwiki/pmwiki.php?n=Software.FABMAP
+http://ijr.sagepub.com/content/27/6/647.short
 
 You should have received a copy of the GNU General Public License along with 
 OpenFABMAP. If not, see http://www.gnu.org/licenses/.
