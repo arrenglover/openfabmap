@@ -48,6 +48,7 @@ using std::valarray;
 using std::accumulate;
 #include <algorithm>
 using std::sort; using std::min_element; using std::max_element;
+#include <iterator>
 
 //utilities
 #include <ctime>

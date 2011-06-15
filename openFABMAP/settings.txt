@@ -8,7 +8,7 @@
 	- maximal probabilty (FABMAP+RatSLAM)
 # 7 - Visualise FABMAP results from results file
 
-FUNCTION = 2
+FUNCTION = 4
 
 ##### CODEBOOK #####
 
@@ -70,8 +70,8 @@ FM_NFR = 3
 
 ##### VIEWING #####
 
-VW_MOVIE = C:\\pioneer\\codebook_raw_dataset\\raw_mod.avi
-VW_NCOLS = 50 #number of colours to use to display words (1-255)
+VW_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+VW_NCOLS = 100 #number of colours to use to display words (1-360)
 VW_FPS = 10
 
 VW_RESULTS = C:\\pioneer\\fabmaptest\\testloop_results_0008_500.txt
