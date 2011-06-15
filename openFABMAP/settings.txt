@@ -1,0 +1,88 @@
+##### FUNCTION #####
+# 1 - Build Codebook
+# 2 - Build ChowLiuTree
+# 3 - View Features on a Video
+# 4 - View Words on a Video
+# 5 - Full PDF Calculation. Each frame added (FAB_MAP 1.0)
+# 6 - FBO PDF Calculation. Frames added when new location is 
+	- maximal probabilty (FABMAP+RatSLAM)
+# 7 - Visualise FABMAP results from results file
+
+FUNCTION = 2
+
+##### CODEBOOK #####
+
+CB_FILE = C:\\pioneer\\fabmaptest\\testloop_book_0008_500.save
+CB_DATAFILE = C:\\pioneer\\fabmaptest\\testloop_bookdata_0008_500.save
+CB_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+
+# 1 - Modified Sequential Cluster
+# 2 - K-Means
+CB_METHOD = 1
+
+MSC_CLUSTERSIZE = 0.5
+MSC_CLUSTERS = 500
+KM_NCENTRES = 10
+
+##### CHOW-LIU TREE #####
+
+CL_FILE = C:\\pioneer\\fabmaptest\\testloop_tree_0008_500.save
+CL_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+
+#a large amount of data is required to store the mutual information used to
+#create the minimum spanning tree. Increasing the threshold means that less
+#data is stored however COULD reduce the tree performance or cause it not to
+#finish building. e.g. 8000 word codebook requires 1.2 Gb RAM.
+#A threshold of 0 is zero risk to performance but takes longer and may fail
+#due to memory requirements
+CL_INFOTHRESH = 0.001;
+
+##### FAB-MAP #####
+
+FM_SAVE = C:\\pioneer\\fabmaptest\\testloop_results_0008_500.txt
+FM_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+
+FM_PZGE = 0.39
+FM_PZGNE = 0.05
+
+# we caclulate the gap between hyp A and hyp B and set the bailout limit
+# such that the probability that B will eventually be better than A is
+FM_PS_D = 1e-3
+
+# we have a limit below the best hyp at which we still consider the
+# probabilty of other hyps valid. The likelihood of bailed-out hyps will 
+# also be set to this value
+FM_LOFBOH = 1e-6
+
+# we estimate the bail-out gap using bisection method.
+# BISECTION_START specifies the maximal value the gap can be
+# BISECTION_ITERATIONS specifies the accuracy (START/2^ITERATIONS)
+FM_BISTART = 256
+FM_BIITS = 8
+
+# prior probabilty of the next location being close to the previous 
+# current location
+FM_PNEAR = 0.9
+# the neighbourhood size of the 'closeness' of PNEAR
+FM_PNEW = 0.5
+# the prior probabilty of the location being a new location
+FM_NFR = 3
+
+##### VIEWING #####
+
+VW_MOVIE = C:\\pioneer\\codebook_raw_dataset\\raw_mod.avi
+VW_NCOLS = 50 #number of colours to use to display words (1-255)
+VW_FPS = 10
+
+VW_RESULTS = C:\\pioneer\\fabmaptest\\testloop_results_0008_500.txt
+VW_TNSIZEWIDTH = 200
+VW_TNSIZEHEIGHT = 100
+
+
+##### SURF #####
+
+OS_UPRIGHT = true
+OS_OCTAVES = 5
+OS_INTERVALS = 4 
+OS_INIT = 6
+OS_THRESHOLD = 0.0008
