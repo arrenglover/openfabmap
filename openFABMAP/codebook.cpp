@@ -212,14 +212,20 @@ int Codebook::extractDataSet(string movie_file, bool verbose,
 	int FRAMECOUNT = (int)cvGetCaptureProperty(movie,CV_CAP_PROP_FRAME_COUNT);
 	int framenumber = 0;
 	if(verbose) cout << endl;
+
+	commonFeatureExtractor detector;
+
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
 		framenumber++;
-		DescriptorVec temp = convertFeatures(openSURFDesc(frame));
-		copy(temp.begin(), temp.end(), back_inserter(data));
+		detector.extract(frame);
+		detector.cvtIpts2Descs();
+		//DescriptorVec temp = convertFeatures(openSURFDesc(frame));
+		copy(detector.descs.begin(), detector.descs.end(), 
+			back_inserter(data));
 		if(verbose) {
 			cout << "Frame: " << framenumber <<
-				", Descriptors " << temp.size() <<
+				", Descriptors " << detector.descs.size() <<
 				", Total Descriptors: " << data.size() <<
 				fixed << setprecision(1) << " (" <<
 				100*(double)framenumber/FRAMECOUNT << "%)            \r";
@@ -286,7 +292,11 @@ vector<int> Codebook::search(DescriptorVec &ds)
 
 vector<int> Codebook::search(IpVec &ipts)
 {
-	return search(convertFeatures(ipts));
+	DescriptorVec descs;
+	descs.resize(ipts.size());
+	for (unsigned n=0; n<ipts.size(); n++)
+		descs[n] = ipts[n].descriptor;
+	return search(descs);
 }
 
 double Codebook::determineMSCClusterSize(int nWords, double initialGuess)
@@ -485,52 +495,157 @@ int Codebook::kMeans(bool verbose)
 
 }
 
+//-------------##WORDPOINT##---------------//
 
+WordPoint::WordPoint(void) {};
 
-
-
-
-//-------------##SURF DESCRIPTORS##---------------//
-
-DescriptorVec convertFeatures(IpVec &ipts)
+WordPoint::WordPoint(int label, double X, double Y)
 {
-	Descriptor new_descriptor;
-	DescriptorVec descriptors;
+	this->label = label;
+	this->X = X;
+	this->Y = Y;
+}
 
-	for (unsigned n=0; n<ipts.size(); n++){
+WordPoint::~WordPoint(void) {};
 
-		new_descriptor = ipts[n].descriptor;
-		descriptors.push_back(new_descriptor);
+double WordPoint::distance(WordPoint &a, WordPoint &b)
+{
+	return sqrt(pow(a.X - b.X, 2.0)+pow(a.Y-b.Y, 2.0));
+}
 
+//-------------##FEATURE EXTRACTOR##---------------//
+
+
+commonFeatureExtractor::commonFeatureExtractor(void)
+{
+	os_upright = parameter.read<bool>("OS_UPRIGHT", true); 
+	os_octaves = parameter.read<int>("OS_OCTAVES", 5);
+	os_intervals = parameter.read<int>("OS_INTERVALS", 4);
+	os_init = parameter.read<int>("OS_INIT", 6);
+	os_threshold = parameter.read<float>("OS_THRESHOLD", 0.0004f);
+
+	star_upright = parameter.read<bool>("STAR_UPRIGHT", true);
+	starDetector = StarDetector(parameter.read<int>("STAR_MAXSIZE", 45),
+		parameter.read<int>("STAR_THRESHOLD", 30), 
+		parameter.read<int>("STAR_LINETHRESHOLD", 10), 
+		parameter.read<int>("STAR_LINEBIN", 8), 
+		parameter.read<int>("STAR_SUPPRESSIONAREA", 5));
+
+	mser_upright = parameter.read<bool>("MSER_UPRIGHT", true);
+	mserparams = cvMSERParams(parameter.read<int>("MSER_DELTA", 5),
+		parameter.read<int>("MSER_MINAREA", 60),
+		parameter.read<int>("MSER_MAXAREA", 14400),
+		parameter.read<float>("MSER_MAXVAR", 0.25f),
+		parameter.read<float>("MSER_MINDIV", 0.2f),
+		parameter.read<int>("MSER_MAXEVO", 200),
+		parameter.read<double>("MSER_AREATHRESH", 1.01),
+		parameter.read<double>("MSER_MINMARGIN", 0.003),
+		parameter.read<int>("MSER_EDGEBLUR", 5));
+
+	switch(parameter.read<int>("DETECT_MODE", 1)) {
+		case(1):
+			extractFunc = &commonFeatureExtractor::SURF; break;
+		case(2):
+			extractFunc = &commonFeatureExtractor::STAR; break;
+		case(3):
+			extractFunc = &commonFeatureExtractor::MSER; break;
 	}
-	return descriptors;
+
+
 }
 
-IpVec openSURFDesc(IplImage *img)
+commonFeatureExtractor::~commonFeatureExtractor(void) {};
+
+void commonFeatureExtractor::SURF(IplImage * img)
 {
-
-	IpVec ipts;
-
-	surfDetDes(img, ipts, 
-		parameter.read<bool>("OS_UPRIGHT", true), 
-		parameter.read<int>("OS_OCTAVES", 5), 
-		parameter.read<int>("OS_INTERVALS", 4), 
-		parameter.read<int>("OS_INIT", 6), 
-		parameter.read<float>("OS_THRESHOLD", 0.0004f));
-
-	return ipts;
+	surfDetDes(img, ipts, os_upright, os_octaves, os_intervals, os_init, 
+		os_threshold);
 }
 
-void drawWords(IplImage * frame, IpVec &ipts, Codebook &book)
+void commonFeatureExtractor::STAR(IplImage * img)
+{
+	IplImage * bw = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+	cvCvtColor(img, bw, CV_BGR2GRAY);
+
+	vector<KeyPoint> detections;
+	starDetector(bw, detections);
+
+	//convert to Ipoint
+	ipts.resize(detections.size());
+	for(unsigned int i = 0; i < detections.size(); i++) {
+		ipts[i].x = detections[i].pt.x;
+		ipts[i].y = detections[i].pt.y;
+		ipts[i].laplacian = 1;
+		ipts[i].scale = detections[i].size / 2.5f;
+	}
+
+	//calculate the descriptor
+	surfDes(bw, ipts, star_upright);
+
+	cvReleaseImage(&bw);
+}
+
+void commonFeatureExtractor::MSER(IplImage * img)
 {
 
-	vector<int> words = book.search(convertFeatures(ipts));
-	
-	int ncols = parameter.read<int>("VW_NCOLS", 10);
-	int V = 1;
+	//get the features
+	CvSeq* contours;
+    CvMemStorage* storage= cvCreateMemStorage();
+	cvExtractMSER(img, NULL, &contours, storage, mserparams);
+
+	//convert to ipoints
+	ipts.clear(); 
+	Ipoint ipt; ipt.laplacian = 1;
+	ipt.dx = 0; ipt.dy = 0;
+	for ( int i = 0; i < contours->total; i++ )
+	{
+		CvContour* r = *(CvContour**)cvGetSeqElem( contours, i );
+		CvBox2D box = cvFitEllipse2( r );
+		//box.angle=(float)CV_PI/2-box.angle;
+		if(box.size.height > 164) continue;
+
+		ipt.x = box.center.x;
+		ipt.y = box.center.y;
+		ipt.scale = max(box.size.height, box.size.width) / 5.0f;
+		ipts.push_back(ipt);
+	}
+	cvReleaseMemStorage(&storage);
+
+	//calculate the descriptor
+	surfDes(img, ipts, mser_upright);
+
+}
+
+void commonFeatureExtractor::extract(IplImage * img)
+{
+	(this->*extractFunc)(img);
+}
+
+void commonFeatureExtractor::cvtIpts2Descs(void)
+{
+	descs.resize(ipts.size());
+	for (unsigned n=0; n<ipts.size(); n++)
+		descs[n] = ipts[n].descriptor;
+}
+
+void commonFeatureExtractor::cvtIpts2Wpts(Codebook &book)
+{
+	wpts.resize(ipts.size());
+	vector<int> words = book.search(ipts);
+	for(unsigned n=0; n<ipts.size(); n++) {
+		wpts[n].label = words[n];
+		wpts[n].X = ipts[n].x;
+		wpts[n].Y = ipts[n].y;
+	}
+}
+
+vector<CvScalar> commonFeatureExtractor::makeColourDistribution(int number)
+{
 	vector<CvScalar> displayCols;
-	for(int i = 0; i < ncols; i++) {
-		double hd = ((double)i / (ncols+1) * 6.0);
+	
+	//int V = 1;
+	for(int i = 0; i < number; i++) {
+		double hd = ((double)i / (number+1) * 6.0);
 		double X = (1.0 - fabs(fmod(hd, 2.0) - 1)) * 255.0;
 		//double C = V * s;
 		//double X = C * (1 - abs(fmod(hd, 2.0) - 1));
@@ -552,12 +667,113 @@ void drawWords(IplImage * frame, IpVec &ipts, Codebook &book)
 		else
 			displayCols.push_back(CV_RGB(C, 0, X));
 	}
+	return displayCols;
+}
 
-	for(unsigned int i = 0; i < ipts.size(); i++) {
+void commonFeatureExtractor::drawWords(IplImage * frame, 
+									   vector<CvScalar> &displayCols)
+{
+	int ncols = displayCols.size();
+
+	char text[32];
+	CvFont s;
+	cvInitFont(&s, CV_FONT_HERSHEY_COMPLEX_SMALL, 0.5, 0.5); 
+	
+	for(unsigned int i = 0; i < wpts.size(); i++) {
 		cvCircle(frame, cvPoint((int)ipts[i].x, (int)ipts[i].y), (int)(2.5 * 
-			ipts[i].scale), displayCols[words[i]%ncols], CV_FILLED);
+			ipts[i].scale), displayCols[wpts[i].label%ncols], CV_FILLED);
+		sprintf_s(text, 32, "%i", wpts[i].label);
+		cvPutText(frame, text, cvPoint((int)ipts[i].x-5, (int)ipts[i].y+3), &s, CV_RGB(255, 255, 255));
 	}
 }
+
+void commonFeatureExtractor::drawFeatures(IplImage * frame)
+{
+	drawIpoints(frame, ipts);
+}
+
+//-------------##SURF DESCRIPTORS##---------------//
+
+//DescriptorVec convertFeatures(IpVec &ipts)
+//{
+//	Descriptor new_descriptor;
+//	DescriptorVec descriptors;
+//
+//	for (unsigned n=0; n<ipts.size(); n++){
+//
+//		new_descriptor = ipts[n].descriptor;
+//		descriptors.push_back(new_descriptor);
+//
+//	}
+//	return descriptors;
+//}
+//
+//IpVec openSURFDesc(IplImage *img)
+//{
+//
+//	IpVec ipts;
+//
+//	surfDetDes(img, ipts, 
+//		parameter.read<bool>("OS_UPRIGHT", true), 
+//		parameter.read<int>("OS_OCTAVES", 5), 
+//		parameter.read<int>("OS_INTERVALS", 4), 
+//		parameter.read<int>("OS_INIT", 6), 
+//		parameter.read<float>("OS_THRESHOLD", 0.0004f));
+//
+//	return ipts;
+//}
+//
+//vector<CvScalar> makeColourDistribution(int number)
+//{
+//	vector<CvScalar> displayCols;
+//	
+//	//int V = 1;
+//	for(int i = 0; i < number; i++) {
+//		double hd = ((double)i / (number+1) * 6.0);
+//		double X = (1.0 - fabs(fmod(hd, 2.0) - 1)) * 255.0;
+//		//double C = V * s;
+//		//double X = C * (1 - abs(fmod(hd, 2.0) - 1));
+//		//double m = v - C;
+//		double C = 255;
+//		//X = (X + m)*255;
+//
+//
+//		if(hd < 1)
+//			displayCols.push_back(CV_RGB(C, X, 0));
+//		else if(hd < 2)
+//			displayCols.push_back(CV_RGB(X, C, 0));
+//		else if(hd < 3)
+//			displayCols.push_back(CV_RGB(0, C, X));
+//		else if(hd < 4)
+//			displayCols.push_back(CV_RGB(0, X, C));
+//		else if(hd < 5)
+//			displayCols.push_back(CV_RGB(X, 0, C));
+//		else
+//			displayCols.push_back(CV_RGB(C, 0, X));
+//	}
+//	return displayCols;
+//}
+//
+//void drawWords(IplImage * frame, IpVec &ipts, Codebook &book)
+//{
+//
+//	vector<int> words = book.search(convertFeatures(ipts));
+//	
+//	int ncols = parameter.read<int>("VW_NCOLS", 10);
+//	vector<CvScalar> displayCols = makeColourDistribution(ncols);
+//
+//	char text[32];
+//	CvFont s = cvFont(0.5);
+//	
+//	for(unsigned int i = 0; i < ipts.size(); i++) {
+//		cvCircle(frame, cvPoint((int)ipts[i].x, (int)ipts[i].y), (int)(2.5 * 
+//			ipts[i].scale), displayCols[words[i]%ncols], CV_FILLED);
+//		sprintf_s(text, 32, "%i", words[i]);
+//		cvPutText(frame, text, cvPoint((int)ipts[i].x-5, (int)ipts[i].y+3), &s, CV_RGB(255, 255, 255));
+//
+//
+//	}
+//}
 
 
 

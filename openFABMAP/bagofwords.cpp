@@ -183,28 +183,6 @@ void BowTemplate::setAsAvgPlace(clTree * t, int ID, double PZGE, double PZGNE)
 	PnzGne = 1 - PZGNE;
 }
 
-BowTemplate::BowTemplate(IplImage * img, int ID, Codebook * codebook, 
-						 clTree * cltree, double PZGE, double PZGNE)
-{
-	//set straightforward variables
-	tree = cltree;
-	templateID = ID;
-	
-	PzGe = PZGE;
-	PnzGe = 1 - PZGE;
-	PzGne = PZGNE;
-	PnzGne = 1 - PZGNE;
-
-	//get the descriptors and create a bag of words
-	DescriptorVec descriptors = convertFeatures(openSURFDesc(img));
-	bagofwords.createBag(codebook, descriptors);
-	
-	//initialise the representation
-	size = codebook->getSize();
-	representation = new float[size];
-	createRepFromBag();
-}
-
 BowTemplate::BowTemplate(Bagofwords &words, int ID, clTree *cltree,
 						 double PZGE, double PZGNE)
 {
@@ -319,7 +297,7 @@ double BowTemplate::Pqgp(int &Zq, bool Sq, bool Sp)
 	beta  = tree->P(Zq, !Sq) * Pzge( Sq, false) * tree->Pqgp(Zq,  Sq, Sp);
 	p = (double)Pegl(Zq, false) * beta / (alpha + beta);
 
-	p = (Sq) ? 0 : (double)Pegl(Zq, false);
+	//p = (Sq) ? 0 : (double)Pegl(Zq, false);
 	alpha = tree->P(Zq,  Sq) * Pzge(!Sq, true) * tree->Pqgp(Zq, !Sq, Sp);
 	beta  = tree->P(Zq, !Sq) * Pzge( Sq, true) * tree->Pqgp(Zq,  Sq, Sp);
 	p += (double)Pegl(Zq, true) * beta / (alpha + beta);

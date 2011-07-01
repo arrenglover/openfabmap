@@ -128,7 +128,8 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="C:\OpenCV2.1\lib\cv210.lib C:\OpenCV2.1\lib\highgui210.lib C:\OpenCV2.1\lib\cxcore210.lib ANN\ANN.lib"
+				AdditionalDependencies="cv210.lib cxcore210.lib highgui210.lib ANN\ANN.lib"
+				AdditionalLibraryDirectories="C:\OpenCV2.1\lib"
 				GenerateDebugInformation="true"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

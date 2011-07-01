@@ -114,11 +114,81 @@ public:
 
 };
 
+//-------------##WORDPOINT##---------------//
+
+class WordPoint {
+
+public:
+
+	int label;
+	double X;
+	double Y;
+
+	WordPoint(void);
+	WordPoint(int label, double X, double Y);
+	~WordPoint(void);
+
+	static double distance(WordPoint &a, WordPoint &b);
+
+};
+
+
+//-------------##FEATURE EXTRACTOR##---------------//
+class commonFeatureExtractor {
+
+public:
+
+	//storage
+	IpVec ipts;
+	DescriptorVec descs;
+	vector<WordPoint> wpts;
+
+	//pointer to extraction function
+	void (commonFeatureExtractor::*extractFunc)(IplImage *);	
+	
+	//openSURF parameter
+	bool os_upright;
+	int os_octaves;
+	int os_intervals;
+	int os_init;
+	float os_threshold;
+
+	//star parameter
+	bool star_upright;
+	StarDetector starDetector;
+
+	//mser parameter
+	bool mser_upright;
+	CvMSERParams mserparams;	
+
+	//constructors
+	commonFeatureExtractor::commonFeatureExtractor(void);
+	commonFeatureExtractor::~commonFeatureExtractor(void);
+	
+	//extractors
+	void extract(IplImage * img); //pointed to by extracFunc
+	void SURF(IplImage * img);
+	void STAR(IplImage * img);
+	void MSER(IplImage * img);
+	
+
+	//converters
+	void cvtIpts2Descs(void);
+	void cvtIpts2Wpts(Codebook &book);
+
+	//utilities
+	static vector<CvScalar> makeColourDistribution(int number);
+	void drawWords(IplImage * frame, vector<CvScalar> &displayCols);
+	void drawFeatures(IplImage * frame);
+
+
+};
+
 //-------------##SURF DESCRIPTORS##---------------//
 //get features of an image
 
-
-IpVec openSURFDesc(IplImage *);
-DescriptorVec convertFeatures(IpVec &ipts);
-void openCVSURFTest(void);
-void drawWords(IplImage * frame, IpVec &ipts, Codebook &book);
+//
+//IpVec openSURFDesc(IplImage *);
+//DescriptorVec convertFeatures(IpVec &ipts);
+//void openCVSURFTest(void);
+//void drawWords(IplImage * frame, IpVec &ipts, Codebook &book);

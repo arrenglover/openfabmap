@@ -315,14 +315,18 @@ int TrainData::makeTrainingData(string movie_file, Codebook  * book)
 	cout << endl << "Making Training Data from..." <<endl<<movie_file<<endl;
 
 	
-	IplImage * frame;
-	DescriptorVec d;
+	commonFeatureExtractor detector;
+	//DescriptorVec d;
 	Bagofwords bag;
 	int bag_number = 0;
+
+	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
 		//get the descriptors
-		d = convertFeatures(openSURFDesc(frame));
-		bag.createBag(book, d);
+		detector.extract(frame);
+		detector.cvtIpts2Descs();
+		//d = convertFeatures(openSURFDesc(frame));
+		bag.createBag(book, detector.descs);
 		for(int i  = 0; i < bag.getSize(); i++)
 			data[bag_number][i] = bag.getWord(i);
 		bag_number++;
@@ -338,12 +342,12 @@ int TrainData::makeTrainingData(string movie_file, Codebook  * book)
 void TrainData::make_absolutes() {
 	//the probability of the word occuring. i.e. frames with feature / total frames
 
-	float accumulation = 0;
+	double accumulation = 0;
 	for(int word = 0; word < sample_size; word++, accumulation = 0) {
 		for(int sample = 0; sample < num_samples; sample++) {
-			accumulation += (float)data[sample][word];
+			accumulation += data[sample][word];
 		}
-		absolutes.push_back((accumulation+1) / (num_samples+1));
+		absolutes.push_back((float)(0.01 + (0.98 * accumulation / num_samples)));
 	}
 }
 

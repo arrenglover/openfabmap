@@ -226,9 +226,12 @@ int functionViewFeatures(void)
 	CvCapture * movie = 
 		cvCreateFileCapture(parameter.read<string>("VW_MOVIE", "movie.avi").c_str());
 	if(!movie) return -1;
+	commonFeatureExtractor detector;
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
-		drawIpoints(frame, openSURFDesc(frame));
+		detector.extract(frame);
+		detector.drawFeatures(frame);
+		//drawIpoints(frame, openSURFDesc(frame));
 		cvShowImage("features", frame);
 		if(cvWaitKey(1) == 27) break;
 	}
@@ -240,7 +243,8 @@ int functionViewWords(void)
 {
 	string book_file = parameter.read<string>("CB_FILE", "codebook.save");
 	string movie_file = parameter.read<string>("VW_MOVIE", "movie.save");
-	int wait_time = (int)(1000 / parameter.read<double>("VW_FPS", 10.0));
+	double fps = parameter.read<double>("VW_FPS", 10.0);
+	int wait_time = fps ? (int)(1000 / fps) : 0;
 
 	cout << "Press Esc to exit" << endl;
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
@@ -256,10 +260,16 @@ int functionViewWords(void)
 		return -1;
 	}
 
+	commonFeatureExtractor detector;
+	vector<CvScalar> displayCols = 
+		detector.makeColourDistribution(book.getSize());
 
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
-		drawWords(frame, openSURFDesc(frame), book);
+		detector.extract(frame);
+		detector.cvtIpts2Wpts(book);
+		detector.drawWords(frame, displayCols);
+		//drawWords(frame, openSURFDesc(frame), book);
 		cvShowImage("Words", frame);
 		if(cvWaitKey(wait_time) == 27) break;
 	}
@@ -316,8 +326,10 @@ int functionFullCalcFABMAP(void)
 	writer.precision(8);
 	writer.setf(std::ios::fixed);
 
+	commonFeatureExtractor detector;
+
 	double PzGe = parameter.read<double>("FM_PZGE", 0.39);
-	double PzGne = parameter.read<double>("FMPZGNE", 0);
+	double PzGne = parameter.read<double>("FM_PZGNE", 0);
 
 	fastLookupFabMap fabmap(&tree, PzGe, PzGne);
 	vector<double> scores; scores.resize((size_t)(cvGetCaptureProperty(movie, 
@@ -329,7 +341,9 @@ int functionFullCalcFABMAP(void)
 
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
-		z.createBag(&book, convertFeatures(openSURFDesc(frame)));
+		detector.extract(frame);
+		detector.cvtIpts2Descs();
+		z.createBag(&book, detector.descs);
 		int i = 0;
 		for(L = Z.begin(); L != Z.end(); L++, i++)
 			scores[i] = fabmap.LLH(*L, z);

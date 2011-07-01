@@ -41,6 +41,9 @@ private:
 	list<BowTemplate> template_list; 
 	BowTemplate avg_loc;
 	int current_location;
+
+	//feature extractor
+	commonFeatureExtractor detector;
 	
 	//bagofwords probabilistic models
 	fastLookupFabMap FABMAP;

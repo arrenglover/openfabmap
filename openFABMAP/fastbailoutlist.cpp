@@ -64,7 +64,8 @@ valarray<double> FBOTemplateList::addObservation(IplImage * img)
 {
 
 	//create the new template to compare against
-	Bagofwords z; z.createBag(&book, convertFeatures(openSURFDesc(img)));
+	detector.extract(img); detector.cvtIpts2Descs();
+	Bagofwords z; z.createBag(&book, detector.descs);
 
 	//create a temporary list of templates to cull
 	list<BowTemplate *> bailout_list;

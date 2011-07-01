@@ -95,8 +95,6 @@ public:
 
 	//default constructor
 	BowTemplate();
-	BowTemplate(IplImage * img, int ID, Codebook * codebook, clTree * cltree, 
-		double PZGE, double PZGNE);
 	BowTemplate(Bagofwords &words, int ID, clTree * cltree, 
 		double PZGE, double PZGNE);
 	~BowTemplate();

@@ -3,31 +3,35 @@
 # 2 - Build ChowLiuTree
 # 3 - View Features on a Video
 # 4 - View Words on a Video
-# 5 - Full PDF Calculation. Each frame added (FAB_MAP 1.0)
+# 5 - Full PDF Calculation. Each frame added (FAB_MAP 1.0 without the Pior on position)
 # 6 - FBO PDF Calculation. Frames added when new location is 
 	- maximal probabilty (FABMAP+RatSLAM)
 # 7 - Visualise FABMAP results from results file
 
-FUNCTION = 4
+FUNCTION = 7
 
 ##### CODEBOOK #####
 
-CB_FILE = C:\\pioneer\\fabmaptest\\testloop_book_0008_500.save
-CB_DATAFILE = C:\\pioneer\\fabmaptest\\testloop_bookdata_0008_500.save
-CB_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+CB_FILE = C:\pioneer\fabmaptest\star_codebook_500.save
+CB_DATAFILE = C:\pioneer\fabmaptest\star_book_data.save
+CB_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 
 # 1 - Modified Sequential Cluster
-# 2 - K-Means
+# 2 - Kmeans (openCV has a Kmeans implementation but is not in here yet)
 CB_METHOD = 1
 
+#setting MSC_CLUSTERS > 0 will attempt to find a clustersize that will give
+# the amount of clusters (words) desired through trial and error. To turn
+#this off and simply use the MSC_CLUSTERSIZE set MSC_CLUSTERS = 0
+MSC_CLUSTERS = 0
 MSC_CLUSTERSIZE = 0.5
-MSC_CLUSTERS = 500
-KM_NCENTRES = 10
+
+KM_NCENTRES = 10 # <- not implemented
 
 ##### CHOW-LIU TREE #####
 
-CL_FILE = C:\\pioneer\\fabmaptest\\testloop_tree_0008_500.save
-CL_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+CL_FILE =  C:\pioneer\fabmaptest\star_tree_500.save
+CL_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 
 #a large amount of data is required to store the mutual information used to
 #create the minimum spanning tree. Increasing the threshold means that less
@@ -39,15 +43,15 @@ CL_INFOTHRESH = 0.001;
 
 ##### FAB-MAP #####
 
-FM_SAVE = C:\\pioneer\\fabmaptest\\testloop_results_0008_500.txt
-FM_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
+FM_SAVE = C:\pioneer\fabmaptest\star_500_fboresults.save
+FM_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 
 FM_PZGE = 0.39
-FM_PZGNE = 0.05
+FM_PZGNE = 0.00
 
 # we caclulate the gap between hyp A and hyp B and set the bailout limit
 # such that the probability that B will eventually be better than A is
-FM_PS_D = 1e-3
+FM_PS_D = 1e-6
 
 # we have a limit below the best hyp at which we still consider the
 # probabilty of other hyps valid. The likelihood of bailed-out hyps will 
@@ -70,19 +74,45 @@ FM_NFR = 3
 
 ##### VIEWING #####
 
-VW_MOVIE = C:\\pioneer\\fabmaptest\\stlucia_testloop.avi
-VW_NCOLS = 100 #number of colours to use to display words (1-360)
-VW_FPS = 10
+VW_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
+VW_FPS = 10 # 0 -> a key must be pressed to continue to the next frame
 
-VW_RESULTS = C:\\pioneer\\fabmaptest\\testloop_results_0008_500.txt
+VW_RESULTS = C:\pioneer\fabmaptest\star_500_fboresults.save
 VW_TNSIZEWIDTH = 200
 VW_TNSIZEHEIGHT = 100
 
 
-##### SURF #####
+##### FEATURE EXTRACTION #####
 
+#DETECTOR_MODE
+# 1 - SURF
+# 2 - STAR
+# 3 - MSER
+DETECT_MODE = 2
+
+#using openSURF
 OS_UPRIGHT = true
 OS_OCTAVES = 5
 OS_INTERVALS = 4 
 OS_INIT = 6
 OS_THRESHOLD = 0.0008
+
+#star interest point (surf descriptor)
+STAR_UPRIGHT = true
+STAR_MAXSIZE = 12
+STAR_THRESHOLD = 15
+STAR_LINETHRESHOLD = 10
+STAR_LINEBIN = 8
+STAR_SUPPRESSIONAREA = 30
+
+#mser interest point (surf descriptor)
+MSER_UPRIGHT = true
+MSER_DELTA = 1
+MSER_MINAREA = 100
+MSER_MAXAREA = 1200
+MSER_MAXVAR = 0.00001
+MSER_MINDIV = 1
+MSER_MAXEVO = 200
+MSER_AREATHRESH = 1.01
+MSER_MINMARGIN = 0.003
+MSER_EDGEBLUR = 5
