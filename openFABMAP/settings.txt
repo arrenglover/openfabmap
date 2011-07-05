@@ -8,12 +8,12 @@
 	- maximal probabilty (FABMAP+RatSLAM)
 # 7 - Visualise FABMAP results from results file
 
-FUNCTION = 7
+FUNCTION = 1
 
 ##### CODEBOOK #####
 
-CB_FILE = C:\pioneer\fabmaptest\star_codebook_500.save
-CB_DATAFILE = C:\pioneer\fabmaptest\star_book_data.save
+CB_FILE = C:\pioneer\fabmaptest\test_codebook.save
+CB_DATAFILE = C:\pioneer\fabmaptest\test_bookdata.save
 CB_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 
 # 1 - Modified Sequential Cluster
@@ -30,7 +30,7 @@ KM_NCENTRES = 10 # <- not implemented
 
 ##### CHOW-LIU TREE #####
 
-CL_FILE =  C:\pioneer\fabmaptest\star_tree_500.save
+CL_FILE =  C:\pioneer\fabmaptest\test_tree.save
 CL_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 
 #a large amount of data is required to store the mutual information used to
@@ -43,7 +43,7 @@ CL_INFOTHRESH = 0.001;
 
 ##### FAB-MAP #####
 
-FM_SAVE = C:\pioneer\fabmaptest\star_500_fboresults.save
+FM_SAVE = C:\pioneer\fabmaptest\test_fboresults.save
 FM_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 
 FM_PZGE = 0.39
@@ -61,8 +61,8 @@ FM_LOFBOH = 1e-6
 # we estimate the bail-out gap using bisection method.
 # BISECTION_START specifies the maximal value the gap can be
 # BISECTION_ITERATIONS specifies the accuracy (START/2^ITERATIONS)
-FM_BISTART = 256
-FM_BIITS = 8
+FM_BISTART = 512
+FM_BIITS = 9
 
 # prior probabilty of the next location being close to the previous 
 # current location
@@ -70,14 +70,14 @@ FM_PNEAR = 0.9
 # the neighbourhood size of the 'closeness' of PNEAR
 FM_PNEW = 0.5
 # the prior probabilty of the location being a new location
-FM_NFR = 3
+FM_NFR = 1
 
 ##### VIEWING #####
 
 VW_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 VW_FPS = 10 # 0 -> a key must be pressed to continue to the next frame
 
-VW_RESULTS = C:\pioneer\fabmaptest\star_500_fboresults.save
+VW_RESULTS = C:\pioneer\fabmaptest\test_fboresults.save
 VW_TNSIZEWIDTH = 200
 VW_TNSIZEHEIGHT = 100
 
