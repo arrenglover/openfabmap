@@ -96,7 +96,8 @@ int main(int argc, char * argv[])
 	}
 
 	cout << "Finished!" <<endl;
-	Sleep(3000);
+	cout << "Press Enter to Exit..."<<endl;
+	cin.sync(); cin.ignore();
 	return error;
 
 }

@@ -54,8 +54,8 @@ public:
 	//void set(int index, double val);
 	//double get(int index);
 
-	double descriptorDistance(Descriptor y);
-	double quickDistance(Descriptor y); //just not sqrt
+	double descriptorDistance(Descriptor &y);
+	double quickDistance(Descriptor &y); //just not sqrt
 
 };
 
@@ -153,14 +153,6 @@ public:
 	int os_init;
 	float os_threshold;
 
-	//star parameter
-	bool star_upright;
-	StarDetector starDetector;
-
-	//mser parameter
-	bool mser_upright;
-	CvMSERParams mserparams;	
-
 	//constructors
 	commonFeatureExtractor::commonFeatureExtractor(void);
 	commonFeatureExtractor::~commonFeatureExtractor(void);
@@ -168,9 +160,6 @@ public:
 	//extractors
 	void extract(IplImage * img); //pointed to by extracFunc
 	void SURF(IplImage * img);
-	void STAR(IplImage * img);
-	void MSER(IplImage * img);
-	
 
 	//converters
 	void cvtIpts2Descs(void);
@@ -183,12 +172,3 @@ public:
 
 
 };
-
-//-------------##SURF DESCRIPTORS##---------------//
-//get features of an image
-
-//
-//IpVec openSURFDesc(IplImage *);
-//DescriptorVec convertFeatures(IpVec &ipts);
-//void openCVSURFTest(void);
-//void drawWords(IplImage * frame, IpVec &ipts, Codebook &book);
