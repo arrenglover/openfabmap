@@ -89,7 +89,7 @@ private:
 
 	//has to be built recursively due to underlying tree structure
 	void recAddToTree(int, int, TrainData & train_data, list<info> &);
-	static bool clNodeCompare(clNode &first, clNode &second) ;
+	static bool clNodeCompare(const clNode &first, const clNode &second) ;
 	
 	static bool sortInfoScores(info &first, info &second);
 	double calcMutInfo(TrainData &train_data, int &word1, int &word2);

@@ -91,7 +91,7 @@ private:
 	void setWordStatistics(Bagofwords &bow);
 	double limitbisection(double v, double m, double Ps_d);
 	static inline double bennettInequality(double v, double m, double delta);
-	static bool compInfo(word_stats &first, word_stats &second);
+	static bool compInfo(const word_stats &first, const word_stats &second);
 
 public:
 	

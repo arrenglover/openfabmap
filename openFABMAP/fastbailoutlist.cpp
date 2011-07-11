@@ -221,7 +221,7 @@ double FBOTemplateList::bennettInequality(double v, double m, double delta)
 	return exp((v / pow(m, 2.0))*(cosh(f_delta) - 1 - DMonV * f_delta));
 }
 
-bool FBOTemplateList::compInfo(word_stats &first, word_stats &second) 
+bool FBOTemplateList::compInfo(const word_stats &first, const word_stats &second) 
 {
 	return first.info < second.info;
 }

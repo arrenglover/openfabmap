@@ -363,8 +363,8 @@ int Codebook::modifiedSequentialCluster(double clusterSize, bool verbose)
 	//vectors of descriptors used as temporary storage
 	DescriptorVec initial_centres; initial_centres.reserve(100000);
 	//DescriptorVec centres;
-	vector<list<Descriptor>> clusters;
-	vector<list<Descriptor>>::iterator Ci;
+	vector<list<Descriptor> > clusters;
+	vector<list<Descriptor> >::iterator Ci;
 
 	//random_shuffle(data.begin(), data.end());
 
@@ -608,7 +608,14 @@ void commonFeatureExtractor::drawWords(IplImage * frame,
 	for(unsigned int i = 0; i < wpts.size(); i++) {
 		cvCircle(frame, cvPoint((int)ipts[i].x, (int)ipts[i].y), (int)(2.5 * 
 			ipts[i].scale), displayCols[wpts[i].label%ncols], CV_FILLED);
+		sprintf(text, "%i", wpts[i].label);
+
+#ifdef WIN32
 		sprintf_s(text, 32, "%i", wpts[i].label);
+#else
+		sprintf(text, "%i", wpts[i].label);
+#endif //WIN32
+
 		cvPutText(frame, text, cvPoint((int)ipts[i].x-5, (int)ipts[i].y+3), &s, CV_RGB(255, 255, 255));
 	}
 }

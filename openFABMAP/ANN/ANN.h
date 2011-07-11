@@ -73,6 +73,7 @@
   // being imported from a DLL, wheras this DLL sees symbols defined with
   // this macro as being exported.
   //----------------------------------------------------------------------
+  #define DLL_EXPORTS
   #ifdef DLL_EXPORTS
 	 #define DLL_API __declspec(dllexport)
   #else

@@ -163,7 +163,7 @@ bool clTree::load(char * location)
 	return false;
 }
 
-bool clTree::clNodeCompare(clNode &first, clNode &second) 
+bool clTree::clNodeCompare(const clNode &first, const clNode &second) 
 {
 	return first.nodeID < second.nodeID;
 }

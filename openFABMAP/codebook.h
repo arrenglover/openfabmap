@@ -154,8 +154,8 @@ public:
 	float os_threshold;
 
 	//constructors
-	commonFeatureExtractor::commonFeatureExtractor(void);
-	commonFeatureExtractor::~commonFeatureExtractor(void);
+	commonFeatureExtractor(void);
+	~commonFeatureExtractor(void);
 	
 	//extractors
 	void extract(IplImage * img); //pointed to by extracFunc
