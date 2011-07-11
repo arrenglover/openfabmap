@@ -2,33 +2,8 @@ PROJECT(openFABMAP)
 
 cmake_minimum_required(VERSION 2.6)
 
-############ ANN library ##################
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP/ANN ANN_FILES)
-# tell cmake about the library
-ADD_LIBRARY(ANN STATIC ${ANN_FILES})
 
-
-
-
-############ ANN library ##################
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP/OpenSURF OPENSURF_FILES)
-# tell cmake about the library
-ADD_LIBRARY(OpenSURF STATIC ${OPENSURF_FILES})
-
-
-
-############ openFABMAP library ##################
-# tell cmake about the library
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP OPENFABMAP_FILES) 
-
-# add the headers to the project
-#file(GLOB_RECURSE INCS "*.h")
-
-# tell cmake about the library
-ADD_LIBRARY(openFABMAP STATIC ${OPENFABMAP_FILES})
-
-# create symbolic lib target for calling target lib_XXX
-#ADD_CUSTOM_TARGET( lib DEPENDS lib_${PROJECT_NAME} )
+############ Cmake setup ##################
 
 # tell cmake where the FindXXX.cmake functions are
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
@@ -41,44 +16,60 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
 
 # required packages
 FIND_PACKAGE(OpenCV REQUIRED)
-#FIND_PACKAGE(ANN REQUIRED)
 
+############ end CMake setup ##################
+
+
+############ ANN library ##################
+AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/ANN ANN_FILES)
+
+# include the headers
+file(GLOB ANN_INCS "${CMAKE_CURRENT_SOURCE_DIR}/ANN/*.h")
+
+# tell cmake about the library
+ADD_LIBRARY(ANN STATIC ${ANN_FILES} ${ANN_INCS})
+############ end ANN library ##################
+
+
+############ OpenSURF library ##################
+AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/OpenSURF OPENSURF_FILES)
+
+# include the headers
+file(GLOB OPENSURF_INCS "${CMAKE_CURRENT_SOURCE_DIR}/OpenSURF/*.h")
+
+# tell cmake about the library
+ADD_LIBRARY(OpenSURF STATIC ${OPENSURF_FILES} ${OPENSURF_INCS})
+############ end OpenSURF library ##################
+
+
+############ openFABMAP library ##################
+# tell cmake about the library
+AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP OPENFABMAP_FILES) 
+
+# include the headers
+file(GLOB OPENFABMAP_INCS "${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP/*.h")
+
+# tell cmake about the library
+ADD_LIBRARY(openFABMAP STATIC ${OPENFABMAP_FILES} ${OPENFABMAP_INCS})
+
+# Tell openFABMAP that it needs ANN
+TARGET_LINK_LIBRARIES(openFABMAP ANN)
+############ end openFABMAP library ##################
+
+
+# Tell CMake where the headers are
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+# Link the libs against OpenCV if it was found
 IF(OPENCV_FOUND)
     IF(WIN32)
         TARGET_LINK_LIBRARIES(openFABMAP highgui210 cv210 cxcore210)
-	TARGET_LINK_LIBRARIES(OpenSURF highgui210 cv210 cxcore210)
+		TARGET_LINK_LIBRARIES(OpenSURF highgui210 cv210 cxcore210)
     ELSE(WIN32)
         TARGET_LINK_LIBRARIES(openFABMAP highgui)
 	TARGET_LINK_LIBRARIES(OpenSURF highgui)
     ENDIF(WIN32)
 ENDIF(OPENCV_FOUND)
-
-#IF(ANN_FOUND)
-    TARGET_LINK_LIBRARIES(openFABMAP ANN)
-#ENDIF(ANN_FOUND)
-
-
-# make an include directory in the build directory
-#file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
-# get all the headers
-#file(GLOB CMAKE_HEADER_LIST ${CMAKE_SOURCE_DIR}/openFABMAP/ *.h)
-# copy all the headers
-#foreach(_file ${CMAKE_HEADER_LIST})
-#    configure_file(_file ${CMAKE_CURRENT_BINARY_DIR}/include/tst.h COPYONLY)
-#endforeach
-#copy(${CMAKE_SOURCE_DIR}/include/global.h ${CMAKE_CURRENT_BINARY_DIR}/include/global.h)
-
-#MESSAGE(STATUS ${CMAKE_INCLUDE_PATH})
-#set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} ${CMAKE_CURRENT_BINARY_DIR}/include/)
-#MESSAGE(STATUS ${CMAKE_INCLUDE_PATH})
-
-############ end openFABMAP library ##################
-
-
-
-
-
-
 
 ############ openFABMAP executable ##################
 if(OPENCV_FOUND)
@@ -88,16 +79,20 @@ if(OPENCV_FOUND)
     # tell cmake that the binary goes in the binary directory
     set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
+	# tell the project where the settings file is
+	file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/settings.txt")
+	message("settings: ${SETTINGS_FILE}")
     # tell cmake about the binary
-    ADD_EXECUTABLE(exampleopenFABMAP ${CMAKE_SOURCE_DIR}/exampleopenFABMAP/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP/ConfigFile/ConfigFile.cpp)
+    ADD_EXECUTABLE(openFABMAPexe ${CMAKE_SOURCE_DIR}/openFABMAPexe/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/ConfigFile/ConfigFile.cpp ${SETTINGS_FILE})
 
     # tell the executable where the fabmap headers are. Need to put these somewhere better like /usr/local/include/openfabmap
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP)
-
-    #AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP ALL_FILES) 
-
-    TARGET_LINK_LIBRARIES(exampleopenFABMAP openFABMAP ANN OpenSURF)
+	
+	# Tell openFABMAPexe to link against it's required libs
+    TARGET_LINK_LIBRARIES(openFABMAPexe openFABMAP ANN OpenSURF)
+	
 endif(OPENCV_FOUND)
 
 ############ end openFABMAP executable ##################
+
 
