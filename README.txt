@@ -25,7 +25,7 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 
 Author Contact aj.glover@qut.edu.au
 
-version 1.0
+version 1.01
 
 please see  http://code.google.com/p/openfabmap/ for more information
 
@@ -34,13 +34,13 @@ Installation Instructions
 Windows (Visual Studio 2008)
 
 1. install openCV2.1 (other dependencies are included in check-out)
-2. get cmake and install it
+2. install cmake (www.cmake.org/)
 3. open the cmake gui, specify the source directory (the directory this README is in), a build directory for the code and click configure
 4. ANN should be automatically found, but you may have to specify the location of opencv2.1 in UngroupedEntries->OPENCV_PATH. It will be "C:\OpenCV2.1" if you installed it in the default location
 5. click configure in the cmake gui again
 6. click generate
-7. compile examplopenFABMAP within Visual studio
-4. add ANN.dll, cv210.dll, cxcore210.dll and highgui.dll to your build/bin directory (respective debug versions for debug mode).
+7. open the visual studio solution, for default running right-click on openFABMAPexe project and select 'Set as StartUp project'. Compile examplopenFABMAP within Visual studio.
+4. add cv210.dll, cxcore210.dll and highgui.dll to your build/bin directory (respective debug versions for debug mode).
 5. Alter the settings file for your application
 6. run exampleopenFABMAP in your build/bin directory (respective debug versions for debug mode).
 

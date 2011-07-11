@@ -158,7 +158,7 @@ public:
 	~commonFeatureExtractor(void);
 	
 	//extractors
-	void extract(IplImage * img); //pointed to by extracFunc
+	void extract(IplImage * img); //pointed to by extractFunc
 	void SURF(IplImage * img);
 
 	//converters

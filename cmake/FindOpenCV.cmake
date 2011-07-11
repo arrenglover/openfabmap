@@ -5,16 +5,20 @@
 
 # Find all the opencv stuff with pkg-config
 
-FIND_PATH( OPENCV_PATH cv.h
-# installation selected by user
-$ENV{OPENCV_HOME}/include
-# system placed in /usr/local/include
-/usr/local/include/opencv
-# system placed in /usr/include
-/usr/include/opencv
-# system placed in windows
-C:/OpenCV2.1/
-)
+IF(WIN32)
+	FIND_PATH( OPENCV_PATH include/opencv/cv.h 
+	C:/OpenCV2.1/
+	)
+ELSE(WIN32)
+	FIND_PATH( OPENCV_PATH cv.h
+	# installation selected by user
+	$ENV{OPENCV_HOME}/include
+	# system placed in /usr/local/include
+	/usr/local/include/opencv
+	# system placed in /usr/include
+	/usr/include/opencv
+	)
+ENDIF(WIN32)
 
 if( OPENCV_PATH )
     MESSAGE( STATUS "Looking for OpenCV - found")

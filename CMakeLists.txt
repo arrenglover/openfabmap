@@ -63,8 +63,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Link the libs against OpenCV if it was found
 IF(OPENCV_FOUND)
     IF(WIN32)
-        TARGET_LINK_LIBRARIES(openFABMAP highgui210 cv210 cxcore210)
-		TARGET_LINK_LIBRARIES(OpenSURF highgui210 cv210 cxcore210)
+        TARGET_LINK_LIBRARIES(openFABMAP optimized highgui210 cv210 cxcore210 debug highgui210d cv210d cxcore210d)
+	TARGET_LINK_LIBRARIES(OpenSURF highgui210 cv210 cxcore210)
     ELSE(WIN32)
         TARGET_LINK_LIBRARIES(openFABMAP highgui)
 	TARGET_LINK_LIBRARIES(OpenSURF highgui)
@@ -81,9 +81,9 @@ if(OPENCV_FOUND)
 
 	# tell the project where the settings file is
 	file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/settings.txt")
-	message("settings: ${SETTINGS_FILE}")
+
     # tell cmake about the binary
-    ADD_EXECUTABLE(openFABMAPexe ${CMAKE_SOURCE_DIR}/openFABMAPexe/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/ConfigFile/ConfigFile.cpp ${SETTINGS_FILE})
+    ADD_EXECUTABLE(openFABMAPexe ${CMAKE_SOURCE_DIR}/openFABMAPexe/main.cpp ${CMAKE_CURRENT_SOURCE_DIR}/ConfigFile/ConfigFile.cpp ${CMAKE_CURRENT_SOURCE_DIR}/ConfigFile/ConfigFile.h ${SETTINGS_FILE})
 
     # tell the executable where the fabmap headers are. Need to put these somewhere better like /usr/local/include/openfabmap
     INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/openFABMAP)

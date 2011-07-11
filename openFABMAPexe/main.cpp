@@ -193,6 +193,7 @@ int functionChowLiu(void)
 	string book_file = parameter.read<string>("CB_FILE", "codebook.save");
 	string tree_file = parameter.read<string>("CL_FILE", "chowliu.save");
 	string movie_file = parameter.read<string>("CL_MOVIE", "movie.save");
+	double info_thresh = parameter.read<double>("CL_INFOTHRESH", 0);
 	
 	//ensure not overwriting a good chow-liu tree
 	ifstream checker(tree_file.c_str());
@@ -220,7 +221,7 @@ int functionChowLiu(void)
 
 	//make the tree
 	clTree tree;
-	tree.make(movie_file, book);
+	tree.make(movie_file, tree_file, book, info_thresh);
 
 	return 0;
 }
