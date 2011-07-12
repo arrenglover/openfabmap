@@ -32,11 +32,12 @@ clTree::clTree() {};
 
 clTree::~clTree() {};
 
-int clTree::make(string movie_file, string tree_file, Codebook &book, double info_threshold)
+int clTree::make(string movie_file, string tree_file, Codebook &book, 
+				 commonFeatureExtractor &detector, double info_threshold)
 {
 	//make the training data
 	TrainData train_data;
-	if(train_data.makeTrainingData(movie_file, &book)) return -1;
+	if(train_data.makeTrainingData(movie_file, &book, detector)) return -1;
 
 	//calculate the parent nodes based on maximising mutual information
 	list<info> edges;
@@ -287,7 +288,8 @@ TrainData::~TrainData() {
 	}
 };
 
-int TrainData::makeTrainingData(string movie_file, Codebook  * book)
+int TrainData::makeTrainingData(string movie_file, Codebook  * book,
+								commonFeatureExtractor &detector)
 {
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) {
@@ -310,9 +312,6 @@ int TrainData::makeTrainingData(string movie_file, Codebook  * book)
 
 	cout << endl << "Making Training Data from..." <<endl<<movie_file<<endl;
 
-	
-	commonFeatureExtractor detector;
-	//DescriptorVec d;
 	Bagofwords bag;
 	int bag_number = 0;
 

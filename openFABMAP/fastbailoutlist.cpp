@@ -28,6 +28,7 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 //-------------##FAST BAIL-OUT LIST##---------------//
 
 FBOTemplateList::FBOTemplateList(Codebook &codebook, clTree &cltree,
+		commonFeatureExtractor &detector,
 		double PZGE, double PZGNE,
 		double PS_D, double LOFBOH,
 		int BISECTION_START, int BISECTION_ITERATIONS, 
@@ -38,6 +39,8 @@ FBOTemplateList::FBOTemplateList(Codebook &codebook, clTree &cltree,
 	tree = cltree;
 	FABMAP = fastLookupFabMap(&tree, PZGE, PZGNE);
 	avg_loc.setAsAvgPlace(&tree, -1, PZGE, PZGNE);
+
+	this->detector = detector;
 	
 	this->LOFBOH = LOFBOH; 
 	C = -log(LOFBOH);

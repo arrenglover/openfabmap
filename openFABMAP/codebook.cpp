@@ -24,7 +24,6 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 ------------------------------------------------------------------------*/
 
 #include "codebook.h"
-extern ConfigFile parameter;
 
 //-------------##DESCRIPTOR##---------------//
 
@@ -203,17 +202,15 @@ bool Codebook::loadData(char * location)
 }
 
 
-int Codebook::extractDataSet(string movie_file, bool verbose,
-							 string save_location)
+int Codebook::extractDataSet(string movie_file, 
+							 commonFeatureExtractor &detector)
 {
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) return -1;
 	clearDataSet();
 	int FRAMECOUNT = (int)cvGetCaptureProperty(movie,CV_CAP_PROP_FRAME_COUNT);
 	int framenumber = 0;
-	if(verbose) cout << endl;
-
-	commonFeatureExtractor detector;
+	cout << fixed << setprecision(1) << endl;
 
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
@@ -223,17 +220,14 @@ int Codebook::extractDataSet(string movie_file, bool verbose,
 		//DescriptorVec temp = convertFeatures(openSURFDesc(frame));
 		copy(detector.descs.begin(), detector.descs.end(), 
 			back_inserter(data));
-		if(verbose) {
-			cout << "Frame: " << framenumber <<
-				", Descriptors " << detector.descs.size() <<
-				", Total Descriptors: " << data.size() <<
-				fixed << setprecision(1) << " (" <<
-				100*(double)framenumber/FRAMECOUNT << "%)            \r";
-		}
+		cout << "Frame: " << framenumber << ", Descriptors " <<
+			detector.descs.size() << ", Total Descriptors: " << 
+			data.size() << " (" << 100*(double)framenumber/FRAMECOUNT << 
+			"%)            \r";
 	}
-	if(verbose) cout <<endl;
-	if(!save_location.empty()) saveData(save_location);
+	cout <<endl;
 	cvReleaseCapture(&movie);
+
 	return 0;
 }
 
@@ -518,23 +512,30 @@ double WordPoint::distance(WordPoint &a, WordPoint &b)
 
 commonFeatureExtractor::commonFeatureExtractor(void)
 {
-	os_upright = parameter.read<bool>("OS_UPRIGHT", true); 
-	os_octaves = parameter.read<int>("OS_OCTAVES", 5);
-	os_intervals = parameter.read<int>("OS_INTERVALS", 4);
-	os_init = parameter.read<int>("OS_INIT", 6);
-	os_threshold = parameter.read<float>("OS_THRESHOLD", 0.0004f);
+	os_upright = true;
+	os_octaves = 5;
+	os_intervals = 4;
+	os_init = 6;
+	os_threshold = 0.0008f;
 
-	switch(parameter.read<int>("DETECT_MODE", 1)) {
-		case(1):
-			extractFunc = &commonFeatureExtractor::SURF; break;
-		default:
-			extractFunc = &commonFeatureExtractor::SURF; break;
-	}
-
+	extractFunc = &commonFeatureExtractor::SURF;
 
 }
 
 commonFeatureExtractor::~commonFeatureExtractor(void) {};
+
+
+void commonFeatureExtractor::setSURFParams(bool upright, int octaves, 
+										   int intervals, int init,
+										   float threshold)
+{
+	os_upright = upright; 
+	os_octaves = octaves;
+	os_intervals = intervals;
+	os_init = init;
+	os_threshold = threshold;
+}
+
 
 void commonFeatureExtractor::SURF(IplImage * img)
 {
@@ -546,6 +547,8 @@ void commonFeatureExtractor::extract(IplImage * img)
 {
 	(this->*extractFunc)(img);
 }
+
+
 
 void commonFeatureExtractor::cvtIpts2Descs(void)
 {
@@ -601,22 +604,17 @@ void commonFeatureExtractor::drawWords(IplImage * frame,
 {
 	int ncols = displayCols.size();
 
-	char text[32];
 	CvFont s;
 	cvInitFont(&s, CV_FONT_HERSHEY_COMPLEX_SMALL, 0.5, 0.5); 
+	ostringstream labelgen;
 	
 	for(unsigned int i = 0; i < wpts.size(); i++) {
 		cvCircle(frame, cvPoint((int)ipts[i].x, (int)ipts[i].y), (int)(2.5 * 
 			ipts[i].scale), displayCols[wpts[i].label%ncols], CV_FILLED);
-		sprintf(text, "%i", wpts[i].label);
 
-#ifdef WIN32
-		sprintf_s(text, 32, "%i", wpts[i].label);
-#else
-		sprintf(text, "%i", wpts[i].label);
-#endif //WIN32
-
-		cvPutText(frame, text, cvPoint((int)ipts[i].x-5, (int)ipts[i].y+3), &s, CV_RGB(255, 255, 255));
+		labelgen.str(""); labelgen << wpts[i].label;
+		cvPutText(frame, labelgen.str().c_str(), cvPoint((int)ipts[i].x-5, 
+			(int)ipts[i].y+3), &s, CV_RGB(255, 255, 255));
 	}
 }
 

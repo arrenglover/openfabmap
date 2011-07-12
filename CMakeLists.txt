@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 2.6)
 ############ Cmake setup ##################
 
 # tell cmake where the FindXXX.cmake functions are
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 
 # make a lib directory in the build directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
@@ -63,7 +63,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 # Link the libs against OpenCV if it was found
 IF(OPENCV_FOUND)
     IF(WIN32)
-        TARGET_LINK_LIBRARIES(openFABMAP optimized highgui210 cv210 cxcore210 debug highgui210d cv210d cxcore210d)
+        TARGET_LINK_LIBRARIES(openFABMAP debug highgui210d debug cv210d debug cxcore210d optimized highgui210 optimized cv210 optimized cxcore210)
 	TARGET_LINK_LIBRARIES(OpenSURF highgui210 cv210 cxcore210)
     ELSE(WIN32)
         TARGET_LINK_LIBRARIES(openFABMAP highgui)

@@ -96,7 +96,8 @@ private:
 public:
 	
 	//con/destructors	
-	FBOTemplateList(Codebook &book, clTree &tree,
+	FBOTemplateList(Codebook &book, clTree &tree, 
+		commonFeatureExtractor &detector,
 		double PZGE, double PZGNE,
 		double PS_D = 1e-6, double LOFBOH = 1e-6,
 		int BISECTION_START = 500, int BISECTION_ITERATIONS = 10,

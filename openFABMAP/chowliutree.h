@@ -26,9 +26,7 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 #pragma once
 
 #include "global.h"
-
 #include "codebook.h"
-
 
 //-------------##TRAINING DATA##---------------//
 //training data used to create the chow-liu tree. after the tree is made all the
@@ -50,7 +48,8 @@ public:
 	TrainData();
 	~TrainData();
 
-	int makeTrainingData(string movie_file, Codebook  *);
+	int makeTrainingData(string movie_file, Codebook  * book, 
+		commonFeatureExtractor &detector);
 
 	double P(int &a, bool ais);
 	double JP(int &a, bool ais, int &b, bool bis); //a & b
@@ -107,8 +106,8 @@ public:
 	~clTree();
 
 	//make
-	int make(string movie_file, string tree_file, Codebook &book, 
-		double info_threshold = 0);
+	int make(string movie_file, string tree_file, Codebook &book,
+		commonFeatureExtractor &detector, double info_threshold = 0);
 	
 	//save load
 	void save(char * location);
