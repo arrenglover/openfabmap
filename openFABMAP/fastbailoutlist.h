@@ -104,6 +104,6 @@ public:
 		double PNEW = 0.5, double PNEAR = 0.9, int NEARFIELDRADIUS = 1);
 	~FBOTemplateList(){};
 
-	valarray<double> addObservation(IplImage *);
+	void addObservation(IplImage * img, valarray<double> &D);
 
 };

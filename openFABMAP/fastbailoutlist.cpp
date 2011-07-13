@@ -63,7 +63,7 @@ FBOTemplateList::FBOTemplateList(Codebook &codebook, clTree &cltree,
 }
 
 
-valarray<double> FBOTemplateList::addObservation(IplImage * img)
+void FBOTemplateList::addObservation(IplImage * img, valarray<double> &D)
 {
 
 	//create the new template to compare against
@@ -84,7 +84,7 @@ valarray<double> FBOTemplateList::addObservation(IplImage * img)
 	setWordStatistics(z);
 	
 	//initiate the scores
-	valarray<double> D(template_list.size() + 1);
+	D.resize(template_list.size() + 1);
 
 	//FAST-BAILOUT Likelihood Calculation
 	double curr_best;
@@ -159,7 +159,7 @@ valarray<double> FBOTemplateList::addObservation(IplImage * img)
 			&tree, PZGE, PZGNE));
 	}
 
-	return D;
+	return;
 
 }
 

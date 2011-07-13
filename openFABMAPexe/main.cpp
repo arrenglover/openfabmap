@@ -335,17 +335,18 @@ int functionFullCalcFABMAP(void)
 		char r = 0;
 		while(r != 'n' && r != 'N' && r != 'Y' && r != 'y') {
 			cout << "Results file: "<<save_file<<" already exists. Overwrite?"
-				" y / n ?" <<endl;
+				" y / n ?";
 			cin >> r;
 		}
 		if(r == 'n' || r == 'N') return 0;
+		cout << endl;
 	}
 	checker.close();
 
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) {
 		cout << movie_file << " not detected. Please Specify a valid movie"
-			"file" <<endl;		
+			"file" << endl;		
 		return -1;
 	}
 
@@ -444,17 +445,18 @@ int functionFBOFABMAP(void)
 		char r = 0;
 		while(r != 'n' && r != 'N' && r != 'Y' && r != 'y') {
 			cout << "Results file: "<<save_file<<" already exists. Overwrite?"
-				" y / n ?" <<endl;
+				" y / n ?";
 			cin >> r;
 		}
 		if(r == 'n' || r == 'N') return 0;
+		cout << endl;
 	}
 	checker.close();
 
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) {
 		cout << movie_file << " not detected. Please Specify a valid movie"
-			"file" <<endl;		
+			"file" << endl;		
 		return -1;
 	}
 	
@@ -488,8 +490,8 @@ int functionFBOFABMAP(void)
 	
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
-		    
-		scores = Locations.addObservation(frame);
+	  
+		Locations.addObservation(frame, scores);
 		
 		for(unsigned int i = 0; i < scores.size(); i++) {
 			writer << scores[i] << " ";
