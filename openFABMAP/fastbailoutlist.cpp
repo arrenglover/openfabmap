@@ -63,7 +63,7 @@ FBOTemplateList::FBOTemplateList(Codebook &codebook, clTree &cltree,
 }
 
 
-void FBOTemplateList::addObservation(IplImage * img, valarray<double> &D)
+void FBOTemplateList::addObservation(IplImage * img)
 {
 
 	//create the new template to compare against
@@ -84,7 +84,7 @@ void FBOTemplateList::addObservation(IplImage * img, valarray<double> &D)
 	setWordStatistics(z);
 	
 	//initiate the scores
-	D.resize(template_list.size() + 1);
+	D.resize(bailout_list.size());
 
 	//FAST-BAILOUT Likelihood Calculation
 	double curr_best;

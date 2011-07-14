@@ -486,15 +486,13 @@ int functionFBOFABMAP(void)
 		parameter.read<double>("FM_PNEAR", 0.9),
 		parameter.read<int>("FM_NFR", 1));
 
-	valarray<double> scores;
-	
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
 	  
-		Locations.addObservation(frame, scores);
+		Locations.addObservation(frame);
 		
-		for(unsigned int i = 0; i < scores.size(); i++) {
-			writer << scores[i] << " ";
+		for(unsigned int i = 0; i < Locations.D.size(); i++) {
+			writer << Locations.D[i] << " ";
 		}
 		writer << endl;
 
@@ -503,7 +501,7 @@ int functionFBOFABMAP(void)
 			if(cvWaitKey(5) == 27) break;
 		}
 		cout << 100*cvGetCaptureProperty(movie, CV_CAP_PROP_POS_AVI_RATIO) <<
-			"% | Number of Locations: " << scores.size() - 1 << "   \r";
+			"% | Number of Locations: " << Locations.D.size() - 1 << "   \r";
 	}
 	cout << endl;
 

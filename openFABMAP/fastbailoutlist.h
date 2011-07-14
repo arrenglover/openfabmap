@@ -65,7 +65,7 @@ private:
 	//such that the probability that B will eventually be better than A is
 	double PS_D;
 	//we have a limit below the best hyp at which we still consider the
-	//probabilty of other hyps valid. The likelihood of bailed-out hyps will 
+	//probabilty of other hyps valid. The likelihood of bailed-out hyps will
 	//also be set to this value
 	double LOFBOH;
 	//C is defined (and set to) as -log(LOFBOH)
@@ -90,7 +90,8 @@ private:
 	//private methods
 	void setWordStatistics(Bagofwords &bow);
 	double limitbisection(double v, double m, double Ps_d);
-	static inline double bennettInequality(double v, double m, double delta);
+	static inline double bennettInequality(double v, double m, 
+		double delta);
 	static bool compInfo(const word_stats &first, const word_stats &second);
 
 public:
@@ -104,6 +105,8 @@ public:
 		double PNEW = 0.5, double PNEAR = 0.9, int NEARFIELDRADIUS = 1);
 	~FBOTemplateList(){};
 
-	void addObservation(IplImage * img, valarray<double> &D);
+	//data structure holding probabilities
+	valarray<double> D;
+	void addObservation(IplImage * img);
 
 };
