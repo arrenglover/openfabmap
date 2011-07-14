@@ -28,6 +28,7 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 #include "chowliutree.h"
 #include "bagofwords.h"
 #include "fastbailoutlist.h"
+#include "ConfigFile/ConfigFile.h"
 
 ConfigFile parameter;
 
@@ -56,7 +57,8 @@ int main(int argc, char * argv[])
 		parameter = ConfigFile(settings_file);
 	} catch(ConfigFile::file_not_found) {
 		cerr << "Could not open settings file" <<endl;
-		Sleep(3000);
+		cout << "Press Enter to Exit..."<<endl;
+		cin.sync(); cin.ignore();
 		return -1;
 	}
 
@@ -144,7 +146,13 @@ int functionCodebook(void)
 	checker.close();
 
 	if(makeNewData) {
-		if(book.extractDataSet(movie_file, true)) {
+		commonFeatureExtractor detector;
+		detector.setSURFParams(parameter.read<bool>("OS_UPRIGHT", true),
+			parameter.read<int>("OS_OCTAVES", 5),
+			parameter.read<int>("OS_INTERVALS", 4),
+			parameter.read<int>("OS_INIT", 6),
+			parameter.read<float>("OS_THRESHOLD", 0.0008f));
+		if(book.extractDataSet(movie_file, detector)) {
 			cout << "Could not find " <<movie_file<<". Please specify a valid "
 				"movie file"<<endl;
 			return -1;
@@ -189,6 +197,7 @@ int functionChowLiu(void)
 	string book_file = parameter.read<string>("CB_FILE", "codebook.save");
 	string tree_file = parameter.read<string>("CL_FILE", "chowliu.save");
 	string movie_file = parameter.read<string>("CL_MOVIE", "movie.save");
+	double info_thresh = parameter.read<double>("CL_INFOTHRESH", 0);
 	
 	//ensure not overwriting a good chow-liu tree
 	ifstream checker(tree_file.c_str());
@@ -215,8 +224,15 @@ int functionChowLiu(void)
 
 
 	//make the tree
+	commonFeatureExtractor detector;
+	detector.setSURFParams(parameter.read<bool>("OS_UPRIGHT", true),
+		parameter.read<int>("OS_OCTAVES", 5),
+		parameter.read<int>("OS_INTERVALS", 4),
+		parameter.read<int>("OS_INIT", 6),
+		parameter.read<float>("OS_THRESHOLD", 0.0008f));
+
 	clTree tree;
-	tree.make(movie_file, book);
+	tree.make(movie_file, tree_file, book, detector, info_thresh);
 
 	return 0;
 }
@@ -228,6 +244,11 @@ int functionViewFeatures(void)
 		cvCreateFileCapture(parameter.read<string>("VW_MOVIE", "movie.avi").c_str());
 	if(!movie) return -1;
 	commonFeatureExtractor detector;
+	detector.setSURFParams(parameter.read<bool>("OS_UPRIGHT", true),
+		parameter.read<int>("OS_OCTAVES", 5),
+		parameter.read<int>("OS_INTERVALS", 4),
+		parameter.read<int>("OS_INIT", 6),
+		parameter.read<float>("OS_THRESHOLD", 0.0008f));
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
 		detector.extract(frame);
@@ -237,6 +258,7 @@ int functionViewFeatures(void)
 		if(cvWaitKey(1) == 27) break;
 	}
 	cvReleaseCapture(&movie);
+	cvDestroyAllWindows();
 	return 0;
 }
 
@@ -262,6 +284,11 @@ int functionViewWords(void)
 	}
 
 	commonFeatureExtractor detector;
+	detector.setSURFParams(parameter.read<bool>("OS_UPRIGHT", true),
+		parameter.read<int>("OS_OCTAVES", 5),
+		parameter.read<int>("OS_INTERVALS", 4),
+		parameter.read<int>("OS_INIT", 6),
+		parameter.read<float>("OS_THRESHOLD", 0.0008f));
 	vector<CvScalar> displayCols = 
 		detector.makeColourDistribution(book.getSize());
 
@@ -274,9 +301,8 @@ int functionViewWords(void)
 		cvShowImage("Words", frame);
 		if(cvWaitKey(wait_time) == 27) break;
 	}
-
-
 	cvReleaseCapture(&movie);
+	cvDestroyAllWindows();
 	return 0;
 }
 
@@ -309,28 +335,37 @@ int functionFullCalcFABMAP(void)
 		char r = 0;
 		while(r != 'n' && r != 'N' && r != 'Y' && r != 'y') {
 			cout << "Results file: "<<save_file<<" already exists. Overwrite?"
-				" y / n ?" <<endl;
+				" y / n ?";
 			cin >> r;
 		}
 		if(r == 'n' || r == 'N') return 0;
+		cout << endl;
 	}
 	checker.close();
 
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) {
 		cout << movie_file << " not detected. Please Specify a valid movie"
-			"file" <<endl;		
+			"file" << endl;		
 		return -1;
 	}
 
 	ofstream writer(save_file.c_str());
-	writer.precision(8);
+	writer.precision(10);
 	writer.setf(std::ios::fixed);
+	cout.precision(1);
+	cout.setf(std::ios::fixed);
 
 	commonFeatureExtractor detector;
+	detector.setSURFParams(parameter.read<bool>("OS_UPRIGHT", true),
+		parameter.read<int>("OS_OCTAVES", 5),
+		parameter.read<int>("OS_INTERVALS", 4),
+		parameter.read<int>("OS_INIT", 6),
+		parameter.read<float>("OS_THRESHOLD", 0.0008f));
 
 	double PzGe = parameter.read<double>("FM_PZGE", 0.39);
 	double PzGne = parameter.read<double>("FM_PZGNE", 0);
+	bool show_movie = parameter.read<bool>("FM_SHOWMOVIE", true);
 
 	fastLookupFabMap fabmap(&tree, PzGe, PzGne);
 	vector<double> scores; scores.resize((size_t)(cvGetCaptureProperty(movie, 
@@ -339,6 +374,8 @@ int functionFullCalcFABMAP(void)
 	Bagofwords z;
 	BowTemplate z_avg; z_avg.setAsAvgPlace(&tree, -1, PzGe, PzGne);
 	list<Bagofwords> Z; list<Bagofwords>::iterator L;
+
+	cout << "Running Full Calculation FABMAP" << endl;
 
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
@@ -364,13 +401,19 @@ int functionFullCalcFABMAP(void)
 		writer << endl;
 
 		Z.push_back(z);
-		cvShowImage("Frame", frame);
-		cvWaitKey(1);
+
+		if(show_movie) {
+			cvShowImage("Frame", frame);
+			if(cvWaitKey(5) == 27) break;
+		}
+		cout << 100*cvGetCaptureProperty(movie, CV_CAP_PROP_POS_AVI_RATIO) <<
+			"%    \r";
 	}
+	cout << endl;
 
 	writer.close();
 	cvReleaseCapture(&movie);
-
+	cvDestroyAllWindows();
 	return 0;
 }
 
@@ -402,26 +445,37 @@ int functionFBOFABMAP(void)
 		char r = 0;
 		while(r != 'n' && r != 'N' && r != 'Y' && r != 'y') {
 			cout << "Results file: "<<save_file<<" already exists. Overwrite?"
-				" y / n ?" <<endl;
+				" y / n ?";
 			cin >> r;
 		}
 		if(r == 'n' || r == 'N') return 0;
+		cout << endl;
 	}
 	checker.close();
 
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) {
 		cout << movie_file << " not detected. Please Specify a valid movie"
-			"file" <<endl;		
+			"file" << endl;		
 		return -1;
 	}
-
+	
 	ofstream writer(save_file.c_str());
-	writer.precision(8);
+	writer.precision(10);
 	writer.setf(std::ios::fixed);
+	cout.precision(1);
+	cout.setf(std::ios::fixed);
 
+	bool show_movie = parameter.read<bool>("FM_SHOWMOVIE", true);
+	
+	commonFeatureExtractor detector;
+	detector.setSURFParams(parameter.read<bool>("OS_UPRIGHT", true),
+		parameter.read<int>("OS_OCTAVES", 5),
+		parameter.read<int>("OS_INTERVALS", 4),
+		parameter.read<int>("OS_INIT", 6),
+		parameter.read<float>("OS_THRESHOLD", 0.0008f));
 
-	FBOTemplateList Locations(book, tree,
+	FBOTemplateList Locations(book, tree, detector,
 		parameter.read<double>("FM_PZGE", 0.39),
 		parameter.read<double>("FM_PZGNE", 0.0),
 		parameter.read<double>("FM_PS_D", 1e-6),
@@ -432,27 +486,28 @@ int functionFBOFABMAP(void)
 		parameter.read<double>("FM_PNEAR", 0.9),
 		parameter.read<int>("FM_NFR", 1));
 
-	valarray<double> scores;
-		
-
 	IplImage * frame;
 	while(frame = cvQueryFrame(movie)) {
-
-		scores = Locations.addObservation(frame);
-
+	  
+		Locations.addObservation(frame);
 		
-		for(unsigned int i = 0; i < scores.size(); i++) {
-			writer << scores[i] << " ";
+		for(unsigned int i = 0; i < Locations.D.size(); i++) {
+			writer << Locations.D[i] << " ";
 		}
 		writer << endl;
 
-		cvShowImage("Frame", frame);
-		cvWaitKey(1);
+		if(show_movie) {
+			cvShowImage("Frame", frame);
+			if(cvWaitKey(5) == 27) break;
+		}
+		cout << 100*cvGetCaptureProperty(movie, CV_CAP_PROP_POS_AVI_RATIO) <<
+			"% | Number of Locations: " << Locations.D.size() - 1 << "   \r";
 	}
+	cout << endl;
 
 	writer.close();
 	cvReleaseCapture(&movie);
-
+	cvDestroyAllWindows();
 	return 0;
 }
 
@@ -476,7 +531,7 @@ int functionVisualiseResults(void)
 		return -1;
 	}
 
-	map<int, vector<int>> locations;
+	map<int, vector<int> > locations;
 
 	//extract the frame location map from the results file
 	//using maximal likelihood match
@@ -510,7 +565,9 @@ int functionVisualiseResults(void)
 
 	CvSize frm_size = cvSize(thumbnail->width+6, thumbnail->height + 33);
 
-	map<int, vector<int>>::iterator L;
+	ostringstream title;
+
+	map<int, vector<int> >::iterator L;
 	for(L = locations.begin(); L != locations.end(); L++) {
 		CvPoint pos = cvPoint(0, 0);
 		vector<int>::iterator fnum;
@@ -521,15 +578,13 @@ int functionVisualiseResults(void)
 			frame = cvQueryFrame(movie);
 			cvResize(frame, thumbnail);
 
-			//set the frame size
-
 			//set the title
-			char title[20];
-			sprintf_s(title, 20, "L%i-F%i", L->first, *fnum);
+			title.str("");
+			title << "L"<< L->first << "-F" << *fnum;
 
 			//display the window
-			cvShowImage(title, thumbnail);
-			cvMoveWindow(title, pos.x, pos.y);
+			cvShowImage(title.str().c_str(), thumbnail);
+			cvMoveWindow(title.str().c_str(), pos.x, pos.y);
 
 			//set the position for next window
 			pos.x += frm_size.width;
@@ -548,7 +603,8 @@ int functionVisualiseResults(void)
 	}
 
 	cvReleaseCapture(&movie);
-	return -1;
+	cvDestroyAllWindows();
+	return 0;
 }
 
 

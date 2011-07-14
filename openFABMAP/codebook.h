@@ -27,6 +27,11 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 
 #include "global.h"
 
+class Descriptor;
+class Codebook;
+class wordPoint;
+class commonFeatureExtractor;
+
 //-------------##DESCRIPTOR##---------------//
 //descriptor is 64 dimension used to represent a patch of image
 //basically a glorified array of doubles
@@ -99,8 +104,7 @@ public:
 	bool loadData(string location);
 
 	//creation
-	int extractDataSet(string movie_file, bool verbose = false, 
-		string save_location = "");
+	int extractDataSet(string movie_file, commonFeatureExtractor &detector);
 	double determineMSCClusterSize(int nWords, double initialGuess);
 	int modifiedSequentialCluster(double clusterSize, bool verbose = true);
 	int kMeans(bool verbose = true);
@@ -154,12 +158,16 @@ public:
 	float os_threshold;
 
 	//constructors
-	commonFeatureExtractor::commonFeatureExtractor(void);
-	commonFeatureExtractor::~commonFeatureExtractor(void);
+	commonFeatureExtractor(void);
+	~commonFeatureExtractor(void);
 	
 	//extractors
-	void extract(IplImage * img); //pointed to by extracFunc
+	void extract(IplImage * img); //pointed to by extractFunc
 	void SURF(IplImage * img);
+
+	//parameter mods
+	void setSURFParams(bool upright, int octaves, int intervals, int init,
+		float threshold);
 
 	//converters
 	void cvtIpts2Descs(void);

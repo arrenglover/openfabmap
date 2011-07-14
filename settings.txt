@@ -8,13 +8,13 @@
 	- maximal probabilty (FABMAP+RatSLAM)
 # 7 - Visualise FABMAP results from results file
 
-FUNCTION = 1
+FUNCTION = 6
 
 ##### CODEBOOK #####
 
 CB_FILE = C:\pioneer\fabmaptest\test_codebook.save
 CB_DATAFILE = C:\pioneer\fabmaptest\test_bookdata.save
-CB_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
+CB_MOVIE = C:\pioneer\fabmaptest\stlucia_testloop.avi
 
 # 1 - Modified Sequential Cluster
 # 2 - Kmeans (openCV has a Kmeans implementation but is not in here yet)
@@ -31,7 +31,7 @@ KM_NCENTRES = 10 # <- not implemented
 ##### CHOW-LIU TREE #####
 
 CL_FILE =  C:\pioneer\fabmaptest\test_tree.save
-CL_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
+CL_MOVIE = C:\pioneer\fabmaptest\stlucia_testloop.avi
 
 #a large amount of data is required to store the mutual information used to
 #create the minimum spanning tree. Increasing the threshold means that less
@@ -39,12 +39,13 @@ CL_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
 #finish building. e.g. 8000 word codebook requires 1.2 Gb RAM.
 #A threshold of 0 is zero risk to performance but takes longer and may fail
 #due to memory requirements
-CL_INFOTHRESH = 0.001;
+CL_INFOTHRESH = 0.008;
 
 ##### FAB-MAP #####
 
 FM_SAVE = C:\pioneer\fabmaptest\test_fboresults.save
-FM_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
+FM_MOVIE = C:\pioneer\fabmaptest\stlucia_testloop.avi
+FM_SHOWMOVIE = true
 
 FM_PZGE = 0.39
 FM_PZGNE = 0.00
@@ -74,8 +75,8 @@ FM_NFR = 1
 
 ##### VIEWING #####
 
-VW_MOVIE = C:\pioneer\codebook_raw_dataset\raw_mod.avi
-VW_FPS = 10 # 0 -> a key must be pressed to continue to the next frame
+VW_MOVIE = C:\pioneer\fabmaptest\stlucia_testloop.avi
+VW_FPS = 20 # 0 -> a key must be pressed to continue to the next frame
 
 VW_RESULTS = C:\pioneer\fabmaptest\test_fboresults.save
 VW_TNSIZEWIDTH = 200

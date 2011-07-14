@@ -26,25 +26,22 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 #include "chowliutree.h"
 #include "bagofwords.h"
 
-extern ConfigFile parameter;
-
 //-------------##CHOW-LIU TREE##---------------//
 
 clTree::clTree() {};
 
 clTree::~clTree() {};
 
-int clTree::make(string movie_file, Codebook &book)
+int clTree::make(string movie_file, string tree_file, Codebook &book, 
+				 commonFeatureExtractor &detector, double info_threshold)
 {
-	string tree_file = parameter.read<string>("CL_FILE", "chowliu.save");
-	
 	//make the training data
 	TrainData train_data;
-	if(train_data.makeTrainingData(movie_file, &book)) return -1;
+	if(train_data.makeTrainingData(movie_file, &book, detector)) return -1;
 
 	//calculate the parent nodes based on maximising mutual information
 	list<info> edges;
-	createBaseEdges(edges, train_data);
+	createBaseEdges(edges, train_data, info_threshold);
 	if(reduceEdgesToMinSpan(edges, book.getSize())) return -1;
 	
 	//recursively build the tree into correct data structure
@@ -163,7 +160,7 @@ bool clTree::load(char * location)
 	return false;
 }
 
-bool clTree::clNodeCompare(clNode &first, clNode &second) 
+bool clTree::clNodeCompare(const clNode &first, const clNode &second) 
 {
 	return first.nodeID < second.nodeID;
 }
@@ -198,10 +195,10 @@ double clTree::calcMutInfo(TrainData &train_data, int &word1, int &word2)
 
 
 
-void clTree::createBaseEdges(list<info> &edges, TrainData &train_data) 
+void clTree::createBaseEdges(list<info> &edges, TrainData &train_data, 
+							 double info_threshold) 
 {
 	int no_words = train_data.numberofwords();
-	double threshold = parameter.read<double>("CL_INFOTHRESH", 0);
 	double average = 0;
 	double list_size = floor(pow((double)no_words, 2.0) / 2) - 
 		floor((double)no_words/2);
@@ -213,7 +210,7 @@ void clTree::createBaseEdges(list<info> &edges, TrainData &train_data)
 			mut_info.word1 = word1;
 			mut_info.word2 = word2;
 			mut_info.score = (float)calcMutInfo(train_data, word1, word2);
-			if(mut_info.score > threshold) {
+			if(mut_info.score > info_threshold) {
 				edges.push_back(mut_info);
 				average += mut_info.score;
 			}
@@ -291,7 +288,8 @@ TrainData::~TrainData() {
 	}
 };
 
-int TrainData::makeTrainingData(string movie_file, Codebook  * book)
+int TrainData::makeTrainingData(string movie_file, Codebook  * book,
+								commonFeatureExtractor &detector)
 {
 	CvCapture * movie = cvCreateFileCapture(movie_file.c_str());
 	if(!movie) {
@@ -314,9 +312,6 @@ int TrainData::makeTrainingData(string movie_file, Codebook  * book)
 
 	cout << endl << "Making Training Data from..." <<endl<<movie_file<<endl;
 
-	
-	commonFeatureExtractor detector;
-	//DescriptorVec d;
 	Bagofwords bag;
 	int bag_number = 0;
 

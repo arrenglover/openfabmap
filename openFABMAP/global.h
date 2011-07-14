@@ -31,9 +31,11 @@ using std::setprecision; using std::fixed; using std::setw;
 #include <fstream>
 using std::ofstream; using std::ifstream; using std::ios_base;
 #include <sstream>
-using std::istringstream;
+using std::istringstream; using std::ostringstream;
 
 //containers
+#include <string>
+using std::string;
 #include <vector>
 using std::vector;
 #include <list>
@@ -58,7 +60,7 @@ using std::min; using std::max;
 //OpenCV
 #include <cv.h>
 #include <highgui.h>
-using cv::SURF; using cv::KeyPoint; using cv::StarDetector;
+using cv::SURF; using cv::KeyPoint;
 
 //OpenSURF
 #include "OpenSURF/surflib.h"
@@ -66,7 +68,6 @@ using cv::SURF; using cv::KeyPoint; using cv::StarDetector;
 //ANN
 #include "ANN/ANN.h"
 
-//ConfigFile
-#include "ConfigFile/ConfigFile.h"
+
 
 #define DESCLEN 64

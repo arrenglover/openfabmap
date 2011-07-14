@@ -26,10 +26,7 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 #pragma once
 
 #include "global.h"
-
 #include "codebook.h"
-
-//using namespace std;
 
 //-------------##TRAINING DATA##---------------//
 //training data used to create the chow-liu tree. after the tree is made all the
@@ -51,7 +48,8 @@ public:
 	TrainData();
 	~TrainData();
 
-	int makeTrainingData(string movie_file, Codebook  *);
+	int makeTrainingData(string movie_file, Codebook  * book, 
+		commonFeatureExtractor &detector);
 
 	double P(int &a, bool ais);
 	double JP(int &a, bool ais, int &b, bool bis); //a & b
@@ -89,11 +87,12 @@ private:
 
 	//has to be built recursively due to underlying tree structure
 	void recAddToTree(int, int, TrainData & train_data, list<info> &);
-	static bool clNodeCompare(clNode &first, clNode &second) ;
+	static bool clNodeCompare(const clNode &first, const clNode &second) ;
 	
 	static bool sortInfoScores(info &first, info &second);
 	double calcMutInfo(TrainData &train_data, int &word1, int &word2);
-	void createBaseEdges(list<info> &edges, TrainData &train_data);
+	void createBaseEdges(list<info> &edges, TrainData &train_data,
+		double info_threshold);
 	int reduceEdgesToMinSpan(list<info> &edges, double n_nodes);
 
 
@@ -107,7 +106,8 @@ public:
 	~clTree();
 
 	//make
-	int make(string movie_file, Codebook &book);
+	int make(string movie_file, string tree_file, Codebook &book,
+		commonFeatureExtractor &detector, double info_threshold = 0);
 	
 	//save load
 	void save(char * location);
