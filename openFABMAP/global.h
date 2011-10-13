@@ -60,7 +60,7 @@ using std::min; using std::max;
 //OpenCV
 #include <cv.h>
 #include <highgui.h>
-using cv::SURF; using cv::KeyPoint;
+using cv::SURF; using cv::KeyPoint; using cv::StarDetector;
 
 //OpenSURF
 #include "OpenSURF/surflib.h"

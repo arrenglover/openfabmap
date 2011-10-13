@@ -210,7 +210,7 @@ void clTree::createBaseEdges(list<info> &edges, TrainData &train_data,
 			mut_info.word1 = word1;
 			mut_info.word2 = word2;
 			mut_info.score = (float)calcMutInfo(train_data, word1, word2);
-			if(mut_info.score > info_threshold) {
+			if(mut_info.score >= info_threshold) {
 				edges.push_back(mut_info);
 				average += mut_info.score;
 			}
