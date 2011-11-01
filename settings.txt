@@ -3,29 +3,31 @@
 # 2 - Build Codebook
 # 3 - View Words on a Video
 # 4 - Build ChowLiuTree
-# 5 - Full PDF Calculation. Each frame added (FAB_MAP 1.0 as in Cummins et. al. without the Pior on position)
+# 5 - Full PDF Calculation. Each frame added 
+	- (FAB_MAP 1.0 as in Cummins et. al. without the Pior on position)
 # 6 - FBO PDF Calculation. Frames added when a 'new location' is 
-	- largest probability (as in Glover et. al.)
+	- largest probability (as in Glover et. al.). Also the Fast-Bailout is
+	- implemented in this function.
 # 7 - Visualise FABMAP results from results file
 
 FUNCTION = 1
 
 ##### GLOBAL I/O ######
 
-VIDEO = E:\SLAM Datasets\Datasets\NewCollege\PanoStitchOutput_LisaNewCollegeNov3\panostitch.avi
-CODEBOOK = C:\pioneer\fabmaptest\UAV_book_2000.save
-CLTREE = C:\pioneer\fabmaptest\UAV_tree_2000.save
-FM_SAVE = C:\pioneer\fabmaptest\UAV_results\full_kyfrms_2000_2.save
+VIDEO = C:\openFABMAP\example.avi
+CODEBOOK = C:\openFABMAP\codebook.save
+CLTREE = C:\openFABMAP\tree.save
+FM_SAVE = C:\openFABMAP\\full.save
 
 ##### VIEWING FEATURES AND WORDS #####
 
 # 0 -> a key must be pressed to continue to the next frame
-VW_FPS = 30 
+VW_FPS = 10 
 
 ##### CODEBOOK #####
 
 #where to save the descriptors used to create a codebook
-CB_DATAFILE = C:\pioneer\fabmaptest\UAB_bookdata.save
+CB_DATAFILE = C:\pioneer\fabmaptest\fabmaptest1.3\codebookdata.save
 
 # 1 - Modified Sequential Cluster
 # 2 - Kmeans
@@ -39,9 +41,9 @@ MSC_CLUSTERS = 0
 MSC_CLUSTERSIZE = 0.5
 
 #K-MEANS options
-KM_NCENTRES = 2000
-KM_EPSILON = 0.05
-KM_ATTEMPTS = 5
+KM_NCENTRES = 1000
+KM_EPSILON = 0.1
+KM_ATTEMPTS = 1
 
 ##### CHOW-LIU TREE #####
 
@@ -60,8 +62,8 @@ FM_SHOWMOVIE = true
 
 #DETECTOR model  - should be experimentally determined based on 
 #					repeatability of the detector used 
-FM_PZGE = 0.8		#decreasing this makes algorithm match more often
-FM_PZGNE = 0.001	#increasing this makes appearnce match more often
+FM_PZGE = 0.39		#decreasing this makes algorithm match more often
+FM_PZGNE = 0	#increasing this makes appearnce match more often
 
 #PRIOR/MOTION MODEL options
 
@@ -71,7 +73,7 @@ FM_PNEAR = 0.95
 # the neighbourhood size of the 'closeness' of PNEAR
 FM_NFR = 4
 # the prior probabilty of the location being a new location
-FM_PNEW = 0.2
+FM_PNEW = 0.5
 
 #FAST-BAILOUT options
 
@@ -86,9 +88,18 @@ FM_LOFBOH = 1e-8
 
 # we estimate the bail-out gap using bisection method.
 # BISECTION_START specifies the maximal value the gap can be
-# BISECTION_ITERATIONS specifies the accuracy (START/2^ITERATIONS)
+# BISECTION_ITERATIONS specifies the accuracy, which = START/2^ITERATIONS
 FM_BISTART = 512
 FM_BIITS = 9
+
+#Full Calculation Options
+
+# a no match bound is implemented in the full fabmap calculation to
+# disallow openFABMAP from matching to images that are immediately
+# preceeding the current location (as in Cummins & Newman IJRR 2008)
+# set to 0 for no affect.
+
+FM_NOMATCHBOUND = 0
 
 ##### FABMAP VISUALISATION #####
 
@@ -96,11 +107,15 @@ FM_BIITS = 9
 VW_TNSIZEWIDTH = 200
 VW_TNSIZEHEIGHT = 100
 
+#size of monitor/area in which to display thumbnails
+VW_MONWIDTH = 1680
+VW_MONHEIGHT = 1050
+
 ##### FEATURE EXTRACTION #####
 
 #resize the image before extraction. Allows speed/performance trade-off
 #detector options should be tailored for the image size
-DETECT_RESIZE = false
+DETECT_RESIZE = true
 DETECT_RESIZE_WIDTH = 640
 DETECT_RESIZE_HEIGHT = 480
 
@@ -108,7 +123,7 @@ DETECT_RESIZE_HEIGHT = 480
 # 1 - SURF
 # 2 - STAR
 # 3 - MSER
-DETECT_MODE = 2
+DETECT_MODE = 1
 
 #using openSURF
 OS_UPRIGHT = true

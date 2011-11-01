@@ -169,12 +169,6 @@ public:
 	double mser_e_ratio;
 	CvMSERParams mserparams;
 
-	//good parameter
-	bool good_upright;
-	int good_maxDetections;
-	double good_sig2noiseCutoff;
-	double good_minInterFeatDistance;
-
 	//constructors
 	commonFeatureExtractor(void);
 	~commonFeatureExtractor(void);

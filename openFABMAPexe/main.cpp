@@ -393,7 +393,7 @@ int functionFullCalcFABMAP(void)
 	
 	vector<double> scores(nframes+1);
 
-	int NOMATCHBOUND = 50;
+	int nomatchbound = parameter.read<int>("FM_NOMATCHBOUND", 0);
 	
 
 	int64 timer = cvGetTickCount();
@@ -405,9 +405,9 @@ int functionFullCalcFABMAP(void)
 		z.createBag(&book, detector.descs);
 
 		int newL = (int)Z.size();
-		int usableLs = max(newL - NOMATCHBOUND, 0);
+		int usableLs = max(newL - nomatchbound, 0);
 	
-		//calculate the likelihoods ignoring locations withing the
+		//calculate the likelihoods ignoring locations within the
 		//no match bound
 		int i = 0;
 		double max_scr = -DBL_MAX;
@@ -420,12 +420,48 @@ int functionFullCalcFABMAP(void)
 		scores[newL] = z_avg.loglikelihood(z);
 		max_scr = max(max_scr, scores[newL]);
 
+		//convert from log likelihood
 		i = 0;
 		while(i < usableLs) {
-			scores[i] = exp(scores[i] - maxscr);
+			scores[i] = exp(scores[i] - max_scr);
 			i++;
 		}
-		scores[newL] = exp(scores[newL] - maxscr);
+		scores[newL] = exp(scores[newL] - max_scr);
+
+		//normalise
+		double sum_scr = accumulate<vector<double>::iterator, double>
+			(scores.begin(), scores.begin()+usableLs, 0);
+		sum_scr += scores[newL];
+		sum_scr = 1 / sum_scr;
+		
+		i = 0;
+		while(i < usableLs) {
+			scores[i] *= sum_scr;
+			i++;
+		}
+		scores[newL] *= sum_scr;
+
+		//write to file
+		i = 0;
+		while(i < newL+1) {
+			writer << scores[i] << " ";
+			i++;
+		}
+		writer << endl;
+
+
+		//add a new location
+		Z.push_back(z);
+
+		//display
+		if(show_movie) {
+			detector.drawFeatures(frame);
+			cvShowImage("Frame", frame);
+			if(cvWaitKey(5) == 27) break;
+		}
+		cout << 100 * cvGetCaptureProperty(movie, 
+			CV_CAP_PROP_POS_AVI_RATIO) <<	"%    \r";
+
 
 
 
@@ -449,22 +485,22 @@ int functionFullCalcFABMAP(void)
 		//}
 		//scores[nelem-1] = exp(scores[nelem-1] - maxscr);
 
-		double sumscr = 1.0/accumulate<vector<double>::iterator, double>
-			(scores.begin(), scores.begin()+nelem, 0);
-		for(int i = 0; i < nelem; i++) {
-			scores[i] *= sumscr;
-			writer << scores[i] << " ";
-		}
-		writer << endl;
+		//double sumscr = 1.0/accumulate<vector<double>::iterator, double>
+		//	(scores.begin(), scores.begin()+nelem, 0);
+		//for(int i = 0; i < nelem; i++) {
+		//	scores[i] *= sumscr;
+		//	writer << scores[i] << " ";
+		//}
+		//writer << endl;
 
-		Z.push_back(z);
+		//Z.push_back(z);
 
-		if(show_movie) {
-			detector.drawFeatures(frame);
-			cvShowImage("Frame", frame);
-			if(cvWaitKey(5) == 27) break;
-		}
-		cout << 100 * (double)fn / nframes <<	"%    \r";
+		//if(show_movie) {
+		//	detector.drawFeatures(frame);
+		//	cvShowImage("Frame", frame);
+		//	if(cvWaitKey(5) == 27) break;
+		//}
+		//cout << 100 * (double)fn / nframes <<	"%    \r";
 	}
 	cout << endl;
 	timer = cvGetTickCount() - timer;
@@ -617,6 +653,8 @@ int functionVisualiseResults(void)
 		parameter.read<int>("VW_TNSIZEWIDTH", frame->width),
 		parameter.read<int>("VW_TNSIZEHEIGHT",frame->height)),
 		frame->depth, frame->nChannels);
+	double mon_width = parameter.read<double>("VW_MONWIDTH", 1680);
+	double mon_height = parameter.read<double>("VW_MONHEIGHT", 1050);
 
 
 	CvSize frm_size = cvSize(thumbnail->width+6, thumbnail->height + 33);
@@ -644,11 +682,11 @@ int functionVisualiseResults(void)
 
 			//set the position for next window
 			pos.x += frm_size.width;
-			if(pos.x > 1680 - frm_size.width) {
+			if(pos.x > mon_width - frm_size.width) {
 				pos.x = 0;
 				pos.y += frm_size.height;
 			}
-			if(pos.y > 1050 - frm_size.height) {
+			if(pos.y > mon_height - frm_size.height) {
 				pos.y = 0;
 				if(cvWaitKey() == 27) break;
 			}			
