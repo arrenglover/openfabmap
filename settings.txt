@@ -17,7 +17,7 @@ FUNCTION = 1
 VIDEO = C:\openFABMAP\example.avi
 CODEBOOK = C:\openFABMAP\codebook.save
 CLTREE = C:\openFABMAP\tree.save
-FM_SAVE = C:\openFABMAP\\full.save
+FM_SAVE = C:\openFABMAP\full.save
 
 ##### VIEWING FEATURES AND WORDS #####
 
