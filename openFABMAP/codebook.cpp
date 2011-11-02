@@ -466,27 +466,41 @@ int Codebook::modifiedSequentialCluster(double clusterSize, bool verbose)
 	return 0;
 }
 
-int Codebook::kMeans(bool verbose)
+int Codebook::kMeans(int num_clusters, double epsilon, int attempts)
 {
-	//build samples into CvArr*
-	//CvMat * samples = cvCreateMat(data.size(), DESCLEN, CV_32FC1);
-	//for(unsigned int i = 0; i < data.size(); i++) {
-	//	for(int j = 0; j < DESCLEN; j++) {
 
-	//		samples->data[
+	cout << "Performing K-means Clustering\r\n";
+	cout << "Total number of points : " << data.size() << endl;
+	cout << "Number of centres is : " << num_clusters << endl;
 
-	//build dummy CvArr* to hold labels which i dont use
+	//parameters for kmeans
+	cv::TermCriteria params(cv::TermCriteria::EPS, 1000, epsilon);
+	int flags = cv::KMEANS_PP_CENTERS;
 
-	//build options in CvTermCriteria
+	//openCV data structures used by Kmeans
+	cv::Mat points(cv::Size(DESCLEN, data.size()), CV_32FC1);
+	cv::Mat labels(cv::Size(1, data.size()), CV_32SC1);
+	cv::Mat centres(cv::Size(DESCLEN, num_clusters), CV_32FC1);
+	
+	//copy the points data across
+	for(unsigned i = 0; i < data.size(); i++)
+		for(unsigned j = 0; j < DESCLEN; j++)
+			points.at<float>(i, j) = (float)(data[i].data[j]);
 
-	//build output centers
-
-	//run algorithm
-	//cvKMeans2(
+	cv::kmeans(points, num_clusters, labels, params, attempts, flags,     
+		&centres);
 
 	//put centers into words in codebook
-	return 0;
+	words.resize(num_clusters);
+	for(int i = 0; i < num_clusters; i++)
+		for(int j = 0; j < DESCLEN; j++)
+			words[i].data[j] = centres.at<float>(i, j);
 
+	//ouput information
+	cout << words.size() << " words in codebook" << endl;
+	cout << "K-means Clustering Finished" << endl;
+		
+	return 0;
 }
 
 //-------------##WORDPOINT##---------------//
@@ -518,12 +532,48 @@ commonFeatureExtractor::commonFeatureExtractor(void)
 	os_init = 6;
 	os_threshold = 0.0008f;
 
+	star_upright = true;
+	starDetector = StarDetector(45, 30, 10, 8, 5);
+
+	mser_upright = true;
+	mser_e_ratio = 0.002;
+	mserparams = 
+		cvMSERParams(5, 60, 14400, 0.25f, 0.2f, 200, 1.01, 0.003, 5);
+	
+	resize = false;
+	resized_size = cvSize(640, 480);
+
 	extractFunc = &commonFeatureExtractor::SURF;
+}
+
+commonFeatureExtractor::~commonFeatureExtractor(void) 
+{
 
 }
 
-commonFeatureExtractor::~commonFeatureExtractor(void) {};
+void commonFeatureExtractor::setImageResize(bool resize, int width, 
+											int height)
+{
+	this->resize = resize;
+	resized_size = cvSize(width, height);
+}
 
+void commonFeatureExtractor::setMethod(int method_index)
+{
+	switch(method_index) {
+		case(1):
+			extractFunc = &commonFeatureExtractor::SURF;
+			break;
+		case(2):
+			extractFunc = &commonFeatureExtractor::STAR;
+			break;
+		case(3):
+			extractFunc = &commonFeatureExtractor::MSER;
+			break;
+		default:
+			extractFunc = &commonFeatureExtractor::SURF;
+	}
+}
 
 void commonFeatureExtractor::setSURFParams(bool upright, int octaves, 
 										   int intervals, int init,
@@ -536,12 +586,157 @@ void commonFeatureExtractor::setSURFParams(bool upright, int octaves,
 	os_threshold = threshold;
 }
 
+void commonFeatureExtractor::setSTARParams(bool upright, int max_size,
+										   int threshold, int line_threshold,
+										   int line_bin, int suppression_area)
+{
+	star_upright = upright;
+	starDetector = StarDetector(max_size, threshold, line_threshold,
+		line_bin, suppression_area);
+}
+
+void commonFeatureExtractor::setMSERParams(bool upright, double e_ratio,
+										   int delta,
+										   int min_area, int max_area,
+										   float max_var, float min_div)
+{
+	mser_upright = upright;
+	mser_e_ratio = e_ratio;
+	mserparams = cvMSERParams(delta, min_area, max_area, max_var, min_div);
+}
 
 void commonFeatureExtractor::SURF(IplImage * img)
 {
-	surfDetDes(img, ipts, os_upright, os_octaves, os_intervals, os_init, 
+	IplImage * grey, *resized;
+	if(img->nChannels > 1) {
+		grey = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+		cvCvtColor(img, grey, CV_BGR2GRAY);
+	} else {
+		grey = img;
+	}
+
+	if(resize) {
+		resized = cvCreateImage( resized_size, IPL_DEPTH_8U, 1 );
+		cvResize(grey, resized);
+	} else {
+		resized = grey;
+	}
+
+	surfDetDes(resized, ipts, os_upright, os_octaves, os_intervals, os_init, 
 		os_threshold);
+
+	if(resized != grey) cvReleaseImage(&resized);
+	if(grey != img) cvReleaseImage(&grey);	
 }
+
+
+void commonFeatureExtractor::STAR(IplImage * img)
+{
+	//the star detector is bugged in that it cannot detect small features
+	//near the border (dependent on max size). We can hack around that by 
+	//adding a border to the image
+
+	//the border size
+	int shift = starDetector.maxSize;
+	IplImage * bordered;
+	IplImage * grey;
+
+	//we only need a greyscale image convert if necessary
+	if(img->nChannels > 1) {
+		grey = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+		cvCvtColor(img, grey, CV_BGR2GRAY);
+	} else {
+		grey = img;
+	}
+
+	//create the bordered image taking into account the final image size
+	//due to any resizing requirements
+	if(resize) {
+		bordered = cvCreateImage( cvSize(resized_size.width+2*shift,
+			resized_size.height+2*shift), IPL_DEPTH_8U, 1 );
+		cvSetImageROI(bordered,
+			cvRect(shift, shift, resized_size.width, resized_size.height));
+		cvResize(grey, bordered);
+	} else {
+		bordered = cvCreateImage( cvSize(grey->width+2*shift,
+			grey->height+2*shift), IPL_DEPTH_8U, 1 );
+		cvSetImageROI(bordered, 
+			cvRect(shift, shift, grey->width, grey->height));
+		cvCopyImage(grey, bordered);
+	}
+	cvResetImageROI(bordered);
+	if(grey != img) cvReleaseImage(&grey);
+
+	vector<KeyPoint> detections;
+	starDetector(bordered, detections);
+
+	//convert to Ipoint
+	ipts.resize(detections.size());
+	for(unsigned int i = 0; i < detections.size(); i++) {
+		ipts[i].x = detections[i].pt.x - shift;
+		ipts[i].y = detections[i].pt.y - shift;
+		ipts[i].laplacian = 1;
+		ipts[i].scale = detections[i].size / 2.5f;
+	}
+
+	//calculate the descriptor
+	surfDes(bordered, ipts, star_upright);
+
+	cvReleaseImage(&bordered);
+}
+
+void commonFeatureExtractor::MSER(IplImage * img)
+{
+
+	IplImage * grey, * resized;
+	if(img->nChannels > 1) {
+		grey = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 1);
+		cvCvtColor(img, grey, CV_BGR2GRAY);
+	} else {
+		grey = img;
+	}
+
+	if(resize) {
+		resized = cvCreateImage( resized_size, IPL_DEPTH_8U, 1 );
+		cvResize(grey, resized);
+	} else {
+		resized = grey;
+	}
+
+	//get the features
+	CvSeq* contours;
+    CvMemStorage* storage= cvCreateMemStorage();
+	cvExtractMSER(resized, NULL, &contours, storage, mserparams);
+
+	//convert to ipoints
+	ipts.clear(); ipts.reserve(contours->total);
+	Ipoint ipt; ipt.laplacian = 1;
+	ipt.dx = 0; ipt.dy = 0; ipt.orientation = 0;
+	for (int i = 0; i < contours->total; i++) {
+		CvContour* r = *(CvContour**)cvGetSeqElem( contours, i );
+		CvBox2D box = cvFitEllipse2(r);
+		//box.angle=(float)CV_PI/2-box.angle;
+
+		if(box.size.height == 0 ||
+			box.size.width / box.size.height < mser_e_ratio) continue;
+
+		ipt.x = box.center.x;
+		ipt.y = box.center.y;
+		ipt.scale = box.size.height / 5.0f;
+		ipts.push_back(ipt);
+	}
+	
+
+	//calculate the descriptor
+	surfDes(resized, ipts, mser_upright);
+
+	cvReleaseMemStorage(&storage);
+	if(resized != grey) cvReleaseImage(&resized);
+	if(grey != img) cvReleaseImage(&grey);
+	
+
+}
+
 
 void commonFeatureExtractor::extract(IplImage * img)
 {
@@ -599,9 +794,15 @@ vector<CvScalar> commonFeatureExtractor::makeColourDistribution(int number)
 	return displayCols;
 }
 
-void commonFeatureExtractor::drawWords(IplImage * frame, 
-									   vector<CvScalar> &displayCols)
+void commonFeatureExtractor::drawWords(IplImage * image,
+											 vector<CvScalar> &displayCols)
 {
+	double scalex = 
+		resize ? (double)cvGetSize(image).width / resized_size.width : 1;
+	double scaley = 
+		resize ? (double)cvGetSize(image).height / resized_size.height : 1; 
+	
+	//IplImage * copy = cvCloneImage(frame);
 	int ncols = displayCols.size();
 
 	CvFont s;
@@ -609,18 +810,36 @@ void commonFeatureExtractor::drawWords(IplImage * frame,
 	ostringstream labelgen;
 	
 	for(unsigned int i = 0; i < wpts.size(); i++) {
-		cvCircle(frame, cvPoint((int)ipts[i].x, (int)ipts[i].y), (int)(2.5 * 
-			ipts[i].scale), displayCols[wpts[i].label%ncols], CV_FILLED);
+		cvCircle(image, 
+			cvPoint((int)ipts[i].x*scalex, (int)ipts[i].y*scaley), 
+			(int)(2.5 * ipts[i].scale), 
+			displayCols[wpts[i].label%ncols], 
+			CV_FILLED);
 
 		labelgen.str(""); labelgen << wpts[i].label;
-		cvPutText(frame, labelgen.str().c_str(), cvPoint((int)ipts[i].x-5, 
-			(int)ipts[i].y+3), &s, CV_RGB(255, 255, 255));
+		cvPutText(image, 
+			labelgen.str().c_str(), 
+			cvPoint((int)(ipts[i].x*scalex-5), (int)(ipts[i].y*scaley+3)), 
+			&s, CV_RGB(255, 255, 255));
 	}
+
 }
 
-void commonFeatureExtractor::drawFeatures(IplImage * frame)
-{
-	drawIpoints(frame, ipts);
+void commonFeatureExtractor::drawFeatures(IplImage * image)
+{	
+	double scalex = 
+		resize ? (double)cvGetSize(image).width / resized_size.width : 1;
+	double scaley = 
+		resize ? (double)cvGetSize(image).height / resized_size.height  : 1; 
+	
+	for(unsigned int i = 0; i < ipts.size(); i++) {
+		cvCircle(image, 
+			cvPoint((int)ipts[i].x*scalex, (int)ipts[i].y*scaley), 
+			(int)(2.5 * ipts[i].scale), 
+			CV_RGB(0, 0, 255), 
+			1);
+	}
+
 }
 
 

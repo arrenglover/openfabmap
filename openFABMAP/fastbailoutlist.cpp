@@ -170,7 +170,8 @@ void FBOTemplateList::setWordStatistics(Bagofwords &bow)
 	int word;
 	for(int i = 0; i < book.getSize(); i++) {
 		word = word_data[i].word;
-		word_data[i].info = tree.Pqgp(word, bow[word], bow[tree.parent(word)]);
+		word_data[i].info = 
+			tree.Pqgp(word, bow[word], bow[tree.parent(word)]);
 	}
 	sort(word_data.begin(), word_data.end(), compInfo);
 

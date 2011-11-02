@@ -107,7 +107,7 @@ public:
 	int extractDataSet(string movie_file, commonFeatureExtractor &detector);
 	double determineMSCClusterSize(int nWords, double initialGuess);
 	int modifiedSequentialCluster(double clusterSize, bool verbose = true);
-	int kMeans(bool verbose = true);
+	int kMeans(int num_clusters, double epsilon, int attempts);
 	void clearDataSet(void);
 	
 	//use
@@ -146,6 +146,9 @@ public:
 	IpVec ipts;
 	DescriptorVec descs;
 	vector<WordPoint> wpts;
+	
+	bool resize;
+	CvSize resized_size;
 
 	//pointer to extraction function
 	void (commonFeatureExtractor::*extractFunc)(IplImage *);	
@@ -157,26 +160,44 @@ public:
 	int os_init;
 	float os_threshold;
 
+	//star parameter
+	bool star_upright;
+	StarDetector starDetector;
+
+	//mser parameter
+	bool mser_upright;
+	double mser_e_ratio;
+	CvMSERParams mserparams;
+
 	//constructors
 	commonFeatureExtractor(void);
 	~commonFeatureExtractor(void);
 	
 	//extractors
-	void extract(IplImage * img); //pointed to by extractFunc
+	void extract(IplImage * img); //pointed to by extracFunc
 	void SURF(IplImage * img);
+	void STAR(IplImage * img);
+	void MSER(IplImage * img);
 
 	//parameter mods
+	void setImageResize(bool resize, int width = 640, int height = 480);
+	void setMethod(int method_index);
 	void setSURFParams(bool upright, int octaves, int intervals, int init,
 		float threshold);
-
+	void setSTARParams(bool upright, int max_size, int threshold,
+		int line_threshold, int line_bin, int suppression_area);
+	void setMSERParams(bool upright, double e_ratio, int delta, 
+		int min_area, int max_area, float max_var, float min_div);
+	
 	//converters
 	void cvtIpts2Descs(void);
 	void cvtIpts2Wpts(Codebook &book);
 
 	//utilities
+	void resizeImage(IplImage * img);
 	static vector<CvScalar> makeColourDistribution(int number);
-	void drawWords(IplImage * frame, vector<CvScalar> &displayCols);
-	void drawFeatures(IplImage * frame);
+	void drawWords(IplImage * image, vector<CvScalar> &displayCols);
+	void drawFeatures(IplImage * image);
 
 
 };
