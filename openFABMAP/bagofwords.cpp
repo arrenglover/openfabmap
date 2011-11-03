@@ -288,7 +288,7 @@ double BowTemplate::loglikelihood(Bagofwords &bow)
 }
 
 
-inline double BowTemplate::Pqgp(int &Zq, bool Sq, bool Sp)
+double BowTemplate::Pqgp(int Zq, bool Sq, bool Sp)
 {	
 	double p;
 	double alpha, beta;

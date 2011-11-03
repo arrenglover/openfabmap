@@ -146,7 +146,7 @@ void FBOTemplateList::addObservation(IplImage * img)
 	//and normalise
 	D /= D.sum();
 
-	//set the 'current location' and add a new template if the maximal
+	//set the 'current location' and add a new template if the maximal       
 	//likelihood hypothesis is a new location
 	for(unsigned int i = 0; i < D.size(); i++) {
 		if(D[i] == D.max()) {
