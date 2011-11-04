@@ -35,6 +35,7 @@ FBOTemplateList::FBOTemplateList(Codebook &codebook, clTree &cltree,
 		double PNEW, double PNEAR, int NEARFIELDRADIUS)
 {
 	
+	list_size = 0;
 	book = codebook;
 	tree = cltree;
 	FABMAP = fastLookupFabMap(&tree, PZGE, PZGNE);
@@ -76,18 +77,19 @@ void FBOTemplateList::addObservation(IplImage * img)
 		L != template_list.end(); L++) {
 			bailout_list.push_back(&(*L));
 	}
-	avg_loc.changeID((int)template_list.size());
+	avg_loc.changeID(list_size);
 	bailout_list.push_back(&avg_loc);
 	
 	//set the order of words used in fastbailout plus the maximum
 	//inter-hypothesis movement (M) and the variance of movement (v)
 	setWordStatistics(z);
 	
-	//initiate the scores
-	D.resize(bailout_list.size());
+	//initialise the scores
+	D.resize(list_size + 1);
 
 	//FAST-BAILOUT Likelihood Calculation
 	double curr_best;
+	int bailout_size = list_size + 1;
 	vector<word_stats>::iterator WD;
 	for(WD = word_data.begin(); WD != word_data.end(); WD++) {
 	
@@ -101,7 +103,7 @@ void FBOTemplateList::addObservation(IplImage * img)
 			curr_best = max(D[(*L)->getTemplateID()], curr_best);
 		}
 
-		if(bailout_list.size() == 1) continue;
+		if(bailout_size == 1) continue;
 		
 		double delta = max(limitbisection(WD->v, WD->M, PS_D), C); 
 
@@ -112,6 +114,7 @@ void FBOTemplateList::addObservation(IplImage * img)
 				remove_L = L;
 				L++;
 				bailout_list.erase(remove_L);
+				bailout_size--;
 			} else {
 				L++;
 			}
@@ -131,14 +134,13 @@ void FBOTemplateList::addObservation(IplImage * img)
 	//work out priors
 	valarray<double> priors(D.size());
 	int nf_start = max(0, current_location-(int)NEARFIELDRADIUS);
-	int nf_end = min((int)template_list.size(), 
-		(current_location+NEARFIELDRADIUS));
+	int nf_end = min(list_size, (current_location+NEARFIELDRADIUS));
 	double num_near = nf_end - nf_start;
-	double num_far = template_list.size() - num_near;
+	double num_far = list_size - num_near;
 	priors = (1-PNEW) * (1-PNEAR) / num_far;
 	for(int i = nf_start; i < nf_end; i++)
 		priors[i] = (1-PNEW)*PNEAR / num_near;
-	priors[template_list.size()] = PNEW;
+	priors[list_size] = PNEW;
 
 	//add in priors
 	D *= priors;
@@ -154,9 +156,10 @@ void FBOTemplateList::addObservation(IplImage * img)
 			break;
 		}
 	}
-	if(current_location == template_list.size()) {
-		template_list.push_back(BowTemplate(z, template_list.size(),
+	if(current_location == list_size) {
+		template_list.push_back(BowTemplate(z, list_size,
 			&tree, PZGE, PZGNE));
+		list_size++;
 	}
 
 	return;
@@ -225,7 +228,8 @@ double FBOTemplateList::bennettInequality(double v, double m, double delta)
 	return exp((v / pow(m, 2.0))*(cosh(f_delta) - 1 - DMonV * f_delta));
 }
 
-bool FBOTemplateList::compInfo(const word_stats &first, const word_stats &second) 
+bool FBOTemplateList::compInfo(const word_stats &first, 
+							   const word_stats &second) 
 {
 	return first.info < second.info;
 }

@@ -38,7 +38,8 @@ class FBOTemplateList
 private:
 
 	//the location list etc
-	list<BowTemplate> template_list; 
+	list<BowTemplate> template_list;
+	int list_size;
 	BowTemplate avg_loc;
 	int current_location;
 
