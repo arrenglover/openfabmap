@@ -37,7 +37,7 @@ int clTree::make(string movie_file, string tree_file, Codebook &book,
 {
 	//make the training data
 	TrainData train_data;
-	if(train_data.makeTrainingData(movie_file, &book, detector)) return -1;
+	if(train_data.makeTrainingData(movie_file, &book, detector)) return -1;  
 
 	//calculate the parent nodes based on maximising mutual information
 	list<info> edges;
@@ -46,7 +46,8 @@ int clTree::make(string movie_file, string tree_file, Codebook &book,
 	
 	//recursively build the tree into correct data structure
 	nodes.clear();
-	recAddToTree(edges.front().word1, edges.front().word2, train_data, edges);
+	recAddToTree
+		(edges.front().word1, edges.front().word2, train_data, edges);
 	sort(nodes.begin(), nodes.end(), clNodeCompare);
 
 	//save the final result
@@ -84,8 +85,9 @@ void clTree::recAddToTree(int node, int parent_node, TrainData &train_data,
 		}
 		edge++;
 	}
-	for(vector<int>::iterator child_node = child_nodes.begin(); child_node != child_nodes.end(); child_node++) {
-		recAddToTree(*child_node, node, train_data, edges);
+	for(vector<int>::iterator child_node = child_nodes.begin(); 
+		child_node != child_nodes.end(); child_node++) {
+			recAddToTree(*child_node, node, train_data, edges);
 	}
 }
 
@@ -102,9 +104,11 @@ double clTree::P(int word, bool qistrue)
 double clTree::Pqgp(int word, bool qistrue, bool pistrue)
 {
 	if(pistrue){
-		return (qistrue) ? (double)nodes[word].Pq_p : (double)(1 - nodes[word].Pq_p);
+		return (qistrue) ? (double)nodes[word].Pq_p : 
+			(double)(1 - nodes[word].Pq_p);
 	} else {
-		return (qistrue) ? (double)nodes[word].Pq_np : (double)(1 - nodes[word].Pq_np);
+		return (qistrue) ? (double)nodes[word].Pq_np : 
+			(double)(1 - nodes[word].Pq_np);
 	}
 }
 
@@ -123,14 +127,15 @@ void clTree::save (char * location)
 
 	ofstream saver(location, std::ios_base::trunc);
 
-	for(vector<clNode>::iterator node = nodes.begin(); node != nodes.end(); node++) {
+	for(vector<clNode>::iterator node = nodes.begin(); node != nodes.end();
+		node++) {
 
-		saver << node->nodeID << " ";
-		saver << node->parentNodeID << " ";
-		saver << node->Pq << " ";
-		saver << node->Pq_p << " ";
-		saver << node->Pq_np << " ";
-		saver << endl;
+			saver << node->nodeID << " ";
+			saver << node->parentNodeID << " ";
+			saver << node->Pq << " ";
+			saver << node->Pq_p << " ";
+			saver << node->Pq_np << " ";
+			saver << endl;
 	}
 }
 
@@ -200,11 +205,13 @@ void clTree::createBaseEdges(list<info> &edges, TrainData &train_data,
 {
 	int no_words = train_data.numberofwords();
 	double average = 0;
+	double currentcalc = 0;
 	double list_size = floor(pow((double)no_words, 2.0) / 2) - 
 		floor((double)no_words/2);
 	info mut_info;
 
 	cout << "Calculating the Mutual Information....." << endl;
+	cout << fixed << setprecision(1);
 	for(int word1 = 0; word1 < no_words; word1++) {
 		for(int word2 = word1 + 1; word2 < no_words; word2++) {
 			mut_info.word1 = word1;
@@ -214,9 +221,8 @@ void clTree::createBaseEdges(list<info> &edges, TrainData &train_data,
 				edges.push_back(mut_info);
 				average += mut_info.score;
 			}
+			cout << 100 * (++currentcalc) / list_size << "%\r";
 		}
-		cout << fixed << setprecision(1) <<
-			100 * edges.size() / list_size << "%\r";
 	}
 	cout << "Done           " << endl;
 	cout << "Sorting list....." <<endl;
@@ -225,7 +231,7 @@ void clTree::createBaseEdges(list<info> &edges, TrainData &train_data,
 	cout << "Done" << setprecision(10)<<endl;
 	cout << "Minimum Information: " << edges.back().score << endl;
 	cout << "Maximum Information: " << edges.front().score << endl;
-	cout << "Average Information: " << average / edges.size() << endl;
+	cout << "Average Information: " << average / list_size << endl;
 }
 
 int clTree::reduceEdgesToMinSpan(list<info> &edges, double n_nodes) 
@@ -235,29 +241,33 @@ int clTree::reduceEdgesToMinSpan(list<info> &edges, double n_nodes)
 	map<int, int> groups; map<int, int>::iterator groupIt;
 	for(int i = 0; i < n_nodes; i++) groups[i] = i;
 	int group1, group2;
+	double currentcalc = 0;
+	double list_size = edges.size();
 	double average = 0;
 	
 
 	cout << "Reducing List to Minimum Spanning Tree" << endl;
+	cout << fixed << setprecision(2);
 
 	list<info>::iterator edge = edges.begin();
 	while(edge != edges.end()) {
 		if(groups[edge->word1] != groups[edge->word2]) {
 			group1 = groups[edge->word1];
 			group2 = groups[edge->word2];
-			for(groupIt = groups.begin(); groupIt != groups.end(); groupIt++)
+			for(groupIt = groups.begin(); groupIt != groups.end(); groupIt++)   
 				if(groupIt->second == group2) groupIt->second = group1;
 			average += edge->score;
 			edge++;
 		} else {
 			edge = edges.erase(edge);
 		}
-		cout<<fixed<<setprecision(2)<< 100.0*n_nodes/edges.size() <<"%\r";
+		cout << 100.0 * (++currentcalc) / list_size << "%\r";
 	}
 
 	if(edges.size() != n_nodes - 1) {
-		cout << "Not enough edges to complete the spanning tree. Decrease the"
-			"information threshold to increase edges. Tree not built." <<endl;
+		cout << "Not enough edges to complete the spanning tree. Decrease "
+			"the information threshold to increase edges. " 
+			"Tree not built." << endl;
 		return -1;
 	}
 	cout << "Done       " <<setprecision(10)<<endl;

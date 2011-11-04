@@ -117,7 +117,7 @@ public:
 	double naive_bayes(BowTemplate &new_template);	
 	double loglikelihood(BowTemplate &new_template);
 	double loglikelihood(Bagofwords &bow);
-	double Pqgp(int &Zq, bool Sq, bool Sp);
+	double Pqgp(int Zq, bool Sq, bool Sp);
 
 };
 
