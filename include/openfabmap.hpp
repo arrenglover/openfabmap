@@ -29,7 +29,7 @@ public:
 	FabMap();
 	virtual ~FabMap();
 
-private:
+protected:
 	Mat codebook;
 	Mat clTree;
 
@@ -45,24 +45,28 @@ class FabMap1 : public FabMap {
 public:
 	FabMap1();
 	virtual ~FabMap1();
+protected:
 };
 
 class FabMapLUT : public FabMap {
 public:
 	FabMapLUT();
 	virtual ~FabMapLUT();
+protected:
 };
 
 class FabMapFBO : public FabMap {
 public:
 	FabMapFBO();
 	virtual ~FabMapFBO();
+protected:
 };
 
 class FabMap2 : public FabMap {
 public:
 	FabMap2();
 	virtual ~FabMap2();
+protected:
 };
 
 class ChowLiuTree {
@@ -81,38 +85,29 @@ private:
 		vector<float> absolutes;
 		int numSamples;
 		int sampleSize;
-
 		const Mat* data;
 
 	public:
-
 		TrainData();
 		~TrainData();
-
 		void make(const Mat& _imgDescriptors);
-
 		double P(int a, bool ais);
 		double JP(int a, bool ais, int b, bool bis); //a & b
 		double CP(int a, bool ais, int b, bool bis);	// a | b
-
 	};
 
 	typedef struct clNode {
-
 		int nodeID;
 		int parentNodeID;
 		float Pq;
 		float Pq_p;
 		float Pq_np;
-
 	} clNode;
 
 	typedef struct info {
-
 		float score;
 		short word1;
 		short word2;
-
 	} info;
 
 	vector<clNode> nodes;
@@ -123,6 +118,22 @@ private:
 	double calcMutInfo(TrainData& trainData, int word1, int word2);
 	void createBaseEdges(list<info>& edges, TrainData& trainData, double infoThreshold);
 	bool reduceEdgesToMinSpan(list<info>& edges);
+
+};
+
+class BOWMSCTrainer : public cv::BOWTrainer
+{
+public:
+    BOWMSCTrainer( double clusterSize );
+    virtual ~BOWMSCTrainer();
+
+    // Returns trained vocabulary (i.e. cluster centers).
+    virtual Mat cluster() const;
+    virtual Mat cluster( const Mat& descriptors ) const;
+
+protected:
+
+    double clusterSize;
 
 };
 

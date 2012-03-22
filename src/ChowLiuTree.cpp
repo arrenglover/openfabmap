@@ -12,11 +12,9 @@ namespace ofm
 {
 
 ChowLiuTree::ChowLiuTree() {
-	// TODO Auto-generated constructor stub
 }
 
 ChowLiuTree::~ChowLiuTree() {
-	// TODO Auto-generated destructor stub
 }
 
 void ChowLiuTree::add(const Mat& _imgDescriptor) {
