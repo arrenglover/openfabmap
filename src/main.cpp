@@ -5,7 +5,7 @@ int main(int argc, char * argv[])
 {
 
 	/*
-	ofm::ChowLiuTree chowLiuTree(params);
+	of2::ChowLiuTree chowLiuTree(params);
 
 	for (;;)  {// every training BoW
 		chowLiuTree.add(BoW);
@@ -17,7 +17,7 @@ int main(int argc, char * argv[])
 	fs << "clTree" << clTree;
 	fs.release();
 
-	ofm::FabMap* fabMap = new ofm::FabMap2(codebook, clTree, params);
+	of2::FabMap* fabMap = new of2::FabMap2(codebook, clTree, params);
 
 	*/
 

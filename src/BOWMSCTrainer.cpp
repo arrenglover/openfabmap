@@ -9,7 +9,7 @@
 #include "../include/openfabmap.hpp"
 
 
-namespace ofm
+namespace of2
 {
 
 BOWMSCTrainer::BOWMSCTrainer( double _clusterSize ) : clusterSize(_clusterSize) {
@@ -40,16 +40,11 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 
 	CV_Assert(!descriptors.empty());
 
-	vector<Mat> initialCentres;
-	vector<list<Mat> > clusters;
-	vector<list<Mat> >::iterator Ci;
-
 	double threshold = pow(clusterSize,2.0);
-
 	Mat icovar = Mat::eye(descriptors.cols,descriptors.cols,descriptors.type());
 
+	vector<Mat> initialCentres;
 	initialCentres.push_back(descriptors.rowRange(0,0));
-
 	for (int i = 1; i < descriptors.rows; i++) {
 		double minDist = DBL_MAX;
 		for (size_t j = 0; j < initialCentres.size(); j++) {
@@ -59,6 +54,7 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 			initialCentres.push_back(descriptors.rowRange(i,i));
 	}
 
+	vector<list<Mat> > clusters;
 	clusters.resize(initialCentres.size());
 	for (int i = 0; i < descriptors.rows; i++) {
 		int index; double dist, minDist = DBL_MAX;
@@ -82,6 +78,7 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 		centre /= (double)clusters[i].size();
 		vocabulary.push_back(centre);
 	}
+
 
 	return vocabulary;
 }

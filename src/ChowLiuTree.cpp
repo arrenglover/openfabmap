@@ -8,7 +8,7 @@
 #include "../include/openfabmap.hpp"
 
 
-namespace ofm
+namespace of2
 {
 
 ChowLiuTree::ChowLiuTree() {
@@ -17,14 +17,14 @@ ChowLiuTree::ChowLiuTree() {
 ChowLiuTree::~ChowLiuTree() {
 }
 
-void ChowLiuTree::add(const Mat& _imgDescriptor) {
-	CV_Assert(!_imgDescriptor.empty());
-	CV_Assert(!_imgDescriptor.rows == 1);
+void ChowLiuTree::add(const Mat& imgDescriptor) {
+	CV_Assert(!imgDescriptor.empty());
+	CV_Assert(!imgDescriptor.rows == 1);
 	if (!imgDescriptors.empty()) {
-		CV_Assert(imgDescriptors[0].cols == _imgDescriptor.cols);
-		CV_Assert(imgDescriptors[0].type() == _imgDescriptor.type());
+		CV_Assert(imgDescriptors[0].cols == imgDescriptor.cols);
+		CV_Assert(imgDescriptors[0].type() == imgDescriptor.type());
 	}
-	imgDescriptors.push_back(_imgDescriptor);
+	imgDescriptors.push_back(imgDescriptor);
 }
 
 Mat ChowLiuTree::make(double infoThreshold) {
@@ -54,10 +54,9 @@ Mat ChowLiuTree::make(double infoThreshold) {
 	sort(nodes.begin(), nodes.end(), clNodeCompare);
 
 	Mat clTree;
-	clTree.create(5,imgDescriptors[0].cols,CV_64F);
+	clTree.create(4,imgDescriptors[0].cols,CV_64F);
 
 	for(int i = 0; i < imgDescriptors[0].cols; i++) {
-		clTree.at<double>(0,i) = nodes[i].nodeID;
 		clTree.at<double>(1,i) = nodes[i].parentNodeID;
 		clTree.at<double>(2,i) = nodes[i].Pq;
 		clTree.at<double>(3,i) = nodes[i].Pq_p;
@@ -75,18 +74,18 @@ ChowLiuTree::TrainData::TrainData() {
 ChowLiuTree::TrainData::~TrainData() {
 }
 
-void ChowLiuTree::TrainData::make(const Mat& _imgDescriptors) {
+void ChowLiuTree::TrainData::make(const Mat& imgDescriptors) {
 
-	data = &_imgDescriptors;
+	data = imgDescriptors;
 
 	absolutes.clear();
-	numSamples = _imgDescriptors.rows;
-	sampleSize = _imgDescriptors.cols;
+	numSamples = imgDescriptors.rows;
+	sampleSize = imgDescriptors.cols;
 
 	double accumulation = 0;
 	for(int word = 0; word < sampleSize; word++, accumulation = 0) {
 		for(int sample = 0; sample < numSamples; sample++) {
-			accumulation += (double)(data->at<float>(sample,word) > 0);
+			accumulation += (double)(data.at<float>(sample,word) > 0);
 		}
 		absolutes.push_back((float)(0.01 + (0.98 * accumulation / numSamples)));
 	}
@@ -100,7 +99,7 @@ double ChowLiuTree::TrainData::P(int a, bool ais) {
 double ChowLiuTree::TrainData::JP(int a, bool ais, int b, bool bis) {
 	double count = 0;
 	for(int i = 0; i < numSamples; i++) {
-		if((data->at<float>(i,a) > 0) == ais && (data->at<float>(i,b) > 0) == bis) count++;
+		if((data.at<float>(i,a) > 0) == ais && (data.at<float>(i,b) > 0) == bis) count++;
 	}
 	return count / numSamples;
 }
@@ -108,8 +107,8 @@ double ChowLiuTree::TrainData::JP(int a, bool ais, int b, bool bis) {
 double ChowLiuTree::TrainData::CP(int a, bool ais, int b, bool bis) {
 	int count = 0, total = 0;
 	for(int sampleNumber = 0; sampleNumber < numSamples; sampleNumber++) {
-		if((data->at<float>(sampleNumber,b) > 0) == bis) {
-			count += ((data->at<float>(sampleNumber,a) > 0) == ais);
+		if((data.at<float>(sampleNumber,b) > 0) == bis) {
+			count += ((data.at<float>(sampleNumber,a) > 0) == ais);
 			total++;
 		}
 	}
