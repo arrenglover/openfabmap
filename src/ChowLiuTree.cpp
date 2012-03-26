@@ -7,9 +7,7 @@
 
 #include "../include/openfabmap.hpp"
 
-
-namespace of2
-{
+namespace of2 {
 
 ChowLiuTree::ChowLiuTree() {
 }
@@ -19,7 +17,7 @@ ChowLiuTree::~ChowLiuTree() {
 
 void ChowLiuTree::add(const Mat& imgDescriptor) {
 	CV_Assert(!imgDescriptor.empty());
-	CV_Assert(!imgDescriptor.rows == 1);
+	CV_Assert(imgDescriptor.rows == 1);
 	if (!imgDescriptors.empty()) {
 		CV_Assert(imgDescriptors[0].cols == imgDescriptor.cols);
 		CV_Assert(imgDescriptors[0].type() == imgDescriptor.type());
@@ -217,7 +215,7 @@ bool ChowLiuTree::reduceEdgesToMinSpan(list<info>& edges) {
 		}
 	}
 
-	if(edges.size() != imgDescriptors[0].cols - 1) {
+	if(edges.size() != (unsigned int)imgDescriptors[0].cols - 1) {
 		return false;
 	} else {
 		return true;
@@ -226,6 +224,4 @@ bool ChowLiuTree::reduceEdgesToMinSpan(list<info>& edges) {
 }
 
 }
-
-
 

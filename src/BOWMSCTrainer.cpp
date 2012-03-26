@@ -5,35 +5,32 @@
  *      Author: will
  */
 
-
 #include "../include/openfabmap.hpp"
 
+namespace of2 {
 
-namespace of2
-{
-
-BOWMSCTrainer::BOWMSCTrainer( double _clusterSize ) : clusterSize(_clusterSize) {
+BOWMSCTrainer::BOWMSCTrainer(double _clusterSize) :
+	clusterSize(_clusterSize) {
 }
 
 BOWMSCTrainer::~BOWMSCTrainer() {
 }
 
-Mat BOWMSCTrainer::cluster() const
-{
-    CV_Assert(!descriptors.empty());
+Mat BOWMSCTrainer::cluster() const {
+	CV_Assert(!descriptors.empty());
 
-    int descCount = 0;
-    for(size_t i = 0; i < descriptors.size(); i++)
-        descCount += descriptors[i].rows;
+	int descCount = 0;
+	for(size_t i = 0; i < descriptors.size(); i++)
+	descCount += descriptors[i].rows;
 
-    Mat mergedDescriptors(descCount, descriptors[0].cols, descriptors[0].type());
-    for(size_t i = 0, start = 0; i < descriptors.size(); i++)
-    {
-        Mat submut = mergedDescriptors.rowRange((int)start, (int)(start + descriptors[i].rows));
-        descriptors[i].copyTo(submut);
-        start += descriptors[i].rows;
-    }
-    return cluster(mergedDescriptors);
+	Mat mergedDescriptors(descCount, descriptors[0].cols, descriptors[0].type());
+	for(size_t i = 0, start = 0; i < descriptors.size(); i++)
+	{
+		Mat submut = mergedDescriptors.rowRange((int)start, (int)(start + descriptors[i].rows));
+		descriptors[i].copyTo(submut);
+		start += descriptors[i].rows;
+	}
+	return cluster(mergedDescriptors);
 }
 
 Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
@@ -51,7 +48,7 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 			minDist = std::min(minDist,cv::Mahalanobis(descriptors.rowRange(i,i),initialCentres[j],icovar));
 		}
 		if (minDist < threshold)
-			initialCentres.push_back(descriptors.rowRange(i,i));
+		initialCentres.push_back(descriptors.rowRange(i,i));
 	}
 
 	vector<list<Mat> > clusters;
@@ -79,10 +76,8 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 		vocabulary.push_back(centre);
 	}
 
-
 	return vocabulary;
 }
 
 }
-
 
