@@ -10,6 +10,7 @@
 using std::vector;
 using std::list;
 using std::map;
+using std::valarray;
 using cv::Mat;
 
 double logsumexp(double a, double b) {
@@ -285,10 +286,8 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 			p += Pegl * beta / (alpha + beta);
 
 			table[word][i] = (int)(log(p)*precFactor);
-
 		}
 	}
-
 }
 
 FabMapLUT::~FabMapLUT() {
@@ -318,6 +317,11 @@ FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe,
 FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PS_D(_PS_D), LOFBOH(_LOFBOH),
 bisectionStart(_bisectionStart), bisectionIts(_bisectionIts) {
 
+	for (int word = 0; word < clTree.cols; word++) {
+		trainingWordData.push_back(wordStats(word));
+		testWordData.push_back(wordStats(word));
+	}
+
 }
 
 FabMapFBO::~FabMapFBO() {
@@ -326,6 +330,38 @@ FabMapFBO::~FabMapFBO() {
 void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
+}
+
+double FabMapFBO::limitbisection(double v, double m) {
+	double midpoint, left_val, mid_val;
+	double left = 0, right = bisectionStart;
+
+	left_val = bennettInequality(v, m, left) - PS_D;
+
+	for(int i = 0; i < bisectionIts; i++) {
+
+		midpoint = (left + right)*0.5;
+		mid_val = bennettInequality(v, m, midpoint)- PS_D;
+
+		if(left_val * mid_val > 0) {
+			left = midpoint;
+			left_val = mid_val;
+		} else {
+			right = midpoint;
+		}
+	}
+
+	return (right + left) * 0.5;
+}
+
+double FabMapFBO::bennettInequality(double v, double m, double delta) {
+	double DMonV = delta * m / v;
+	double f_delta = log(DMonV + sqrt(pow(DMonV, 2.0) + 1));
+	return exp((v / pow(m, 2.0))*(cosh(f_delta) - 1 - DMonV * f_delta));
+}
+
+bool FabMapFBO::compInfo(const wordStats& first, const wordStats& second) {
+	return first.info < second.info;
 }
 
 FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
@@ -369,8 +405,8 @@ void FabMap2::addTraining(const Mat& imgDescriptors) {
 }
 
 void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
-		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
-	if (testImgDescriptors == this->testImgDescriptors) {
+		const vector<Mat>& _testImgDescriptors, vector<IMatch>& matches) {
+	if (_testImgDescriptors[0].data == testImgDescriptors[0].data) {
 		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
 		addToIndex(queryImgDescriptor, testDefaults, testInvertedMap);
 	} else {
@@ -385,7 +421,7 @@ void FabMap2::addToIndex(const Mat& queryImgDescriptor,
 	for (int word = 0; word < clTree.cols; word++) {
 		if (queryImgDescriptor.at<float>(0,word) > 0) {
 			defaults.back() += d1[word];
-			invertedMap[word].push_back(defaults.size());
+			invertedMap[word].push_back((int)defaults.size());
 		}
 	}
 }
