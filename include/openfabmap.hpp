@@ -162,7 +162,9 @@ protected:
 			std::vector<double>& defaults,
 			std::map<int, std::vector<int> >& invertedMap,
 			std::vector<IMatch>& matches);
-
+	void addToIndex(const Mat& queryImgDescriptor,
+			vector<double>& defaults,
+			map<int, vector<int> >& invertedMap)
 
 	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
 

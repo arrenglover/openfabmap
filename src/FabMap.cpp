@@ -22,8 +22,8 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 		double _PzGNe, int _flags, int _numSamples) :
 	clTree(_clTree), PzGe(_PzGe), PzGNe(_PzGNe), flags(
 			_flags), numSamples(_numSamples) {
-	CV_Assert(flags & MEAN_FIELD || flags & SAMPLED)
-;	CV_Assert(flags & NAIVE_BAYES || flags & CHOW_LIU);
+	CV_Assert(flags & MEAN_FIELD || flags & SAMPLED);
+	CV_Assert(flags & NAIVE_BAYES || flags & CHOW_LIU);
 }
 
 FabMap::~FabMap() {
@@ -370,7 +370,24 @@ void FabMap2::addTraining(const Mat& imgDescriptors) {
 
 void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
+	if (testImgDescriptors == this->testImgDescriptors) {
+		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
+		addToIndex(queryImgDescriptor, testDefaults, testInvertedMap);
+	} else {
+		getIndexLikelihoods(queryImgDescriptor, trainingDefaults, trainingInvertedMap, matches);
+	}
+}
 
+void FabMap2::addToIndex(const Mat& queryImgDescriptor,
+		vector<double>& defaults,
+		map<int, vector<int> >& invertedMap) {
+	defaults.push_back(0);
+	for (int word = 0; word < clTree.cols; word++) {
+		if (queryImgDescriptor.at<float>(0,word) > 0) {
+			defaults.back() += d1[word];
+			invertedMap[word].push_back(defaults.size());
+		}
+	}
 }
 
 void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,

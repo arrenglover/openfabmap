@@ -40,7 +40,6 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 
 	CV_Assert(!descriptors.empty());
 
-	double threshold = pow(clusterSize,2.0);
 	Mat icovar = Mat::eye(descriptors.cols,descriptors.cols,descriptors.type());
 
 	vector<Mat> initialCentres;
@@ -50,7 +49,7 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 		for (size_t j = 0; j < initialCentres.size(); j++) {
 			minDist = std::min(minDist,cv::Mahalanobis(descriptors.rowRange(i,i),initialCentres[j],icovar));
 		}
-		if (minDist < threshold)
+		if (minDist < clusterSize)
 		initialCentres.push_back(descriptors.rowRange(i,i));
 	}
 
