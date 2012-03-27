@@ -7,6 +7,10 @@
 
 #include "../include/openfabmap.hpp"
 
+using std::vector;
+using std::list;
+using cv::Mat;
+
 namespace of2 {
 
 BOWMSCTrainer::BOWMSCTrainer(double _clusterSize) :
@@ -17,8 +21,7 @@ BOWMSCTrainer::~BOWMSCTrainer() {
 }
 
 Mat BOWMSCTrainer::cluster() const {
-	CV_Assert(!descriptors.empty())
-;
+	CV_Assert(!descriptors.empty());
 	int descCount = 0;
 	for(size_t i = 0; i < descriptors.size(); i++)
 	descCount += descriptors[i].rows;

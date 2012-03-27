@@ -7,6 +7,11 @@
 
 #include "../include/openfabmap.hpp"
 
+using std::vector;
+using std::list;
+using std::map;
+using cv::Mat;
+
 namespace of2 {
 
 ChowLiuTree::ChowLiuTree() {

@@ -7,28 +7,21 @@
 
 #include "../include/openfabmap.hpp"
 
-double logsumexp(
-		double a, double b) {
-	return a > b ? log(
-			1 + exp(
-					b - a)) + a
-			: log(
-					1 + exp(
-							a - b)) + b;
+using std::vector;
+using std::list;
+using std::map;
+using cv::Mat;
+
+double logsumexp(double a, double b) {
+	return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
 }
 
 namespace of2 {
 
-FabMap::FabMap(
-		const Mat& _codebook, const Mat& _clTree, double _PzGe,
+FabMap::FabMap(const Mat& _clTree, double _PzGe,
 		double _PzGNe, int _flags, int _numSamples) :
-	codebook(
-			_codebook), clTree(
-			_clTree), PzGe(
-			_PzGe), PzGNe(
-			_PzGNe), flags(
-			_flags), numSamples(
-			_numSamples) {
+	clTree(_clTree), PzGe(_PzGe), PzGNe(_PzGNe), flags(
+			_flags), numSamples(_numSamples) {
 	CV_Assert(flags & MEAN_FIELD || flags & SAMPLED)
 ;	CV_Assert(flags & NAIVE_BAYES || flags & CHOW_LIU);
 }
@@ -214,8 +207,8 @@ double FabMap::Pzge(bool Zi, bool ei) {
 	}
 }
 
-FabMap1::FabMap1(const Mat& _codebook, const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
-FabMap(_codebook, _clTree, _PzGe, _PzGNe, _flags, _numSamples) {
+FabMap1::FabMap1(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
+FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 }
 
 FabMap1::~FabMap1() {
@@ -261,8 +254,8 @@ double FabMap1::PeGl(int word, bool zi, bool ei) {
 	}
 }
 
-FabMapLUT::FabMapLUT(const Mat& _codebook, const Mat& _clTree, double _PzGe, double _PzGNe, int _precision, int _flags, int _numSamples) :
-FabMap(_codebook, _clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
+FabMapLUT::FabMapLUT(const Mat& _clTree, double _PzGe, double _PzGNe, int _precision, int _flags, int _numSamples) :
+FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 
 	int nWords = clTree.cols;
 	double precFactor = (double)pow(10.0,precision);
@@ -320,9 +313,9 @@ void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
 	}
 }
 
-FabMapFBO::FabMapFBO(const Mat& _codebook, const Mat& _clTree, double _PzGe,
+FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe,
 		double _PzGNe, double _PS_D, double _LOFBOH, int _bisectionStart, int _bisectionIts, int _flags, int _numSamples) :
-FabMap(_codebook, _clTree, _PzGe, _PzGNe, _flags, _numSamples), PS_D(_PS_D), LOFBOH(_LOFBOH),
+FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PS_D(_PS_D), LOFBOH(_LOFBOH),
 bisectionStart(_bisectionStart), bisectionIts(_bisectionIts) {
 
 }
@@ -335,8 +328,8 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 
 }
 
-FabMap2::FabMap2(const Mat& _codebook, const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
-FabMap(_codebook, _clTree, _PzGe, _PzGNe, _flags, _numSamples) {
+FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
+FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 	CV_Assert(flags & SAMPLED);
 
 	d1.resize(clTree.cols);

@@ -5,6 +5,12 @@ int main(int argc, char * argv[])
 {
 
 	/*
+
+
+	of2::BOWSMCTrainer bowTrainer(clusterSize);
+
+	cv::Mat codebook = bowTrainer.cluster(all_descriptors);
+
 	of2::ChowLiuTree chowLiuTree(params);
 
 	for (;;)  {// every training BoW
@@ -17,7 +23,7 @@ int main(int argc, char * argv[])
 	fs << "clTree" << clTree;
 	fs.release();
 
-	of2::FabMap* fabMap = new of2::FabMap2(codebook, clTree, params);
+	FabMap fabMap = FabMap2(clTree, params);
 
 	*/
 

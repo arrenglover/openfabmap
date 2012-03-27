@@ -11,12 +11,9 @@
 #include <vector>
 #include <list>
 #include <map>
-using std::vector;
-using std::list;
-using std::map;
 
 #include <opencv2/opencv.hpp>
-using cv::Mat;
+
 
 namespace of2 {
 
@@ -53,34 +50,33 @@ public:
 		MOTION_MODEL = 8
 	};
 
-	FabMap(const Mat& codebook, const Mat& clTree, double PzGe, double PzGNe,
+	FabMap(const cv::Mat& clTree, double PzGe, double PzGNe,
 			int flags, int numSamples);
 	virtual ~FabMap();
 
-	void addTraining(const Mat& imgDescriptors);
+	void addTraining(const cv::Mat& imgDescriptors);
 
-	void match(const Mat& queryImgDescriptors, vector<IMatch>& matches);
-	void match(const Mat& queryImgDescriptors, const Mat& testImgDescriptors,
-			vector<IMatch>& matches);
+	void match(const cv::Mat& queryImgDescriptors, std::vector<IMatch>& matches);
+	void match(const cv::Mat& queryImgDescriptors, const cv::Mat& testImgDescriptors,
+			std::vector<IMatch>& matches);
 
 protected:
 
-	virtual void getLikelihoods(const Mat& queryImgDescriptor,
-			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
-	double getNewPlaceLikelihood(const Mat& queryImgDescriptor);
-	void normaliseDistribution(vector<IMatch>& matches);
+	virtual void getLikelihoods(const cv::Mat& queryImgDescriptor,
+			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
+	double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
+	void normaliseDistribution(std::vector<IMatch>& matches);
 
 	int parent(int word);
 	double P(int word, bool q);
 	double PqGp(int word, bool q, bool p);
 	double Pzge(bool zi, bool ei);
 
-	Mat codebook;
-	Mat clTree;
+	cv::Mat clTree;
 
-	vector<Mat> trainingImgDescriptors;
-	vector<Mat> testImgDescriptors;
-	vector<IMatch> priorMatches;
+	std::vector<cv::Mat> trainingImgDescriptors;
+	std::vector<cv::Mat> testImgDescriptors;
+	std::vector<IMatch> priorMatches;
 
 	double PzGe;
 	double PzGNe;
@@ -96,23 +92,23 @@ protected:
 
 class FabMap1: public FabMap {
 public:
-	FabMap1(const Mat& codebook, const Mat& clTree, double PzGe, double PzGNe,
+	FabMap1(const cv::Mat& clTree, double PzGe, double PzGNe,
 			int flags, int numSamples);
 	virtual ~FabMap1();
 protected:
-	void getLikelihoods(const Mat& queryImgDescriptor,
-			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
+	void getLikelihoods(const cv::Mat& queryImgDescriptor,
+			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 	double PeGl(int word, bool zi, bool ei);
 };
 
 class FabMapLUT: public FabMap {
 public:
-	FabMapLUT(const Mat& codebook, const Mat& clTree, double PzGe,
+	FabMapLUT(const cv::Mat& clTree, double PzGe,
 			double PzGNe, int precision, int flags, int numSamples);
 	virtual ~FabMapLUT();
 protected:
-	void getLikelihoods(const Mat& queryImgDescriptor,
-			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
+	void getLikelihoods(const cv::Mat& queryImgDescriptor,
+			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
 	int (*table)[8];
 
@@ -121,14 +117,14 @@ protected:
 
 class FabMapFBO: public FabMap {
 public:
-	FabMapFBO(const Mat& codebook, const Mat& clTree, double PzGe,
+	FabMapFBO(const cv::Mat& clTree, double PzGe,
 			double PzGNe, double PS_D, double LOFBOH, int bisectionStart,
 			int bisectionIts, int flags, int numSamples);
 	virtual ~FabMapFBO();
 
 protected:
-	void getLikelihoods(const Mat& queryImgDescriptor,
-			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
+	void getLikelihoods(const cv::Mat& queryImgDescriptor,
+			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
 	struct wordStats {
 		int word;
@@ -141,8 +137,8 @@ protected:
 		}
 	};
 
-	vector<wordStats> trainingWordData;
-	vector<wordStats> testWordData;
+	std::vector<wordStats> trainingWordData;
+	std::vector<wordStats> testWordData;
 
 	double PS_D;
 	double LOFBOH;
@@ -152,32 +148,32 @@ protected:
 
 class FabMap2: public FabMap {
 public:
-	FabMap2(const Mat& codebook, const Mat& clTree, double PzGe, double PzGNe,
+	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe,
 			int flags, int numSamples);
 	virtual ~FabMap2();
 
-	void addTraining(const Mat& imgDescriptors);
+	void addTraining(const cv::Mat& imgDescriptors);
 
 protected:
-	void getLikelihoods(const Mat& queryImgDescriptor,
-			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
+	void getLikelihoods(const cv::Mat& queryImgDescriptor,
+			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
-	void getIndexLikelihoods(const Mat& queryImgDescriptor,
-			vector<double>& defaults,
-			map<int, vector<int> >& invertedMap,
-			vector<IMatch>& matches);
+	void getIndexLikelihoods(const cv::Mat& queryImgDescriptor,
+			std::vector<double>& defaults,
+			std::map<int, std::vector<int> >& invertedMap,
+			std::vector<IMatch>& matches);
 
 
 	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
 
-	vector<double> d1, d2, d3, d4;
-	map<int, vector<int> > children;
+	std::vector<double> d1, d2, d3, d4;
+	std::map<int, std::vector<int> > children;
 
-	vector<double> trainingDefaults;
-	map<int, vector<int> > trainingInvertedMap;
+	std::vector<double> trainingDefaults;
+	std::map<int, std::vector<int> > trainingInvertedMap;
 
-	vector<double> testDefaults;
-	map<int, vector<int> > testInvertedMap;
+	std::vector<double> testDefaults;
+	std::map<int, std::vector<int> > testInvertedMap;
 
 };
 
@@ -186,23 +182,23 @@ public:
 	ChowLiuTree();
 	virtual ~ChowLiuTree();
 
-	void add(const Mat& imgDescriptor);
-	Mat make(double infoThreshold);
+	void add(const cv::Mat& imgDescriptor);
+	cv::Mat make(double infoThreshold);
 
 private:
-	vector<Mat> imgDescriptors;
+	std::vector<cv::Mat> imgDescriptors;
 
 	class TrainData {
 	private:
-		vector<float> absolutes;
+		std::vector<float> absolutes;
 		int numSamples;
 		int sampleSize;
-		Mat data;
+		cv::Mat data;
 
 	public:
 		TrainData();
 		~TrainData();
-		void make(const Mat& imgDescriptors);
+		void make(const cv::Mat& imgDescriptors);
 		double P(int a, bool ais);
 		double JP(int a, bool ais, int b, bool bis); //a & b
 		double CP(int a, bool ais, int b, bool bis); // a | b
@@ -222,16 +218,16 @@ private:
 		short word2;
 	} info;
 
-	vector<clNode> nodes;
+	std::vector<clNode> nodes;
 
 	void recAddToTree(int node, int parentNode, TrainData& trainData,
-			list<info>& edges);
+			std::list<info>& edges);
 	static bool clNodeCompare(const clNode& first, const clNode& second);
 	static bool sortInfoScores(const info& first, const info& second);
 	double calcMutInfo(TrainData& trainData, int word1, int word2);
-	void createBaseEdges(list<info>& edges, TrainData& trainData,
+	void createBaseEdges(std::list<info>& edges, TrainData& trainData,
 			double infoThreshold);
-	bool reduceEdgesToMinSpan(list<info>& edges);
+	bool reduceEdgesToMinSpan(std::list<info>& edges);
 
 };
 
@@ -241,8 +237,8 @@ public:
 	virtual ~BOWMSCTrainer();
 
 	// Returns trained vocabulary (i.e. cluster centers).
-	virtual Mat cluster() const;
-	virtual Mat cluster(const Mat& descriptors) const;
+	virtual cv::Mat cluster() const;
+	virtual cv::Mat cluster(const cv::Mat& descriptors) const;
 
 protected:
 
