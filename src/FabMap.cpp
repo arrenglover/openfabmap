@@ -265,7 +265,7 @@ FabMapLUT::FabMapLUT(const Mat& _codebook, const Mat& _clTree, double _PzGe, dou
 FabMap(_codebook, _clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 
 	int nWords = clTree.cols;
-	double precFactor = (double)pow(10,precision);
+	double precFactor = (double)pow(10.0,precision);
 
 	table = new int[nWords][8];
 	double alpha, beta, p;
@@ -307,7 +307,7 @@ void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
 
 	matches.clear();
 
-	double precFactor = (double)pow(10,-precision);
+	double precFactor = (double)pow(10.0,-precision);
 
 	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
 		long int logP = 0;
