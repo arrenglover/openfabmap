@@ -16,8 +16,8 @@ ChowLiuTree::~ChowLiuTree() {
 }
 
 void ChowLiuTree::add(const Mat& imgDescriptor) {
-	CV_Assert(!imgDescriptor.empty());
-	CV_Assert(imgDescriptor.rows == 1);
+	CV_Assert(!imgDescriptor.empty())
+;	CV_Assert(imgDescriptor.rows == 1);
 	if (!imgDescriptors.empty()) {
 		CV_Assert(imgDescriptors[0].cols == imgDescriptor.cols);
 		CV_Assert(imgDescriptors[0].type() == imgDescriptor.type());

@@ -136,8 +136,8 @@ protected:
 		double v;
 		double M;
 
-		wordStats(int word) :
-			word(word), info(0), v(0), M(0) {
+		wordStats(int _word) :
+			word(_word), info(0), v(0), M(0) {
 		}
 	};
 
@@ -162,10 +162,15 @@ protected:
 	void getLikelihoods(const Mat& queryImgDescriptor,
 			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
 
+	void getIndexLikelihoods(const Mat& queryImgDescriptor,
+			vector<double>& defaults,
+			map<int, vector<int> >& invertedMap,
+			vector<IMatch>& matches);
+
+
 	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
 
 	vector<double> d1, d2, d3, d4;
-	map<int, int> parent;
 	map<int, vector<int> > children;
 
 	vector<double> trainingDefaults;

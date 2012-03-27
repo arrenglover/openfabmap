@@ -7,18 +7,30 @@
 
 #include "../include/openfabmap.hpp"
 
-double logsumexp(double a, double b) {
-	return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
+double logsumexp(
+		double a, double b) {
+	return a > b ? log(
+			1 + exp(
+					b - a)) + a
+			: log(
+					1 + exp(
+							a - b)) + b;
 }
 
 namespace of2 {
 
-FabMap::FabMap(const Mat& _codebook, const Mat& _clTree, double _PzGe,
+FabMap::FabMap(
+		const Mat& _codebook, const Mat& _clTree, double _PzGe,
 		double _PzGNe, int _flags, int _numSamples) :
-	codebook(_codebook), clTree(_clTree), PzGe(_PzGe), PzGNe(_PzGNe), flags(
-			_flags), numSamples(_numSamples) {
-	CV_Assert(flags & MEAN_FIELD || flags & SAMPLED);
-	CV_Assert(flags & NAIVE_BAYES || flags & CHOW_LIU);
+	codebook(
+			_codebook), clTree(
+			_clTree), PzGe(
+			_PzGe), PzGNe(
+			_PzGNe), flags(
+			_flags), numSamples(
+			_numSamples) {
+	CV_Assert(flags & MEAN_FIELD || flags & SAMPLED)
+;	CV_Assert(flags & NAIVE_BAYES || flags & CHOW_LIU);
 }
 
 FabMap::~FabMap() {
@@ -73,9 +85,6 @@ void FabMap::match(const Mat& queryImgDescriptors, const Mat& testImgDescriptors
 	vector<Mat> queryImgDescriptorsVec;
 	for (int i = 0; i < queryImgDescriptors.rows; i++) {
 		Mat queryImgDescriptor = queryImgDescriptors.rowRange(i,i);
-
-
-
 
 	}
 	//match(queryImgDescriptorsVec,testImgDescriptorsVec,matches);
@@ -148,14 +157,14 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 
 		if (priorMatches.size() > 2) {
 			matches[1].match += log((priorMatches[1].match +
-					2 * mBias * priorMatches[2].match) / 3);
+							2 * mBias * priorMatches[2].match) / 3);
 			for (size_t i = 2; i < priorMatches.size()-1; i++) {
 				matches[i].match += log((2 * (1-mBias) * priorMatches[i-1].match
-				     + priorMatches[i].match + 2 * mBias * priorMatches[i+1].match)/3);
+								+ priorMatches[i].match + 2 * mBias * priorMatches[i+1].match)/3);
 			}
 			matches[priorMatches.size()-1].match +=
-					log((2 * (1-mBias) * priorMatches[priorMatches.size()-2].match
-					+ priorMatches[priorMatches.size()-1].match)/3);
+			log((2 * (1-mBias) * priorMatches[priorMatches.size()-2].match
+							+ priorMatches[priorMatches.size()-1].match)/3);
 		}
 
 		for (size_t i = 0; i < matches.size(); i++) {
@@ -174,12 +183,10 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 		}
 	}
 
-
 	for (size_t i = 0; i < matches.size(); i++) {
 		matches[i].match = sFactor*matches[i].match +
-				(1 - sFactor)/matches.size();
+		(1 - sFactor)/matches.size();
 	}
-
 
 }
 
@@ -244,8 +251,8 @@ void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
 
 double FabMap1::PeGl(int word, bool zi, bool ei) {
 	double alpha, beta;
-	alpha = Pzge(zi, true)  * P(word, true);
-	beta  = Pzge(zi, false) * P(word, false);
+	alpha = Pzge(zi, true) * P(word, true);
+	beta = Pzge(zi, false) * P(word, false);
 
 	if (ei) {
 		return alpha / (alpha + beta);
@@ -337,19 +344,16 @@ FabMap(_codebook, _clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 	d3.resize(clTree.cols);
 	d4.resize(clTree.cols);
 
-	for (int i = 0; i < clTree.cols; i++) {
-		for(unsigned i = 0; i < Wcount; i++) {
-			d1[i] = log(Pqgp(false, false, true, i) /
-				Pqgp(false, false, false, i));
-			d2[i] = log(Pqgp(false, true, true, i) /
-				Pqgp(false, true, false, i)) - d1[i];
-			d3[i] = log(Pqgp(true, false, true, i) /
-				Pqgp(true, false, false, i))- d1[i];
-			d4[i] = log(Pqgp(true, true, true, i) /
-				Pqgp(true, true, false, i))- d1[i];
-			parent[i] = tree.parent(i);
-			children[tree.parent(i)].push_back(i);
-		}
+	for (int word = 0; word < clTree.cols; word++) {
+		d1[word] = log(Pqgp(false, false, true, word) /
+				Pqgp(false, false, false, word));
+		d2[word] = log(Pqgp(false, true, true, word) /
+				Pqgp(false, true, false, word)) - d1[word];
+		d3[word] = log(Pqgp(true, false, true, word) /
+				Pqgp(true, false, false, word))- d1[word];
+		d4[word] = log(Pqgp(true, true, true, word) /
+				Pqgp(true, true, false, word))- d1[word];
+		children[parent(word)].push_back(word);
 	}
 
 }
@@ -360,17 +364,48 @@ FabMap2::~FabMap2() {
 void FabMap2::addTraining(const Mat& imgDescriptors) {
 	FabMap::addTraining(imgDescriptors);
 
-
+	trainingDefaults.resize(trainingImgDescriptors.size());
+	for (size_t i = 0; i < trainingImgDescriptors.size(); i++) {
+		for (int j = 0; j < clTree.cols; j++) {
+			if (trainingImgDescriptors[i].at<float>(0,j)) {
+				trainingDefaults[i] += d1[j];
+				trainingInvertedMap[j].push_back(i);
+			}
+		}
+	}
 }
-
 
 void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
+}
 
+void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
+		vector<double>& defaults,
+		map<int, vector<int> >& invertedMap,
+		vector<IMatch>& matches) {
 
+	vector<int>::iterator LwithI, child;
+	vector<double> TnMLogLs = defaults;
 
-
+	for (int word = 0; word < clTree.cols; word++) {
+		if (queryImgDescriptor.at<float>(0,word)) {
+			for (LwithI = invertedMap[word].begin(); LwithI != invertedMap[word].end(); LwithI++) {
+				if (queryImgDescriptor.at<float>(0,parent(word)) > 0) {
+					TnMLogLs[*LwithI] += d4[word];
+				} else {
+					TnMLogLs[*LwithI] += d3[word];
+				}
+			}
+			for (child = children[word].begin(); child != children[word].end(); child++) {
+				if (queryImgDescriptor.at<float>(0,*child) == 0) {
+					for (LwithI = invertedMap[*child].begin(); LwithI != invertedMap[*child].end(); LwithI++) {
+						TnMLogLs[*LwithI] += d1[word];
+					}
+				}
+			}
+		}
+	}
 }
 
 double FabMap2::Pqgp(bool Zq, bool Zpq, bool Lq, int q) {
@@ -378,17 +413,17 @@ double FabMap2::Pqgp(bool Zq, bool Zpq, bool Lq, int q) {
 	double alpha, beta;
 
 	double Pegl, Pnegl;
-	alpha = Pzge(Lq, true)  * P(q, true);
-	beta  = Pzge(Lq, false) * P(q, false);
+	alpha = Pzge(Lq, true) * P(q, true);
+	beta = Pzge(Lq, false) * P(q, false);
 	Pegl = alpha / (alpha + beta);
 	Pnegl = 1 - Pegl;
 
-	alpha = tree.P(q,  Zq) * Pzge(!Zq, false) * Pqgp(q, !Zq, Zpq);
-	beta  = tree.P(q, !Zq) * Pzge( Zq, false) * Pqgp(q,  Zq, Zpq);
+	alpha = P(q, Zq) * Pzge(!Zq, false) * PqGp(q, !Zq, Zpq);
+	beta = P(q, !Zq) * Pzge( Zq, false) * PqGp(q, Zq, Zpq);
 	p = Pnegl * beta / (alpha + beta);
 
-	alpha = tree.P(q,  Zq) * Pzge(!Zq, true) * Pqgp(q, !Zq, Zpq);
-	beta  = tree.P(q, !Zq) * Pzge( Zq, true) * Pqgp(q,  Zq, Zpq);
+	alpha = P(q, Zq) * Pzge(!Zq, true) * PqGp(q, !Zq, Zpq);
+	beta = P(q, !Zq) * Pzge( Zq, true) * PqGp(q, Zq, Zpq);
 	p += Pegl * beta / (alpha + beta);
 
 	return p;
