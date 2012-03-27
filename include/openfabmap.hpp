@@ -85,7 +85,9 @@ protected:
 	double PzGe;
 	double PzGNe;
 	double Pnew;
-	double Pnear;
+
+	double mBias;
+	double sFactor;
 
 	int flags;
 	int numSamples;
@@ -123,9 +125,24 @@ public:
 			double PzGNe, double PS_D, double LOFBOH, int bisectionStart,
 			int bisectionIts, int flags, int numSamples);
 	virtual ~FabMapFBO();
+
 protected:
 	void getLikelihoods(const Mat& queryImgDescriptor,
 			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
+
+	struct wordStats {
+		int word;
+		double info;
+		double v;
+		double M;
+
+		wordStats(int word) :
+			word(word), info(0), v(0), M(0) {
+		}
+	};
+
+	vector<wordStats> trainingWordData;
+	vector<wordStats> testWordData;
 
 	double PS_D;
 	double LOFBOH;
@@ -138,9 +155,25 @@ public:
 	FabMap2(const Mat& codebook, const Mat& clTree, double PzGe, double PzGNe,
 			int flags, int numSamples);
 	virtual ~FabMap2();
+
+	void addTraining(const Mat& imgDescriptors);
+
 protected:
 	void getLikelihoods(const Mat& queryImgDescriptor,
 			const vector<Mat>& testImgDescriptors, vector<IMatch>& matches);
+
+	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
+
+	vector<double> d1, d2, d3, d4;
+	map<int, int> parent;
+	map<int, vector<int> > children;
+
+	vector<double> trainingDefaults;
+	map<int, vector<int> > trainingInvertedMap;
+
+	vector<double> testDefaults;
+	map<int, vector<int> > testInvertedMap;
+
 };
 
 class ChowLiuTree {
