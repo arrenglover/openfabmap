@@ -406,6 +406,9 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 			}
 		}
 	}
+	for (size_t i = 0; i < TnMLogLs.size(); i++) {
+		matches.push_back(IMatch(0, i, TnMLogLs[i],0));
+	}
 }
 
 double FabMap2::Pqgp(bool Zq, bool Zpq, bool Lq, int q) {
