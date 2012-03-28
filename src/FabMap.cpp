@@ -357,12 +357,14 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		matchIndices.push_back(i);
 	}
 
+	double currBest;
+
 	for (set<WordStats>::reverse_iterator wordIter = wordData.rbegin();
 			wordIter != wordData.rend(); wordIter++) {
 		bool Sq = queryImgDescriptor.at<float>(0,wordIter->word)>0;
 		bool Sp = queryImgDescriptor.at<float>(0,parent(wordIter->word))>0;
 
-		double currBest = -DBL_MAX;
+		currBest = -DBL_MAX;
 
 		for (size_t i = 0; i < matchIndices.size(); i++) {
 			bool Zq = testImgDescriptors[matchIndices[i]].at<float>(0,wordIter->word)>0;
@@ -378,7 +380,7 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		vector<int>::iterator matchIter = matchIndices.begin(), removeIter;
 		while (matchIter != matchIndices.end()) {
 			if (currBest - matches[*matchIter].likelihood > delta) {
-				matches[*matchIter].likelihood = -log(rejectionThreshold);
+				matches[*matchIter].likelihood = 1.0;
 				removeIter = matchIter;
 				matchIter++;
 				matchIndices.erase(removeIter);
@@ -388,31 +390,37 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		}
 	}
 
+	for (size_t i = 0; i < matches.size(); i++) {
+		if (matches[i].likelihood == 1.0) {
+			matches[i].likelihood = currBest + log(rejectionThreshold);
+		}
+	}
+
 }
 
 void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
-		set<WordStats>& wordData) {
-		for (int i = 0; i < clTree.cols; i++) {
-			wordData.insert(WordStats(i,PqGp(i,
-					queryImgDescriptor.at<float>(0,i)>0,
-					queryImgDescriptor.at<float>(0,parent(i))>0)));
-		}
+	set<WordStats>& wordData) {
+	for (int i = 0; i < clTree.cols; i++) {
+		wordData.insert(WordStats(i,PqGp(i,
+				queryImgDescriptor.at<float>(0,i)>0,
+				queryImgDescriptor.at<float>(0,parent(i))>0)));
+	}
 
-		double d = 0, V = 0, M = 0;
+	double d = 0, V = 0, M = 0;
 
-		for (set<WordStats>::iterator wordIter = wordData.begin();
-				wordIter != wordData.end(); wordIter++) {
-			d = Pqgp(queryImgDescriptor.at<float>(0,wordIter->word)>0,
-						queryImgDescriptor.at<float>(0,parent(wordIter->word))>0,
-						true, wordIter->word);
-				- Pqgp(queryImgDescriptor.at<float>(0,wordIter->word)>0,
-						queryImgDescriptor.at<float>(0,parent(wordIter->word))>0,
-						false, wordIter->word);
-			V += pow(d, 2.0) * 2 * (P(wordIter->word, true) - pow(P(wordIter->word, true), 2.0));
-			wordIter->V = V;
-			M = std::max(M, fabs(d));
-			wordIter->M = M;
-		}
+	for (set<WordStats>::iterator wordIter = wordData.begin();
+			wordIter != wordData.end(); wordIter++) {
+		d = Pqgp(queryImgDescriptor.at<float>(0,wordIter->word)>0,
+					queryImgDescriptor.at<float>(0,parent(wordIter->word))>0,
+					true, wordIter->word)
+			- Pqgp(queryImgDescriptor.at<float>(0,wordIter->word)>0,
+					queryImgDescriptor.at<float>(0,parent(wordIter->word))>0,
+					false, wordIter->word);
+		V += pow(d, 2.0) * 2 * (P(wordIter->word, true) - pow(P(wordIter->word, true), 2.0));
+		M = std::max(M, fabs(d));
+		wordIter->V = V;
+		wordIter->M = M;
+	}
 }
 
 double FabMapFBO::limitbisection(double v, double m) {
