@@ -10,6 +10,7 @@
 using std::vector;
 using std::list;
 using std::map;
+using std::set;
 using std::valarray;
 using cv::Mat;
 
@@ -208,6 +209,40 @@ double FabMap::Pzge(bool Zi, bool ei) {
 	}
 }
 
+double FabMap::PeGl(int word, bool zi, bool ei) {
+	double alpha, beta;
+	alpha = Pzge(zi, true) * P(word, true);
+	beta = Pzge(zi, false) * P(word, false);
+
+	if (ei) {
+		return alpha / (alpha + beta);
+	} else {
+		return 1 - alpha / (alpha + beta);
+	}
+}
+
+double FabMap::Pqgp(bool Zq, bool Zpq, bool Lq, int q) {
+	double p;
+	double alpha, beta;
+
+	double Pegl, Pnegl;
+	alpha = Pzge(Lq, true) * P(q, true);
+	beta = Pzge(Lq, false) * P(q, false);
+	Pegl = alpha / (alpha + beta);
+	Pnegl = 1 - Pegl;
+
+	alpha = P(q, Zq) * Pzge(!Zq, false) * PqGp(q, !Zq, Zpq);
+	beta = P(q, !Zq) * Pzge( Zq, false) * PqGp(q, Zq, Zpq);
+	p = Pnegl * beta / (alpha + beta);
+
+	alpha = P(q, Zq) * Pzge(!Zq, true) * PqGp(q, !Zq, Zpq);
+	beta = P(q, !Zq) * Pzge( Zq, true) * PqGp(q, Zq, Zpq);
+	p += Pegl * beta / (alpha + beta);
+
+	return p;
+}
+
+
 FabMap1::FabMap1(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
 FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 }
@@ -240,18 +275,6 @@ void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
 			logP += log(p);
 		}
 		matches.push_back(IMatch(0,i,logP,0));
-	}
-}
-
-double FabMap1::PeGl(int word, bool zi, bool ei) {
-	double alpha, beta;
-	alpha = Pzge(zi, true) * P(word, true);
-	beta = Pzge(zi, false) * P(word, false);
-
-	if (ei) {
-		return alpha / (alpha + beta);
-	} else {
-		return 1 - alpha / (alpha + beta);
 	}
 }
 
@@ -313,15 +336,9 @@ void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
 }
 
 FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe,
-		double _PzGNe, double _PS_D, double _LOFBOH, int _bisectionStart, int _bisectionIts, int _flags, int _numSamples) :
-FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PS_D(_PS_D), LOFBOH(_LOFBOH),
+		double _PzGNe, double _PS_D, double _rejectionThreshold, int _bisectionStart, int _bisectionIts, int _flags, int _numSamples) :
+FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PS_D(_PS_D), rejectionThreshold(_rejectionThreshold),
 bisectionStart(_bisectionStart), bisectionIts(_bisectionIts) {
-
-	for (int word = 0; word < clTree.cols; word++) {
-		trainingWordData.push_back(wordStats(word));
-		testWordData.push_back(wordStats(word));
-	}
-
 }
 
 FabMapFBO::~FabMapFBO() {
@@ -330,6 +347,72 @@ FabMapFBO::~FabMapFBO() {
 void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
+	set<WordStats> wordData;
+	setWordStatistics(queryImgDescriptor, wordData);
+
+	vector<int> matchIndices;
+
+	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
+		matches.push_back(IMatch(0,i,0,0));
+		matchIndices.push_back(i);
+	}
+
+	for (set<WordStats>::reverse_iterator wordIter = wordData.rbegin();
+			wordIter != wordData.rend(); wordIter++) {
+		bool Sq = queryImgDescriptor.at<float>(0,wordIter->word)>0;
+		bool Sp = queryImgDescriptor.at<float>(0,parent(wordIter->word))>0;
+
+		double currBest = -DBL_MAX;
+
+		for (size_t i = 0; i < matchIndices.size(); i++) {
+			bool Zq = testImgDescriptors[matchIndices[i]].at<float>(0,wordIter->word)>0;
+			matches[matchIndices[i]].likelihood += log(Pqgp(Sq,Sp,Zq,wordIter->word));
+			currBest = std::max(matches[matchIndices[i]].likelihood,currBest);
+		}
+
+		if (matchIndices.size() == 1)
+			continue;
+
+		double delta = std::max(limitbisection(wordIter->V, wordIter->M), -log(rejectionThreshold));
+
+		vector<int>::iterator matchIter = matchIndices.begin(), removeIter;
+		while (matchIter != matchIndices.end()) {
+			if (currBest - matches[*matchIter].likelihood > delta) {
+				matches[*matchIter].likelihood = -log(rejectionThreshold);
+				removeIter = matchIter;
+				matchIter++;
+				matchIndices.erase(removeIter);
+			} else {
+				matchIter++;
+			}
+		}
+	}
+
+}
+
+void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
+		set<WordStats>& wordData) {
+		for (int i = 0; i < clTree.cols; i++) {
+			wordData.insert(WordStats(i,PqGp(i,
+					queryImgDescriptor.at<float>(0,i)>0,
+					queryImgDescriptor.at<float>(0,parent(i))>0)));
+		}
+
+		double d = 0, V = 0, M = 0;
+
+		for (set<WordStats>::iterator wordIter = wordData.begin();
+				wordIter != wordData.end(); wordIter++) {
+			d = Pqgp(queryImgDescriptor.at<float>(0,wordIter->word)>0,
+						queryImgDescriptor.at<float>(0,parent(wordIter->word))>0,
+						true, wordIter->word);
+				- Pqgp(queryImgDescriptor.at<float>(0,wordIter->word)>0,
+						queryImgDescriptor.at<float>(0,parent(wordIter->word))>0,
+						false, wordIter->word);
+			V += pow(d, 2.0) * 2 * (P(wordIter->word, true) - pow(P(wordIter->word, true), 2.0));
+			wordIter->V = V;
+			M = std::max(M, fabs(d));
+			wordIter->M = M;
+		}
 }
 
 double FabMapFBO::limitbisection(double v, double m) {
@@ -360,7 +443,7 @@ double FabMapFBO::bennettInequality(double v, double m, double delta) {
 	return exp((v / pow(m, 2.0))*(cosh(f_delta) - 1 - DMonV * f_delta));
 }
 
-bool FabMapFBO::compInfo(const wordStats& first, const wordStats& second) {
+bool FabMapFBO::compInfo(const WordStats& first, const WordStats& second) {
 	return first.info < second.info;
 }
 
@@ -455,27 +538,6 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 	for (size_t i = 0; i < TnMLogLs.size(); i++) {
 		matches.push_back(IMatch(0, i, TnMLogLs[i],0));
 	}
-}
-
-double FabMap2::Pqgp(bool Zq, bool Zpq, bool Lq, int q) {
-	double p;
-	double alpha, beta;
-
-	double Pegl, Pnegl;
-	alpha = Pzge(Lq, true) * P(q, true);
-	beta = Pzge(Lq, false) * P(q, false);
-	Pegl = alpha / (alpha + beta);
-	Pnegl = 1 - Pegl;
-
-	alpha = P(q, Zq) * Pzge(!Zq, false) * PqGp(q, !Zq, Zpq);
-	beta = P(q, !Zq) * Pzge( Zq, false) * PqGp(q, Zq, Zpq);
-	p = Pnegl * beta / (alpha + beta);
-
-	alpha = P(q, Zq) * Pzge(!Zq, true) * PqGp(q, !Zq, Zpq);
-	beta = P(q, !Zq) * Pzge( Zq, true) * PqGp(q, Zq, Zpq);
-	p += Pegl * beta / (alpha + beta);
-
-	return p;
 }
 
 }

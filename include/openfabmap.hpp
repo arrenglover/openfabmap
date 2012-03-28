@@ -11,6 +11,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 #include <valarray>
 
 #include <opencv2/opencv.hpp>
@@ -72,6 +73,8 @@ protected:
 	double P(int word, bool q);
 	double PqGp(int word, bool q, bool p);
 	double Pzge(bool zi, bool ei);
+	double PeGl(int word, bool zi, bool ei);
+	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
 
 	cv::Mat clTree;
 
@@ -99,7 +102,6 @@ public:
 protected:
 	void getLikelihoods(const cv::Mat& queryImgDescriptor,
 			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
-	double PeGl(int word, bool zi, bool ei);
 };
 
 class FabMapLUT: public FabMap {
@@ -119,7 +121,7 @@ protected:
 class FabMapFBO: public FabMap {
 public:
 	FabMapFBO(const cv::Mat& clTree, double PzGe,
-			double PzGNe, double PS_D, double LOFBOH, int bisectionStart,
+			double PzGNe, double PS_D, double rejectionThreshold, int bisectionStart,
 			int bisectionIts, int flags, int numSamples);
 	virtual ~FabMapFBO();
 
@@ -127,29 +129,34 @@ protected:
 	void getLikelihoods(const cv::Mat& queryImgDescriptor,
 			const std::vector<cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
-	struct wordStats {
+	struct WordStats {
+		WordStats() :
+			word(0), info(0), V(0), M(0) {
+		}
+
+		WordStats(int _word, double _info) :
+			word(_word), info(_info), V(0), M(0) {
+		}
+
 		int word;
 		double info;
-		double v;
-		double M;
+		mutable double V;
+		mutable double M;
 
-		wordStats(int _word) :
-			word(_word), info(0), v(0), M(0) {
+		bool operator<(const WordStats& w) const {
+			return info < w.info;
 		}
+
 	};
 
-
+	void setWordStatistics(const cv::Mat& queryImgDescriptor,
+			std::set<WordStats>& wordData);
 	double limitbisection(double v, double m);
 	double bennettInequality(double v, double m, double delta);
-	static bool compInfo(const wordStats& first, const wordStats& second);
-
-	std::vector<wordStats> trainingWordData;
-	std::vector<wordStats> testWordData;
-
-	std::valarray<double> D;
+	static bool compInfo(const WordStats& first, const WordStats& second);
 
 	double PS_D;
-	double LOFBOH;
+	double rejectionThreshold;
 	int bisectionStart;
 	int bisectionIts;
 };
@@ -173,8 +180,6 @@ protected:
 	void addToIndex(const cv::Mat& queryImgDescriptor,
 			std::vector<double>& defaults,
 			std::map<int, std::vector<int> >& invertedMap);
-
-	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
 
 	std::vector<double> d1, d2, d3, d4;
 	std::map<int, std::vector<int> > children;

@@ -4,11 +4,13 @@
 int main(int argc, char * argv[])
 {
 
+
+
+
+	of2::BOWMSCTrainer bowTrainer(5);
+
+	std::cout << "It worked" << std::endl;
 	/*
-
-
-	of2::BOWSMCTrainer bowTrainer(clusterSize);
-
 	cv::Mat codebook = bowTrainer.cluster(all_descriptors);
 
 	of2::ChowLiuTree chowLiuTree(params);
