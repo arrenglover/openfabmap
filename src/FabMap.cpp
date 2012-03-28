@@ -36,7 +36,7 @@ void FabMap::addTraining(const Mat& imgDescriptors) {
 	CV_Assert(!imgDescriptors.empty());
 	CV_Assert(imgDescriptors.cols == clTree.cols);
 	for (int i = 0; i < imgDescriptors.rows; i++) {
-		trainingImgDescriptors.push_back(imgDescriptors.rowRange(i,i));
+		trainingImgDescriptors.push_back(imgDescriptors.row(i));
 	}
 
 }
@@ -51,12 +51,12 @@ void FabMap::match(const Mat& queryImgDescriptors, vector<IMatch>& matches) {
 	for (int i = 0; i < queryImgDescriptors.rows; i++) {
 
 		vector<IMatch> queryMatches;
-		Mat queryImgDescriptor = queryImgDescriptors.rowRange(i,i);
+		Mat queryImgDescriptor = queryImgDescriptors.row(i);
 		queryMatches.push_back(IMatch(i,-1,getNewPlaceLikelihood(queryImgDescriptor),0));
 		getLikelihoods(queryImgDescriptor,testImgDescriptors,queryMatches);
 		normaliseDistribution(queryMatches);
 
-		testImgDescriptors.push_back(queryImgDescriptors.rowRange(i,i));
+		testImgDescriptors.push_back(queryImgDescriptors.row(i));
 		matches.insert(matches.end(), queryMatches.begin(), queryMatches.end());
 	}
 
@@ -72,14 +72,14 @@ void FabMap::match(const Mat& queryImgDescriptors, const Mat& testImgDescriptors
 
 	vector<Mat> testImgDescriptorsVec;
 	for (int i = 0; i < testImgDescriptors.rows; i++) {
-		testImgDescriptorsVec.push_back(testImgDescriptors.rowRange(i,i));
+		testImgDescriptorsVec.push_back(testImgDescriptors.row(i));
 	}
 
 	matches.clear();
 
 	vector<Mat> queryImgDescriptorsVec;
 	for (int i = 0; i < queryImgDescriptors.rows; i++) {
-		Mat queryImgDescriptor = queryImgDescriptors.rowRange(i,i);
+		Mat queryImgDescriptor = queryImgDescriptors.row(i);
 
 	}
 	//match(queryImgDescriptorsVec,testImgDescriptorsVec,matches);

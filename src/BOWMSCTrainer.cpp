@@ -26,10 +26,12 @@ Mat BOWMSCTrainer::cluster() const {
 	for(size_t i = 0; i < descriptors.size(); i++)
 	descCount += descriptors[i].rows;
 
-	Mat mergedDescriptors(descCount, descriptors[0].cols, descriptors[0].type());
+	Mat mergedDescriptors(descCount, descriptors[0].cols, 
+		descriptors[0].type());
 	for(size_t i = 0, start = 0; i < descriptors.size(); i++)
 	{
-		Mat submut = mergedDescriptors.rowRange((int)start, (int)(start + descriptors[i].rows));
+		Mat submut = mergedDescriptors.rowRange((int)start, 
+			(int)(start + descriptors[i].rows));
 		descriptors[i].copyTo(submut);
 		start += descriptors[i].rows;
 	}
@@ -40,17 +42,22 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 
 	CV_Assert(!descriptors.empty());
 
+	// TODO: sort the descriptors before clustering.
+
+
 	Mat icovar = Mat::eye(descriptors.cols,descriptors.cols,descriptors.type());
 
 	vector<Mat> initialCentres;
-	initialCentres.push_back(descriptors.rowRange(0,0));
+	initialCentres.push_back(descriptors.row(0));
 	for (int i = 1; i < descriptors.rows; i++) {
 		double minDist = DBL_MAX;
 		for (size_t j = 0; j < initialCentres.size(); j++) {
-			minDist = std::min(minDist,cv::Mahalanobis(descriptors.rowRange(i,i),initialCentres[j],icovar));
+			minDist = std::min(minDist,
+				cv::Mahalanobis(descriptors.row(i),initialCentres[j],
+				icovar));
 		}
-		if (minDist < clusterSize)
-		initialCentres.push_back(descriptors.rowRange(i,i));
+		if (minDist > clusterSize)
+			initialCentres.push_back(descriptors.row(i));
 	}
 
 	vector<list<Mat> > clusters;
@@ -58,14 +65,16 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 	for (int i = 0; i < descriptors.rows; i++) {
 		int index; double dist, minDist = DBL_MAX;
 		for (size_t j = 0; j < initialCentres.size(); j++) {
-			dist = cv::Mahalanobis(descriptors.rowRange(i,i),initialCentres[j],icovar);
+			dist = cv::Mahalanobis(descriptors.row(i),initialCentres[j],icovar);
 			if (dist < minDist) {
 				minDist = dist;
 				index = j;
 			}
 		}
-		clusters[index].push_back(descriptors.rowRange(i,i));
+		clusters[index].push_back(descriptors.row(i));
 	}
+
+	// TODO: throw away small clusters.
 
 	Mat vocabulary;
 	Mat centre = Mat::zeros(1,descriptors.cols,descriptors.type());

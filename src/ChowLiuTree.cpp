@@ -60,10 +60,10 @@ Mat ChowLiuTree::make(double infoThreshold) {
 	clTree.create(4,imgDescriptors[0].cols,CV_64F);
 
 	for(int i = 0; i < imgDescriptors[0].cols; i++) {
-		clTree.at<double>(1,i) = nodes[i].parentNodeID;
-		clTree.at<double>(2,i) = nodes[i].Pq;
-		clTree.at<double>(3,i) = nodes[i].Pq_p;
-		clTree.at<double>(4,i) = nodes[i].Pq_np;
+		clTree.at<double>(0,i) = nodes[i].parentNodeID;
+		clTree.at<double>(1,i) = nodes[i].Pq;
+		clTree.at<double>(2,i) = nodes[i].Pq_p;
+		clTree.at<double>(3,i) = nodes[i].Pq_np;
 	}
 
 	return clTree;
