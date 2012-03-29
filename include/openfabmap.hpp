@@ -88,12 +88,17 @@ protected:
 	double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
 	void normaliseDistribution(std::vector<IMatch>& matches);
 
-	int parent(int word);
-	double P(int word, bool q);
-	double PqGp(int word, bool q, bool p);
-	double Pzge(bool zi, bool ei);
-	double PeGl(int word, bool zi, bool ei);
-	double Pqgp(bool Zq, bool Zpq, bool Lq, int q);
+	//Chow-Liu Tree
+	int pq(int q);
+	double Pzq(int q, bool zq);
+	double PzqGzpq(int q, bool zq, bool zpq);
+	
+	//FAB-MAP Core
+	double PzqGeq(bool zq, bool eq);
+	double PeqGL(int q, bool Lzq, bool eq);
+	double PzqGL(int q, bool zq, bool zpq, bool Lzq);
+	double PzqGzpqL(int q, bool zq, bool zpq, bool Lzq);
+	double (FabMap::*PzGL)(int q, bool zq, bool zpq, bool Lzq);
 
 	cv::Mat clTree;
 
@@ -150,14 +155,14 @@ protected:
 
 	struct WordStats {
 		WordStats() :
-			word(0), info(0), V(0), M(0) {
+			q(0), info(0), V(0), M(0) {
 		}
 
-		WordStats(int _word, double _info) :
-			word(_word), info(_info), V(0), M(0) {
+		WordStats(int _q, double _info) :
+			q(_q), info(_info), V(0), M(0) {
 		}
 
-		int word;
+		int q;
 		double info;
 		mutable double V;
 		mutable double M;
