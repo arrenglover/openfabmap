@@ -4,6 +4,8 @@
 int main(int argc, char * argv[])
 {
 
+	
+
 	//cv::Mat tree; cv::Mat book;
 	//of2::FabMap1 fmtest(tree, 0.4, 0, of2::FabMap::MEAN_FIELD, 0);
 
@@ -86,6 +88,7 @@ int main(int argc, char * argv[])
 	}
 
 	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
+	cv::Ptr<cv::BOWImgDescriptorExtractor> b = &bide;
 	bide.setVocabulary(vocab);
 
 	of2::ChowLiuTree tree;
@@ -120,6 +123,8 @@ int main(int argc, char * argv[])
 	fs << "Tree" << clTree;
 	fs.release();
 
+
+	of2::FabMap a = of2::FabMap1(clTree, 0.4, 0, of2::FabMap::MEAN_FIELD, 29);
 
 	//fs << "Training Data" << kpts[1];
 	//detector.detect(images, kpts);
