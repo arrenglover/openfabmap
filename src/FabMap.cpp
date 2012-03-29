@@ -55,16 +55,58 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 FabMap::~FabMap() {
 }
 
-void FabMap::addTraining(const Mat& imgDescriptors) {
+const std::vector<cv::Mat>& FabMap::getTrainingImgDescriptors() const {
+	return trainingImgDescriptors;
+}
 
-	CV_Assert(!imgDescriptors.empty());
-	CV_Assert(imgDescriptors.cols == clTree.cols);
-	for (int i = 0; i < imgDescriptors.rows; i++) {
-		trainingImgDescriptors.push_back(imgDescriptors.row(i));
+const std::vector<cv::Mat>& FabMap::getTestImgDescriptors() const {
+	return testImgDescriptors;
+}
+
+void FabMap::addTraining(const Mat& queryImgDescriptor) {
+	CV_Assert(!queryImgDescriptor.empty());
+	CV_Assert(queryImgDescriptor.cols == clTree.cols);
+	CV_Assert(queryImgDescriptor.type() == CV_32F);
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		trainingImgDescriptors.push_back(queryImgDescriptor.row(i));
 	}
+}
+
+void FabMap::addTraining(const vector<Mat>& queryImgDescriptors) {
+	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
+		addTraining(queryImgDescriptors[i]);
+	}
+}
+
+void FabMap::add(const cv::Mat& queryImgDescriptor) {
+	CV_Assert(!queryImgDescriptor.empty());
+	CV_Assert(queryImgDescriptor.cols == clTree.cols);
+	CV_Assert(queryImgDescriptor.type() == CV_32F);
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		testImgDescriptors.push_back(queryImgDescriptor.row(i));
+	}
+}
+
+void FabMap::add(const std::vector<cv::Mat>& queryImgDescriptors) {
+	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
+		add(queryImgDescriptors[i]);
+	}
+}
+
+
+
+void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor, int queryIndex,
+		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
+
+	vector<IMatch> queryMatches;
+	queryMatches.push_back(IMatch(queryIndex,-1,getNewPlaceLikelihood(queryImgDescriptor),0));
+
 
 }
 
+
+
+/*
 void FabMap::match(const Mat& queryImgDescriptors, vector<IMatch>& matches) {
 	CV_Assert(!queryImgDescriptors.empty());
 	CV_Assert(!testImgDescriptors.empty());
@@ -108,7 +150,7 @@ void FabMap::match(const Mat& queryImgDescriptors, const Mat& testImgDescriptors
 	}
 	//match(queryImgDescriptorsVec,testImgDescriptorsVec,matches);
 }
-
+*/
 void FabMap::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
@@ -300,7 +342,7 @@ void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
 			zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
 			Lzq = testImgDescriptors[i].at<float>(0,q) > 0;
 
-			logP += log((this->*PzGL)(q, zq, zpq, Lzq)); 
+			logP += log((this->*PzGL)(q, zq, zpq, Lzq));
 
 		}
 		matches.push_back(IMatch(0,i,logP,0));
@@ -504,8 +546,8 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 FabMap2::~FabMap2() {
 }
 
-void FabMap2::addTraining(const Mat& imgDescriptors) {
-	FabMap::addTraining(imgDescriptors);
+void FabMap2::addTraining(const Mat& queryImgDescriptor) {
+	FabMap::addTraining(queryImgDescriptor);
 
 	trainingDefaults.resize(trainingImgDescriptors.size());
 	for (size_t i = 0; i < trainingImgDescriptors.size(); i++) {
@@ -518,11 +560,21 @@ void FabMap2::addTraining(const Mat& imgDescriptors) {
 	}
 }
 
+void FabMap2::add(const cv::Mat& queryImgDescriptor) {
+	CV_Assert(!queryImgDescriptor.empty());
+	CV_Assert(queryImgDescriptor.cols == clTree.cols);
+	CV_Assert(queryImgDescriptor.type() == CV_32F);
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		testImgDescriptors.push_back(queryImgDescriptor.row(i));
+		addToIndex(queryImgDescriptor.row(i), testDefaults, testInvertedMap);
+	}
+}
+
 void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& _testImgDescriptors, vector<IMatch>& matches) {
 	if (_testImgDescriptors[0].data == testImgDescriptors[0].data) {
 		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
-		addToIndex(queryImgDescriptor, testDefaults, testInvertedMap);
+		//addToIndex(queryImgDescriptor, testDefaults, testInvertedMap);
 	} else {
 		getIndexLikelihoods(queryImgDescriptor, trainingDefaults, trainingInvertedMap, matches);
 	}

@@ -49,6 +49,16 @@ void ChowLiuTree::add(const Mat& imgDescriptor) {
 	imgDescriptors.push_back(imgDescriptor);
 }
 
+void ChowLiuTree::add(const vector<Mat>& imgDescriptors) {
+	for (size_t i = 0; i < imgDescriptors.size(); i++) {
+		add(imgDescriptors[i]);
+	}
+}
+
+const std::vector<cv::Mat>& ChowLiuTree::getImgDescriptors() const {
+	return imgDescriptors;
+}
+
 Mat ChowLiuTree::make(double infoThreshold) {
 	CV_Assert(!imgDescriptors.empty());
 

@@ -5,7 +5,7 @@ int main(int argc, char * argv[])
 {
 
 	
-
+/*
 	//cv::Mat tree; cv::Mat book;
 	//of2::FabMap1 fmtest(tree, 0.4, 0, of2::FabMap::MEAN_FIELD, 0);
 
@@ -133,7 +133,7 @@ int main(int argc, char * argv[])
 	//cv::Mat codebook = bowTrainer.cluster(all_descriptors);
 	//cv::BOWImgDescriptorExtractor(
 
-	
+	*/
 	return 0;
 
 	
