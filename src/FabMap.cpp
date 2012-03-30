@@ -65,16 +65,20 @@ const std::vector<cv::Mat>& FabMap::getTestImgDescriptors() const {
 
 void FabMap::addTraining(const Mat& queryImgDescriptor) {
 	CV_Assert(!queryImgDescriptor.empty());
-	CV_Assert(queryImgDescriptor.cols == clTree.cols);
-	CV_Assert(queryImgDescriptor.type() == CV_32F);
+	vector<Mat> queryImgDescriptors;
 	for (int i = 0; i < queryImgDescriptor.rows; i++) {
-		trainingImgDescriptors.push_back(queryImgDescriptor.row(i));
+		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
 	}
+	addTraining(queryImgDescriptors);
 }
 
 void FabMap::addTraining(const vector<Mat>& queryImgDescriptors) {
 	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
-		addTraining(queryImgDescriptors[i]);
+		CV_Assert(!queryImgDescriptors[i].empty());
+		CV_Assert(queryImgDescriptors[i].rows == 1);
+		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
+		trainingImgDescriptors.push_back(queryImgDescriptors[i]);
 	}
 }
 
@@ -85,72 +89,120 @@ void FabMap::add(const cv::Mat& queryImgDescriptor) {
 	for (int i = 0; i < queryImgDescriptor.rows; i++) {
 		testImgDescriptors.push_back(queryImgDescriptor.row(i));
 	}
+
+	CV_Assert(!queryImgDescriptor.empty());
+	vector<Mat> queryImgDescriptors;
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
+	}
+	add(queryImgDescriptors);
 }
 
 void FabMap::add(const std::vector<cv::Mat>& queryImgDescriptors) {
 	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
-		add(queryImgDescriptors[i]);
+		CV_Assert(!queryImgDescriptors[i].empty());
+		CV_Assert(queryImgDescriptors[i].rows == 1);
+		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
+		testImgDescriptors.push_back(queryImgDescriptors[i]);
 	}
 }
 
+void FabMap::compare(const Mat& queryImgDescriptor,
+			vector<IMatch>& matches, bool addQuery,
+			const Mat& mask) {
+	CV_Assert(!queryImgDescriptor.empty());
+	vector<Mat> queryImgDescriptors;
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
+	}
+	compare(queryImgDescriptors,testImgDescriptors,matches,mask);
+}
 
+void FabMap::compare(const Mat& queryImgDescriptor,
+			const Mat& testImgDescriptor, vector<IMatch>& matches,
+			const Mat& mask) {
+	CV_Assert(!queryImgDescriptor.empty());
+	vector<Mat> queryImgDescriptors;
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
+	}
+
+	CV_Assert(!testImgDescriptor.empty());
+	vector<Mat> testImgDescriptors;
+	for (int i = 0; i < testImgDescriptor.rows; i++) {
+		testImgDescriptors.push_back(testImgDescriptor.row(i));
+	}
+	compare(queryImgDescriptors,testImgDescriptors,matches,mask);
+
+}
+
+void FabMap::compare(const Mat& queryImgDescriptor,
+		const vector<Mat>& testImgDescriptors,
+		vector<IMatch>& matches, const Mat& mask) {
+	CV_Assert(!queryImgDescriptor.empty());
+	vector<Mat> queryImgDescriptors;
+	for (int i = 0; i < queryImgDescriptor.rows; i++) {
+		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
+	}
+	compare(queryImgDescriptors,testImgDescriptors,matches,mask);
+}
+
+void FabMap::compare(const vector<Mat>& queryImgDescriptors, vector<
+		IMatch>& matches, bool addQuery, const Mat& mask) {
+
+	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
+		CV_Assert(!queryImgDescriptors[i].empty());
+		CV_Assert(queryImgDescriptors[i].rows == 1);
+		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
+
+		// TODO: add mask
+
+		compareImgDescriptor(queryImgDescriptors[i],
+				i, testImgDescriptors, matches);
+		if (addQuery)
+				add(queryImgDescriptors[i]);
+	}
+}
+
+void FabMap::compare(const vector<Mat>& queryImgDescriptors,
+		const vector<Mat>& testImgDescriptors,
+		vector<IMatch>& matches, const Mat& mask) {
+
+	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
+		CV_Assert(!testImgDescriptors[i].empty());
+		CV_Assert(testImgDescriptors[i].rows == 1);
+		CV_Assert(testImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(testImgDescriptors[i].type() == CV_32F);
+	}
+
+	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
+		CV_Assert(!queryImgDescriptors[i].empty());
+		CV_Assert(queryImgDescriptors[i].rows == 1);
+		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
+
+		// TODO: add mask
+
+		compareImgDescriptor(queryImgDescriptors[i],
+				i, testImgDescriptors, matches);
+	}
+}
 
 void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor, int queryIndex,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
 	vector<IMatch> queryMatches;
 	queryMatches.push_back(IMatch(queryIndex,-1,getNewPlaceLikelihood(queryImgDescriptor),0));
-
-
+	getLikelihoods(queryImgDescriptor,testImgDescriptors,queryMatches);
+	normaliseDistribution(queryMatches);
+	for (size_t j = 1; j < queryMatches.size(); j++) {
+		queryMatches[j].queryIdx = queryIndex;
+	}
+	matches.insert(matches.end(), queryMatches.begin(), queryMatches.end());
 }
 
-
-
-/*
-void FabMap::match(const Mat& queryImgDescriptors, vector<IMatch>& matches) {
-	CV_Assert(!queryImgDescriptors.empty());
-	CV_Assert(!testImgDescriptors.empty());
-	CV_Assert(queryImgDescriptors.cols == clTree.cols);
-
-	matches.clear();
-
-	for (int i = 0; i < queryImgDescriptors.rows; i++) {
-
-		vector<IMatch> queryMatches;
-		Mat queryImgDescriptor = queryImgDescriptors.row(i);
-		queryMatches.push_back(IMatch(i,-1,getNewPlaceLikelihood(queryImgDescriptor),0));
-		getLikelihoods(queryImgDescriptor,testImgDescriptors,queryMatches);
-		normaliseDistribution(queryMatches);
-
-		testImgDescriptors.push_back(queryImgDescriptors.row(i));
-		matches.insert(matches.end(), queryMatches.begin(), queryMatches.end());
-	}
-
-}
-
-void FabMap::match(const Mat& queryImgDescriptors, const Mat& testImgDescriptors,
-		vector<IMatch>& matches) {
-	CV_Assert(!queryImgDescriptors.empty());
-	CV_Assert(queryImgDescriptors.cols == clTree.cols);
-	CV_Assert(!testImgDescriptors.empty());
-	CV_Assert(testImgDescriptors.cols == clTree.cols);
-	CV_Assert(!(flags & MOTION_MODEL));
-
-	vector<Mat> testImgDescriptorsVec;
-	for (int i = 0; i < testImgDescriptors.rows; i++) {
-		testImgDescriptorsVec.push_back(testImgDescriptors.row(i));
-	}
-
-	matches.clear();
-
-	vector<Mat> queryImgDescriptorsVec;
-	for (int i = 0; i < queryImgDescriptors.rows; i++) {
-		Mat queryImgDescriptor = queryImgDescriptors.row(i);
-
-	}
-	//match(queryImgDescriptorsVec,testImgDescriptorsVec,matches);
-}
-*/
 void FabMap::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
@@ -161,16 +213,13 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 		double logP = 0;
 		bool zq, zpq;
 		if(flags & NAIVE_BAYES) {
-
 			for (int q = 0; q < clTree.cols; q++) {
 				zq = queryImgDescriptor.at<float>(0,q) > 0;
-				
-				logP += log(Pzq(q, false) * PzqGeq(zq, false) + 
-					Pzq(q, true) * PzqGeq(zq, true));
+
+				logP += log(Pzq(q, false) * PzqGeq(zq, false) +
+						Pzq(q, true) * PzqGeq(zq, true));
 			}
-
 		} else {
-
 			for (int q = 0; q < clTree.cols; q++) {
 				zq = queryImgDescriptor.at<float>(0,q) > 0;
 				zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
@@ -187,10 +236,7 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 				logP += log(p);
 			}
 		}
-
 		return logP;
-		
-
 	}
 
 	if (flags & SAMPLED) {
@@ -213,7 +259,6 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 		}
 
 		return averageLikelihood / (double)numSamples;
-
 	}
 	return 0;
 }
@@ -224,9 +269,8 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 	double logsum = -DBL_MAX;
 
 	if (flags & MOTION_MODEL) {
-		if (matches[0].imgIdx == -1) {
-			matches[0].match = matches[0].likelihood + log(Pnew);
-		}
+
+		matches[0].match = matches[0].likelihood + log(Pnew);
 
 		if (priorMatches.size() > 2) {
 			matches[1].match += log((priorMatches[1].match +
@@ -246,6 +290,11 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 		for (size_t i = 0; i < matches.size(); i++) {
 			matches[i].match = exp(matches[i].match - logsum);
 		}
+		for (size_t i = 0; i < matches.size(); i++) {
+			matches[i].match = sFactor*matches[i].match +
+			(1 - sFactor)/matches.size();
+		}
+		priorMatches = matches;
 
 	} else {
 		for (size_t i = 0; i < matches.size(); i++) {
@@ -254,13 +303,11 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 		for (size_t i = 0; i < matches.size(); i++) {
 			matches[i].match = exp(matches[i].likelihood - logsum);
 		}
+		for (size_t i = 0; i < matches.size(); i++) {
+			matches[i].match = sFactor*matches[i].match +
+			(1 - sFactor)/matches.size();
+		}
 	}
-
-	for (size_t i = 0; i < matches.size(); i++) {
-		matches[i].match = sFactor*matches[i].match +
-		(1 - sFactor)/matches.size();
-	}
-
 }
 
 int FabMap::pq(int q) {
@@ -364,7 +411,7 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 			bool zq = (bool) ((i >> 1) & 0x01);
 			bool zpq = (bool) (i & 1);
 
-			table[q][i] = (int)(log((this->*PzGL)(q, zq, zpq, Lzq))*precFactor);
+			table[q][i] = -(int)(log((this->*PzGL)(q, zq, zpq, Lzq))*precFactor);
 		}
 	}
 }
@@ -381,13 +428,13 @@ void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
 	double precFactor = (double)pow(10.0, -precision);
 
 	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
-		long int logP = 0;
+		unsigned long long int logP = 0;
 		for (int q = 0; q < clTree.cols; q++) {
 			logP += table[q][(queryImgDescriptor.at<float>(0,pq(q)) > 0) +
 			((queryImgDescriptor.at<float>(0, q) > 0) << 1) +
 			((testImgDescriptors[i].at<float>(0,q) > 0) << 2)];
 		}
-		matches.push_back(IMatch(0,i,precFactor*(double)logP,0));
+		matches.push_back(IMatch(0,i,-precFactor*(double)logP,0));
 	}
 }
 
@@ -524,20 +571,15 @@ FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, in
 FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 	CV_Assert(flags & SAMPLED);
 
-	d1.resize(clTree.cols);
-	d2.resize(clTree.cols);
-	d3.resize(clTree.cols);
-	d4.resize(clTree.cols);
-
 	for (int q = 0; q < clTree.cols; q++) {
-		d1[q] = log((this->*PzGL)(q, false, false, true) /
-				(this->*PzGL)(q, false, false, false));
-		d2[q] = log((this->*PzGL)(q, false, true, true) /
-				(this->*PzGL)(q, false, true, false)) - d1[q];
-		d3[q] = log((this->*PzGL)(q, true, false, true) /
-				(this->*PzGL)(q, true, false, false))- d1[q];
-		d4[q] = log((this->*PzGL)(q, true, true, true) /
-				(this->*PzGL)(q, true, true, false))- d1[q];
+		d1.push_back(log((this->*PzGL)(q, false, false, true) /
+				(this->*PzGL)(q, false, false, false)));
+		d2.push_back(log((this->*PzGL)(q, false, true, true) /
+				(this->*PzGL)(q, false, true, false)) - d1[q]);
+		d3.push_back(log((this->*PzGL)(q, true, false, true) /
+				(this->*PzGL)(q, true, false, false))- d1[q]);
+		d4.push_back(log((this->*PzGL)(q, true, true, true) /
+				(this->*PzGL)(q, true, true, false))- d1[q]);
 		children[pq(q)].push_back(q);
 	}
 
@@ -546,38 +588,58 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
 FabMap2::~FabMap2() {
 }
 
-void FabMap2::addTraining(const Mat& queryImgDescriptor) {
-	FabMap::addTraining(queryImgDescriptor);
-
-	trainingDefaults.resize(trainingImgDescriptors.size());
-	for (size_t i = 0; i < trainingImgDescriptors.size(); i++) {
-		for (int q = 0; q < clTree.cols; q++) {
-			if (trainingImgDescriptors[i].at<float>(0,q) > 0) {
-				trainingDefaults[i] += d1[q];
-				trainingInvertedMap[q].push_back(i);
-			}
-		}
+void FabMap2::addTraining(const vector<Mat>& queryImgDescriptors) {
+	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
+		CV_Assert(!queryImgDescriptors[i].empty());
+		CV_Assert(queryImgDescriptors[i].rows == 1);
+		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
+		trainingImgDescriptors.push_back(queryImgDescriptors[i]);
+		addToIndex(queryImgDescriptors[i], trainingDefaults, trainingInvertedMap);
 	}
 }
 
-void FabMap2::add(const cv::Mat& queryImgDescriptor) {
-	CV_Assert(!queryImgDescriptor.empty());
-	CV_Assert(queryImgDescriptor.cols == clTree.cols);
-	CV_Assert(queryImgDescriptor.type() == CV_32F);
-	for (int i = 0; i < queryImgDescriptor.rows; i++) {
-		testImgDescriptors.push_back(queryImgDescriptor.row(i));
-		addToIndex(queryImgDescriptor.row(i), testDefaults, testInvertedMap);
+void FabMap2::add(const vector<Mat>& queryImgDescriptors) {
+	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
+		CV_Assert(!queryImgDescriptors[i].empty());
+		CV_Assert(queryImgDescriptors[i].rows == 1);
+		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
+		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
+		testImgDescriptors.push_back(queryImgDescriptors[i]);
+		addToIndex(queryImgDescriptors[i], trainingDefaults, trainingInvertedMap);
 	}
 }
 
 void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
-		const vector<Mat>& _testImgDescriptors, vector<IMatch>& matches) {
-	if (_testImgDescriptors[0].data == testImgDescriptors[0].data) {
+		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
+	if (testImgDescriptors[0].data == this->testImgDescriptors[0].data) {
 		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
-		//addToIndex(queryImgDescriptor, testDefaults, testInvertedMap);
 	} else {
-		getIndexLikelihoods(queryImgDescriptor, trainingDefaults, trainingInvertedMap, matches);
+		vector<double> defaults;
+		map<int, vector<int> > invertedMap;
+		for (size_t i = 0; i < testImgDescriptors.size(); i++) {
+			addToIndex(testImgDescriptors[i],defaults,invertedMap);
+		}
+		getIndexLikelihoods(queryImgDescriptor, defaults, invertedMap, matches);
 	}
+}
+
+double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
+
+	CV_Assert(!trainingImgDescriptors.empty());
+	CV_Assert(numSamples > 0);
+
+	vector<IMatch> matches;
+	getIndexLikelihoods(queryImgDescriptor, trainingDefaults,
+			trainingInvertedMap, matches);
+
+	double averageLikelihood = 0;
+	for (size_t i = 0; i < matches.size(); i++) {
+		averageLikelihood += matches[i].likelihood;
+	}
+
+	return averageLikelihood / (double)numSamples;
+
 }
 
 void FabMap2::addToIndex(const Mat& queryImgDescriptor,

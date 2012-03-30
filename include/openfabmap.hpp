@@ -216,13 +216,13 @@ public:
 			int numSamples);
 	virtual ~FabMap2();
 
-	void addTraining(const cv::Mat& queryImgDescriptor);
-	void add(const cv::Mat& queryImgDescriptor);
+	void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
+	void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
 protected:
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
 			cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
-
+	double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
 	void getIndexLikelihoods(const cv::Mat& queryImgDescriptor, std::vector<
 			double>& defaults, std::map<int, std::vector<int> >& invertedMap,
 			std::vector<IMatch>& matches);
