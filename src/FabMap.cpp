@@ -50,6 +50,11 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 	} else {
 		PzGL = &FabMap::PzqGzpqL;
 	}
+
+	// TODO: Add default values for member variables
+	Pnew = 0.9;
+	sFactor = 0.99;
+	mBias = 0.5;
 }
 
 FabMap::~FabMap() {
@@ -84,13 +89,6 @@ void FabMap::addTraining(const vector<Mat>& queryImgDescriptors) {
 
 void FabMap::add(const cv::Mat& queryImgDescriptor) {
 	CV_Assert(!queryImgDescriptor.empty());
-	CV_Assert(queryImgDescriptor.cols == clTree.cols);
-	CV_Assert(queryImgDescriptor.type() == CV_32F);
-	for (int i = 0; i < queryImgDescriptor.rows; i++) {
-		testImgDescriptors.push_back(queryImgDescriptor.row(i));
-	}
-
-	CV_Assert(!queryImgDescriptor.empty());
 	vector<Mat> queryImgDescriptors;
 	for (int i = 0; i < queryImgDescriptor.rows; i++) {
 		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
@@ -116,7 +114,7 @@ void FabMap::compare(const Mat& queryImgDescriptor,
 	for (int i = 0; i < queryImgDescriptor.rows; i++) {
 		queryImgDescriptors.push_back(queryImgDescriptor.row(i));
 	}
-	compare(queryImgDescriptors,testImgDescriptors,matches,mask);
+	compare(queryImgDescriptors,matches,addQuery,mask);
 }
 
 void FabMap::compare(const Mat& queryImgDescriptor,
@@ -385,8 +383,6 @@ FabMap1::~FabMap1() {
 void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
-	matches.clear();
-
 	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
 		bool zq, zpq, Lzq;
 		double logP = 0;
@@ -431,8 +427,6 @@ FabMapLUT::~FabMapLUT() {
 
 void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
-
-	matches.clear();
 
 	double precFactor = (double)pow(10.0, -precision);
 
@@ -619,7 +613,7 @@ void FabMap2::add(const vector<Mat>& queryImgDescriptors) {
 		CV_Assert(queryImgDescriptors[i].cols == clTree.cols);
 		CV_Assert(queryImgDescriptors[i].type() == CV_32F);
 		testImgDescriptors.push_back(queryImgDescriptors[i]);
-		addToIndex(queryImgDescriptors[i], trainingDefaults, trainingInvertedMap);
+		addToIndex(queryImgDescriptors[i], testDefaults, testInvertedMap);
 	}
 }
 

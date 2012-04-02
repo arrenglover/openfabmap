@@ -75,10 +75,10 @@ public:
 	virtual ~FabMap();
 
 	void addTraining(const cv::Mat& queryImgDescriptor);
-	void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
+	virtual void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
 
 	void add(const cv::Mat& queryImgDescriptor);
-	void add(const std::vector<cv::Mat>& queryImgDescriptors);
+	virtual void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
 	const std::vector<cv::Mat>& getTrainingImgDescriptors() const;
 	const std::vector<cv::Mat>& getTestImgDescriptors() const;
@@ -110,7 +110,7 @@ protected:
 	virtual void getLikelihoods(const cv::Mat& queryImgDescriptor,
 			const std::vector<cv::Mat>& testImgDescriptors,
 			std::vector<IMatch>& matches);
-	double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
+	virtual double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
 	void normaliseDistribution(std::vector<IMatch>& matches);
 
 	//Chow-Liu Tree
@@ -215,7 +215,14 @@ public:
 	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags);
 	virtual ~FabMap2();
 
+	void addTraining(const cv::Mat& queryImgDescriptors) {
+		FabMap::addTraining(queryImgDescriptors);
+	}
 	void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
+
+	void add(const cv::Mat& queryImgDescriptors) {
+		FabMap::add(queryImgDescriptors);
+	}
 	void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
 protected:
