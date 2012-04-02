@@ -71,7 +71,7 @@ public:
 	};
 
 	FabMap(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
-			int numSamples);
+			int numSamples = 0);
 	virtual ~FabMap();
 
 	void addTraining(const cv::Mat& queryImgDescriptor);
@@ -146,7 +146,7 @@ protected:
 class FabMap1: public FabMap {
 public:
 	FabMap1(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
-			int numSamples);
+			int numSamples = 0);
 	virtual ~FabMap1();
 protected:
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
@@ -155,8 +155,8 @@ protected:
 
 class FabMapLUT: public FabMap {
 public:
-	FabMapLUT(const cv::Mat& clTree, double PzGe, double PzGNe, int precision,
-			int flags, int numSamples);
+	FabMapLUT(const cv::Mat& clTree, double PzGe, double PzGNe,
+			int flags, int numSamples = 0, int precision = 6);
 	virtual ~FabMapLUT();
 protected:
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
@@ -169,9 +169,9 @@ protected:
 
 class FabMapFBO: public FabMap {
 public:
-	FabMapFBO(const cv::Mat& clTree, double PzGe, double PzGNe, double PS_D,
-			double rejectionThreshold, int bisectionStart, int bisectionIts,
-			int flags, int numSamples);
+	FabMapFBO(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
+			int numSamples = 0, double rejectionThreshold = 1e-8, double PsGd =
+					1e-8, int bisectionStart = 512, int bisectionIts = 9);
 	virtual ~FabMapFBO();
 
 protected:
@@ -204,7 +204,7 @@ protected:
 	double bennettInequality(double v, double m, double delta);
 	static bool compInfo(const WordStats& first, const WordStats& second);
 
-	double PS_D;
+	double PsGd;
 	double rejectionThreshold;
 	int bisectionStart;
 	int bisectionIts;
@@ -212,8 +212,7 @@ protected:
 
 class FabMap2: public FabMap {
 public:
-	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
-			int numSamples);
+	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags);
 	virtual ~FabMap2();
 
 	void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
@@ -251,7 +250,7 @@ public:
 
 	const std::vector<cv::Mat>& getImgDescriptors() const;
 
-	cv::Mat make(double infoThreshold);
+	cv::Mat make(double infoThreshold = 0.0);
 
 private:
 	std::vector<cv::Mat> imgDescriptors;
@@ -301,7 +300,7 @@ private:
 
 class BOWMSCTrainer: public cv::BOWTrainer {
 public:
-	BOWMSCTrainer(double clusterSize);
+	BOWMSCTrainer(double clusterSize = 0.4);
 	virtual ~BOWMSCTrainer();
 
 	// Returns trained vocabulary (i.e. cluster centers).

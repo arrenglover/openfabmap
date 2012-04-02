@@ -169,12 +169,14 @@ void FabMap::compare(const vector<Mat>& queryImgDescriptors, vector<
 void FabMap::compare(const vector<Mat>& queryImgDescriptors,
 		const vector<Mat>& testImgDescriptors,
 		vector<IMatch>& matches, const Mat& mask) {
-
-	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
-		CV_Assert(!testImgDescriptors[i].empty());
-		CV_Assert(testImgDescriptors[i].rows == 1);
-		CV_Assert(testImgDescriptors[i].cols == clTree.cols);
-		CV_Assert(testImgDescriptors[i].type() == CV_32F);
+	if (testImgDescriptors[0].data != this->testImgDescriptors[0].data) {
+		CV_Assert(!(flags & MOTION_MODEL));
+		for (size_t i = 0; i < testImgDescriptors.size(); i++) {
+			CV_Assert(!testImgDescriptors[i].empty());
+			CV_Assert(testImgDescriptors[i].rows == 1);
+			CV_Assert(testImgDescriptors[i].cols == clTree.cols);
+			CV_Assert(testImgDescriptors[i].type() == CV_32F);
+		}
 	}
 
 	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
@@ -190,11 +192,13 @@ void FabMap::compare(const vector<Mat>& queryImgDescriptors,
 	}
 }
 
-void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor, int queryIndex,
-		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
+void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor,
+		int queryIndex, const vector<Mat>& testImgDescriptors,
+		vector<IMatch>& matches) {
 
 	vector<IMatch> queryMatches;
-	queryMatches.push_back(IMatch(queryIndex,-1,getNewPlaceLikelihood(queryImgDescriptor),0));
+	queryMatches.push_back(IMatch(queryIndex,-1,
+			getNewPlaceLikelihood(queryImgDescriptor),0));
 	getLikelihoods(queryImgDescriptor,testImgDescriptors,queryMatches);
 	normaliseDistribution(queryMatches);
 	for (size_t j = 1; j < queryMatches.size(); j++) {
@@ -276,8 +280,10 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 			matches[1].match += log((priorMatches[1].match +
 							2 * mBias * priorMatches[2].match) / 3);
 			for (size_t i = 2; i < priorMatches.size()-1; i++) {
-				matches[i].match += log((2 * (1-mBias) * priorMatches[i-1].match
-								+ priorMatches[i].match + 2 * mBias * priorMatches[i+1].match)/3);
+				matches[i].match += log((2 * (1-mBias) *
+								priorMatches[i-1].match +
+								priorMatches[i].match +
+								2 * mBias * priorMatches[i+1].match)/3);
 			}
 			matches[priorMatches.size()-1].match +=
 			log((2 * (1-mBias) * priorMatches[priorMatches.size()-2].match
@@ -368,8 +374,9 @@ double FabMap::PzqGzpqL(int q, bool zq, bool zpq, bool Lzq) {
 }
 
 
-FabMap1::FabMap1(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
-FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
+FabMap1::FabMap1(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags,
+		int _numSamples) : FabMap(_clTree, _PzGe, _PzGNe, _flags,
+				_numSamples) {
 }
 
 FabMap1::~FabMap1() {
@@ -396,7 +403,8 @@ void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
 	}
 }
 
-FabMapLUT::FabMapLUT(const Mat& _clTree, double _PzGe, double _PzGNe, int _precision, int _flags, int _numSamples) :
+FabMapLUT::FabMapLUT(const Mat& _clTree, double _PzGe, double _PzGNe,
+		int _flags, int _numSamples, int _precision) :
 FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 
 	int nWords = clTree.cols;
@@ -411,7 +419,8 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 			bool zq = (bool) ((i >> 1) & 0x01);
 			bool zpq = (bool) (i & 1);
 
-			table[q][i] = -(int)(log((this->*PzGL)(q, zq, zpq, Lzq))*precFactor);
+			table[q][i] = -(int)(log((this->*PzGL)(q, zq, zpq, Lzq))
+					* precFactor);
 		}
 	}
 }
@@ -438,10 +447,12 @@ void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
 	}
 }
 
-FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe,
-		double _PzGNe, double _PS_D, double _rejectionThreshold, int _bisectionStart, int _bisectionIts, int _flags, int _numSamples) :
-FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PS_D(_PS_D), rejectionThreshold(_rejectionThreshold),
-bisectionStart(_bisectionStart), bisectionIts(_bisectionIts) {
+FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe, double _PzGNe,
+		int _flags, int _numSamples, double _rejectionThreshold,
+		double _PsGd, int _bisectionStart, int _bisectionIts) :
+FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PsGd(_PsGd),
+	rejectionThreshold(_rejectionThreshold), bisectionStart(_bisectionStart),
+		bisectionIts(_bisectionIts) {
 }
 
 FabMapFBO::~FabMapFBO() {
@@ -461,6 +472,7 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 	}
 
 	double currBest;
+	double bailedOut = DBL_MAX;
 
 	for (set<WordStats>::reverse_iterator wordIter = wordData.rbegin();
 			wordIter != wordData.rend(); wordIter++) {
@@ -486,7 +498,7 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		vector<int>::iterator matchIter = matchIndices.begin(), removeIter;
 		while (matchIter != matchIndices.end()) {
 			if (currBest - matches[*matchIter].likelihood > delta) {
-				matches[*matchIter].likelihood = 1.0;
+				matches[*matchIter].likelihood = bailedOut;
 				removeIter = matchIter;
 				matchIter++;
 				matchIndices.erase(removeIter);
@@ -497,7 +509,7 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 	}
 
 	for (size_t i = 0; i < matches.size(); i++) {
-		if (matches[i].likelihood == 1.0) {
+		if (matches[i].likelihood == bailedOut) {
 			matches[i].likelihood = currBest + log(rejectionThreshold);
 		}
 	}
@@ -537,12 +549,12 @@ double FabMapFBO::limitbisection(double v, double m) {
 	double midpoint, left_val, mid_val;
 	double left = 0, right = bisectionStart;
 
-	left_val = bennettInequality(v, m, left) - PS_D;
+	left_val = bennettInequality(v, m, left) - PsGd;
 
 	for(int i = 0; i < bisectionIts; i++) {
 
 		midpoint = (left + right)*0.5;
-		mid_val = bennettInequality(v, m, midpoint)- PS_D;
+		mid_val = bennettInequality(v, m, midpoint)- PsGd;
 
 		if(left_val * mid_val > 0) {
 			left = midpoint;
@@ -552,7 +564,7 @@ double FabMapFBO::limitbisection(double v, double m) {
 		}
 	}
 
-	// TODO: check I don't need to add PS_D to the result
+	// TODO: check I don't need to add PsGd to the result
 
 	return (right + left) * 0.5;
 }
@@ -567,8 +579,9 @@ bool FabMapFBO::compInfo(const WordStats& first, const WordStats& second) {
 	return first.info < second.info;
 }
 
-FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags, int _numSamples) :
-FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples) {
+FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe,
+		int _flags) :
+FabMap(_clTree, _PzGe, _PzGNe, _flags) {
 	CV_Assert(flags & SAMPLED);
 
 	for (int q = 0; q < clTree.cols; q++) {
@@ -615,6 +628,7 @@ void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 	if (testImgDescriptors[0].data == this->testImgDescriptors[0].data) {
 		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
 	} else {
+		CV_Assert(!(flags & MOTION_MODEL));
 		vector<double> defaults;
 		map<int, vector<int> > invertedMap;
 		for (size_t i = 0; i < testImgDescriptors.size(); i++) {
@@ -627,7 +641,6 @@ void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 
 	CV_Assert(!trainingImgDescriptors.empty());
-	CV_Assert(numSamples > 0);
 
 	vector<IMatch> matches;
 	getIndexLikelihoods(queryImgDescriptor, trainingDefaults,
