@@ -1,11 +1,82 @@
 
 #include "../include/openfabmap.hpp"
 
+int training(void);
+void loading(void);
+
 int main(int argc, char * argv[])
 {
 
+	//return training();
+
+	cv::FileStorage fs;
+
+
+	fs.open("C:\\pioneer\\fabmaptest\\fm2test\\vocab.yml", 
+		cv::FileStorage::READ);
+	cv::Mat vocab;
+	fs["Vocabulary"] >> vocab;
+	fs.release();
+
+	//fs.open("C:\\pioneer\\fabmaptest\\fm2test\\descriptordata.yml", 
+	//	cv::FileStorage::READ);
+	//cv::Mat all_descriptors;
+	//fs["Training Data"] >> all_descriptors;
+	//fs.release();
+
+	fs.open("C:\\pioneer\\fabmaptest\\fm2test\\tree.yml", 
+		cv::FileStorage::READ);
+	cv::Mat clTree;
+	fs["Tree"] >> clTree;
+	fs.release();
+
+	fs.open("C:\\pioneer\\fabmaptest\\fm2test\\trainbows.yml", 
+		cv::FileStorage::READ);
+	cv::Mat trainer;
+	fs["Tree"] >> trainer;
+	fs.release();
+
+
+	of2::FabMap a = of2::FabMap1(clTree, 0.4, 0, of2::FabMap::MEAN_FIELD | 
+		of2::FabMap::CHOW_LIU, 29);
+
+
+
+
+	
+	return 0;
+
 	
 /*
+	
+	of2::BOWMSCTrainer bowTrainer(clusterSize);
+
+	cv::Mat codebook = bowTrainer.cluster(all_descriptors);
+
+	of2::ChowLiuTree chowLiuTree(params);
+
+	for (;;)  {// every training BoW
+		chowLiuTree.add(BoW);
+	}
+
+	cv::Mat clTree = chowLiuTree.train();
+
+	cv::FileStorage fs("filename",cv::FileStorage::WRITE);
+	fs << "clTree" << clTree;
+	fs.release();
+
+	FabMap fabMap = FabMap2(clTree, params);
+
+	*/
+
+}
+
+
+
+
+int training()
+{
+
 	//cv::Mat tree; cv::Mat book;
 	//of2::FabMap1 fmtest(tree, 0.4, 0, of2::FabMap::MEAN_FIELD, 0);
 
@@ -88,7 +159,6 @@ int main(int argc, char * argv[])
 	}
 
 	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
-	cv::Ptr<cv::BOWImgDescriptorExtractor> b = &bide;
 	bide.setVocabulary(vocab);
 
 	of2::ChowLiuTree tree;
@@ -104,18 +174,30 @@ int main(int argc, char * argv[])
 	cv::Mat frame;
 
 	std::vector<cv::KeyPoint> kpts;
-	cv::Mat bow;
+	cv::Mat bow; cv::Mat bows;
 	while(movie.read(frame)) {
+
 
 		detector.detect(frame, kpts);
 		bide.compute(frame, kpts, bow);
-		tree.add(bow);
+		bows.push_back(bow);
+		//tree.add(bow);
 
 		cv::imshow("frame", frame);
 		char c = cv::waitKey(1);
 		if(c == 27) return 0;
+
+		for(int i = 0; i < 10; i++) {
+			if(!movie.read(frame)) {
+				break;
+			}
+		}
+
 	}
 
+	movie.release();
+
+	tree.add(bows);
 	cv::Mat clTree = tree.make(0);
 
 	fs.open("C:\\pioneer\\fabmaptest\\fm2test\\tree.yml", 
@@ -123,40 +205,12 @@ int main(int argc, char * argv[])
 	fs << "Tree" << clTree;
 	fs.release();
 
-
-	of2::FabMap a = of2::FabMap1(clTree, 0.4, 0, of2::FabMap::MEAN_FIELD, 29);
-
-	//fs << "Training Data" << kpts[1];
-	//detector.detect(images, kpts);
-
-	//of2::BOWMSCTrainer bowTrainer(clusterSize);
-	//cv::Mat codebook = bowTrainer.cluster(all_descriptors);
-	//cv::BOWImgDescriptorExtractor(
-
-	*/
-	return 0;
-
-	
-/*
-	
-	of2::BOWMSCTrainer bowTrainer(clusterSize);
-
-	cv::Mat codebook = bowTrainer.cluster(all_descriptors);
-
-	of2::ChowLiuTree chowLiuTree(params);
-
-	for (;;)  {// every training BoW
-		chowLiuTree.add(BoW);
-	}
-
-	cv::Mat clTree = chowLiuTree.train();
-
-	cv::FileStorage fs("filename",cv::FileStorage::WRITE);
-	fs << "clTree" << clTree;
+	fs.open("C:\\pioneer\\fabmaptest\\fm2test\\trainbows.yml",
+		cv::FileStorage::WRITE);
+	fs << "Trainbows" << bows;
 	fs.release();
 
-	FabMap fabMap = FabMap2(clTree, params);
 
-	*/
+	
 
 }

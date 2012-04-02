@@ -63,11 +63,11 @@ class FabMap {
 public:
 
 	enum {
-		MEAN_FIELD = 0,
-		SAMPLED = 1,
-		NAIVE_BAYES = 2,
-		CHOW_LIU = 4,
-		MOTION_MODEL = 8
+		MEAN_FIELD = 1,
+		SAMPLED = 2,
+		NAIVE_BAYES = 4,
+		CHOW_LIU = 8,
+		MOTION_MODEL = 16
 	};
 
 	FabMap(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
@@ -254,6 +254,8 @@ public:
 
 private:
 	std::vector<cv::Mat> imgDescriptors;
+
+	// TODO: does traindata need to be its own class?
 
 	class TrainData {
 	private:

@@ -41,12 +41,13 @@ ChowLiuTree::~ChowLiuTree() {
 
 void ChowLiuTree::add(const Mat& imgDescriptor) {
 	CV_Assert(!imgDescriptor.empty());
-	CV_Assert(imgDescriptor.rows == 1);
 	if (!imgDescriptors.empty()) {
 		CV_Assert(imgDescriptors[0].cols == imgDescriptor.cols);
 		CV_Assert(imgDescriptors[0].type() == imgDescriptor.type());
 	}
+
 	imgDescriptors.push_back(imgDescriptor);
+
 }
 
 void ChowLiuTree::add(const vector<Mat>& imgDescriptors) {
@@ -64,12 +65,14 @@ Mat ChowLiuTree::make(double infoThreshold) {
 
 	unsigned int descCount = 0;
 	for (size_t i = 0; i < imgDescriptors.size(); i++)
-	descCount += imgDescriptors[i].rows;
+		descCount += imgDescriptors[i].rows;
 
-	Mat mergedImgDescriptors (descCount, imgDescriptors[0].cols, imgDescriptors[0].type());
+	Mat mergedImgDescriptors (descCount, imgDescriptors[0].cols, 
+		imgDescriptors[0].type());
 	for (size_t i = 0, start = 0; i < imgDescriptors.size(); i++)
 	{
-		Mat submut = mergedImgDescriptors.rowRange((int)start, (int)(start + imgDescriptors[i].rows));
+		Mat submut = mergedImgDescriptors.rowRange((int)start, 
+			(int)(start + imgDescriptors[i].rows));
 		imgDescriptors[i].copyTo(submut);
 		start += imgDescriptors[i].rows;
 	}
