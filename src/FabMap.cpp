@@ -29,7 +29,7 @@ OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 using std::vector;
 using std::list;
 using std::map;
-using std::set;
+using std::multiset;
 using std::valarray;
 using cv::Mat;
 
@@ -455,20 +455,21 @@ FabMapFBO::~FabMapFBO() {
 void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
-	set<WordStats> wordData;
+	multiset<WordStats> wordData;
 	setWordStatistics(queryImgDescriptor, wordData);
 
 	vector<int> matchIndices;
+	vector<IMatch> queryMatches;
 
 	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
-		matches.push_back(IMatch(0,i,0,0));
+		queryMatches.push_back(IMatch(0,i,0,0));
 		matchIndices.push_back(i);
 	}
 
 	double currBest;
 	double bailedOut = DBL_MAX;
 
-	for (set<WordStats>::reverse_iterator wordIter = wordData.rbegin();
+	for (multiset<WordStats>::reverse_iterator wordIter = wordData.rbegin();
 			wordIter != wordData.rend(); wordIter++) {
 		bool zq = queryImgDescriptor.at<float>(0,wordIter->q) > 0;
 		bool zpq = queryImgDescriptor.at<float>(0,pq(wordIter->q)) > 0;
@@ -478,9 +479,9 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		for (size_t i = 0; i < matchIndices.size(); i++) {
 			bool Lzq = 
 				testImgDescriptors[matchIndices[i]].at<float>(0,wordIter->q) > 0;
-			matches[matchIndices[i]].likelihood += 
+			queryMatches[matchIndices[i]].likelihood +=
 				log((this->*PzGL)(wordIter->q,zq,zpq,Lzq));
-			currBest = std::max(matches[matchIndices[i]].likelihood,currBest);
+			currBest = std::max(queryMatches[matchIndices[i]].likelihood,currBest);
 		}
 
 		if (matchIndices.size() == 1)
@@ -491,8 +492,8 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 
 		vector<int>::iterator matchIter = matchIndices.begin(), removeIter;
 		while (matchIter != matchIndices.end()) {
-			if (currBest - matches[*matchIter].likelihood > delta) {
-				matches[*matchIter].likelihood = bailedOut;
+			if (currBest - queryMatches[*matchIter].likelihood > delta) {
+				queryMatches[*matchIter].likelihood = bailedOut;
 				removeIter = matchIter;
 				matchIter++;
 				matchIndices.erase(removeIter);
@@ -502,16 +503,17 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		}
 	}
 
-	for (size_t i = 0; i < matches.size(); i++) {
-		if (matches[i].likelihood == bailedOut) {
-			matches[i].likelihood = currBest + log(rejectionThreshold);
+	for (size_t i = 0; i < queryMatches.size(); i++) {
+		if (queryMatches[i].likelihood == bailedOut) {
+			queryMatches[i].likelihood = currBest + log(rejectionThreshold);
 		}
 	}
+	matches.insert(matches.end(), queryMatches.begin(), queryMatches.end());
 
 }
 
 void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
-	set<WordStats>& wordData) {
+	multiset<WordStats>& wordData) {
 	for (int q = 0; q < clTree.cols; q++) {
 		wordData.insert(WordStats(q,PzqGzpq(q,
 				queryImgDescriptor.at<float>(0,q) > 0,
@@ -521,7 +523,7 @@ void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
 	double d = 0, V = 0, M = 0;
 	bool zq, zpq;
 
-	for (set<WordStats>::iterator wordIter = wordData.begin();
+	for (multiset<WordStats>::iterator wordIter = wordData.begin();
 			wordIter != wordData.end(); wordIter++) {
 
 		zq = queryImgDescriptor.at<float>(0,wordIter->q) > 0;
@@ -645,7 +647,7 @@ double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 		averageLikelihood += matches[i].likelihood;
 	}
 
-	return averageLikelihood / (double)numSamples;
+	return averageLikelihood / (double)trainingDefaults.size();
 
 }
 
@@ -668,7 +670,7 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 
 	vector<int>::iterator LwithI, child;
 
-	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
+	for (size_t i = 0; i < defaults.size(); i++) {
 		matches.push_back(IMatch(0,i,defaults[i],0));
 	}
 
@@ -683,14 +685,16 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 					matches[*LwithI].likelihood += d3[q];
 				}
 			}
-			for (child = children[q].begin(); child != children[q].end(); 
-				child++) {
+			if (children.find(q) != children.end()) {
+				for (child = children[q].begin(); child != children[q].end();
+					child++) {
 
-				if (queryImgDescriptor.at<float>(0,*child) == 0) {
-					for (LwithI = invertedMap[*child].begin(); 
-						LwithI != invertedMap[*child].end(); LwithI++) {
+					if (queryImgDescriptor.at<float>(0,*child) == 0) {
+						for (LwithI = invertedMap[*child].begin();
+							LwithI != invertedMap[*child].end(); LwithI++) {
 
-						matches[*LwithI].likelihood += d2[*child];
+							matches[*LwithI].likelihood += d2[*child];
+						}
 					}
 				}
 			}

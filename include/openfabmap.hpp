@@ -74,10 +74,10 @@ public:
 			int numSamples = 0);
 	virtual ~FabMap();
 
-	void addTraining(const cv::Mat& queryImgDescriptor);
+	virtual void addTraining(const cv::Mat& queryImgDescriptor);
 	virtual void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
 
-	void add(const cv::Mat& queryImgDescriptor);
+	virtual void add(const cv::Mat& queryImgDescriptor);
 	virtual void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
 	const std::vector<cv::Mat>& getTrainingImgDescriptors() const;
@@ -198,7 +198,7 @@ protected:
 
 	};
 
-	void setWordStatistics(const cv::Mat& queryImgDescriptor, std::set<
+	void setWordStatistics(const cv::Mat& queryImgDescriptor, std::multiset<
 			WordStats>& wordData);
 	double limitbisection(double v, double m);
 	double bennettInequality(double v, double m, double delta);
