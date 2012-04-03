@@ -449,6 +449,7 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PsGd(_PsGd),
 		bisectionIts(_bisectionIts) {
 }
 
+
 FabMapFBO::~FabMapFBO() {
 }
 

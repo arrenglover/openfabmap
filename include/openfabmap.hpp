@@ -261,32 +261,7 @@ public:
 
 private:
 	std::vector<cv::Mat> imgDescriptors;
-
-	// TODO: does traindata need to be its own class?
-
-	class TrainData {
-	private:
-		std::vector<float> absolutes;
-		int numSamples;
-		int sampleSize;
-		cv::Mat data;
-
-	public:
-		TrainData();
-		~TrainData();
-		void make(const cv::Mat& imgDescriptors);
-		double P(int a, bool ais);
-		double JP(int a, bool ais, int b, bool bis); //a & b
-		double CP(int a, bool ais, int b, bool bis); // a | b
-	};
-
-	typedef struct clNode {
-		int nodeID;
-		int parentNodeID;
-		float Pq;
-		float Pq_p;
-		float Pq_np;
-	} clNode;
+	cv::Mat mergedImgDescriptors;
 
 	typedef struct info {
 		float score;
@@ -294,16 +269,24 @@ private:
 		short word2;
 	} info;
 
-	std::vector<clNode> nodes;
+	//probabilities extracted from mergedImgDescriptors
+	double P(int a, bool za);
+	double JP(int a, bool za, int b, bool zb); //a & b
+	double CP(int a, bool za, int b, bool zb); // a | b
 
-	void recAddToTree(int node, int parentNode, TrainData& trainData,
-			std::list<info>& edges);
-	static bool clNodeCompare(const clNode& first, const clNode& second);
+	//calculating mutual information of all edges
+	void createBaseEdges(std::list<info>& edges, double infoThreshold);
+	double calcMutInfo(int word1, int word2);
 	static bool sortInfoScores(const info& first, const info& second);
-	double calcMutInfo(TrainData& trainData, int word1, int word2);
-	void createBaseEdges(std::list<info>& edges, TrainData& trainData,
-			double infoThreshold);
+
+	//selecting minimum spanning egdges with maximum information
 	bool reduceEdgesToMinSpan(std::list<info>& edges);
+	
+	//building the tree sctructure
+	cv::Mat buildTree(int root_word, std::list<info> &edges);
+	void recAddToTree(cv::Mat &cltree, int q, int pq, 
+		std::list<info> &remaining_edges);
+	std::vector<int> extractChildren(std::list<info> &remaining_edges, int q);
 
 };
 

@@ -7,8 +7,8 @@ void loading(void);
 /*
 #define VIDEO_PATH "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi"
 #define VOCAB_PATH "C:\\pioneer\\fabmaptest\\fm2test\\vocab.yml"
-#define TREE_PATH "C:\\pioneer\\fabmaptest\\fm2test\\tree.yml"
-#define TRAINBOWS_PATH "C:\\pioneer\\fabmaptest\\fm2test\\trainbows.yml"
+#define TREE_PATH "C:\\pioneer\\fabmaptest\\fm2test\\tree2.yml"
+#define TRAINBOWS_PATH "C:\\pioneer\\fabmaptest\\fm2test\\trainbows2.yml"
 #define DESCRIPTOR_PATH "C:\\pioneer\\fabmaptest\\fm2test\\descriptordata.yml"
 */
 
@@ -20,7 +20,7 @@ void loading(void);
 
 int main(int argc, char * argv[])
 {
-	//return training();
+	return training();
 
 	cv::FileStorage fs;
 

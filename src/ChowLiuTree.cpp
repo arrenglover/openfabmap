@@ -67,7 +67,7 @@ Mat ChowLiuTree::make(double infoThreshold) {
 	for (size_t i = 0; i < imgDescriptors.size(); i++)
 		descCount += imgDescriptors[i].rows;
 
-	Mat mergedImgDescriptors (descCount, imgDescriptors[0].cols, 
+	mergedImgDescriptors = cv::Mat(descCount, imgDescriptors[0].cols, 
 		imgDescriptors[0].type());
 	for (size_t i = 0, start = 0; i < imgDescriptors.size(); i++)
 	{
@@ -77,146 +77,147 @@ Mat ChowLiuTree::make(double infoThreshold) {
 		start += imgDescriptors[i].rows;
 	}
 
-	TrainData trainData;
-	trainData.make(mergedImgDescriptors);
-
 	list<info> edges;
-	createBaseEdges(edges, trainData, infoThreshold);
+	createBaseEdges(edges, infoThreshold);
+
+	// TODO: if it cv_asserts here they really won't know why.
+
 	CV_Assert(reduceEdgesToMinSpan(edges));
 
-	nodes.clear();
-	recAddToTree(edges.front().word1, edges.front().word2, trainData, edges);
-	sort(nodes.begin(), nodes.end(), clNodeCompare);
-
-	Mat clTree;
-	clTree.create(4,imgDescriptors[0].cols,CV_64F);
-
-	for(int i = 0; i < imgDescriptors[0].cols; i++) {
-		clTree.at<double>(0,i) = nodes[i].parentNodeID;
-		clTree.at<double>(1,i) = nodes[i].Pq;
-		clTree.at<double>(2,i) = nodes[i].Pq_p;
-		clTree.at<double>(3,i) = nodes[i].Pq_np;
-	}
-
-	return clTree;
+	return buildTree(edges.front().word1, edges);
 }
 
-ChowLiuTree::TrainData::TrainData() {
-	numSamples = 0;
-	sampleSize = 0;
-}
+double ChowLiuTree::P(int a, bool za) {
 
-ChowLiuTree::TrainData::~TrainData() {
-}
-
-void ChowLiuTree::TrainData::make(const Mat& imgDescriptors) {
-
-	data = imgDescriptors;
-
-	absolutes.clear();
-	numSamples = imgDescriptors.rows;
-	sampleSize = imgDescriptors.cols;
-
-	double accumulation = 0;
-	for(int word = 0; word < sampleSize; word++, accumulation = 0) {
-		for(int sample = 0; sample < numSamples; sample++) {
-			accumulation += (double)(data.at<float>(sample,word) > 0);
-		}
-		absolutes.push_back((float)(0.01 + (0.98 * accumulation / numSamples)));
+	if(za) {
+		return (0.98 * cv::countNonZero(mergedImgDescriptors.col(a)) / 
+			mergedImgDescriptors.rows) + 0.01;
+	} else {
+		return 1 - ((0.98 * cv::countNonZero(mergedImgDescriptors.col(a)) / 
+			mergedImgDescriptors.rows) + 0.01);
 	}
 
 }
+double ChowLiuTree::JP(int a, bool za, int b, bool zb) {
 
-double ChowLiuTree::TrainData::P(int a, bool ais) {
-	return ais ? absolutes[a] : 1 - absolutes[a];
-}
-
-double ChowLiuTree::TrainData::JP(int a, bool ais, int b, bool bis) {
 	double count = 0;
-	for(int i = 0; i < numSamples; i++) {
-		if((data.at<float>(i,a) > 0) == ais && (data.at<float>(i,b) > 0) == bis) count++;
+	for(int i = 0; i < mergedImgDescriptors.rows; i++) {
+		if((mergedImgDescriptors.at<float>(i,a) > 0) == za && 
+			(mergedImgDescriptors.at<float>(i,b) > 0) == zb) {
+				count++;
+		}
 	}
-	return count / numSamples;
-}
+	return count / mergedImgDescriptors.rows;
 
-double ChowLiuTree::TrainData::CP(int a, bool ais, int b, bool bis) {
+}
+double ChowLiuTree::CP(int a, bool za, int b, bool zb){
+
 	int count = 0, total = 0;
-	for(int sampleNumber = 0; sampleNumber < numSamples; sampleNumber++) {
-		if((data.at<float>(sampleNumber,b) > 0) == bis) {
-			count += ((data.at<float>(sampleNumber,a) > 0) == ais);
+	for(int i = 0; i < mergedImgDescriptors.rows; i++) {
+		if((mergedImgDescriptors.at<float>(i,b) > 0) == zb) {
 			total++;
+			if((mergedImgDescriptors.at<float>(i,a) > 0) == za) {
+				count++;
+			}
 		}
 	}
 	if(total) {
 		return (double)(0.98 * count)/total + 0.01;
 	} else {
-		return (ais) ? 0.01 : 0.99;
+		return (za) ? 0.01 : 0.99;
 	}
 }
 
-void ChowLiuTree::recAddToTree(int node, int parentNode, TrainData& trainData, list<info>& edges) {
-	clNode newNode;
+cv::Mat ChowLiuTree::buildTree(int root_word, list<info> &edges) {
 
-	newNode.nodeID = node;
-	newNode.parentNodeID = parentNode;
-	newNode.Pq = (float)trainData.P(node, true);
-	newNode.Pq_p = (float)trainData.CP(node, true, parentNode, true);
-	newNode.Pq_np = (float)trainData.CP(node, true, parentNode, false);
+	int q = root_word;
+	cv::Mat cltree(4, edges.size()+1, CV_64F);
 
-	nodes.push_back(newNode);
+	cltree.at<double>(0, q) = q;
+	cltree.at<double>(1, q) = P(q, true);
+	cltree.at<double>(2, q) = P(q, true);
+	cltree.at<double>(3, q) = P(q, true);
+	//setting P(zq|zpq) to P(zq) gives the root node of the chow-liu 
+	//independence from a parent node.
 
 	//find all children and do the same
-	vector<int> childNodes;
-	list<info>::iterator edge = edges.begin();
-	while(edge != edges.end()) {
-		if(edge->word1 == node) {
-			childNodes.push_back(edge->word2);
-			edge = edges.erase(edge);
+	vector<int> nextqs = extractChildren(edges, q);
+
+	int pq = q;
+	vector<int>::iterator nextq;
+	for(nextq = nextqs.begin(); nextq != nextqs.end(); nextq++) {
+		recAddToTree(cltree, *nextq, pq, edges);
+	}
+
+	return cltree;
+
+
+}
+
+void ChowLiuTree::recAddToTree(cv::Mat &cltree, int q, int pq, 
+							   list<info>& remaining_edges) {
+
+	cltree.at<double>(0, q) = pq;
+	cltree.at<double>(1, q) = P(q, true);
+	cltree.at<double>(2, q) = CP(q, true, pq, true);
+	cltree.at<double>(3, q) = CP(q, true, pq, false);
+
+	//find all children and do the same
+	vector<int> nextqs = extractChildren(remaining_edges, q);
+
+	pq = q;
+	vector<int>::iterator nextq;
+	for(nextq = nextqs.begin(); nextq != nextqs.end(); nextq++) {
+		recAddToTree(cltree, *nextq, pq, remaining_edges);
+	}
+}
+
+vector<int> ChowLiuTree::extractChildren(list<info> &remaining_edges, 
+											  int q) {
+
+	vector<int> children;
+	list<info>::iterator edge = remaining_edges.begin();
+
+	while(edge != remaining_edges.end()) {
+		if(edge->word1 == q) {
+			children.push_back(edge->word2);
+			edge = remaining_edges.erase(edge);
 			continue;
 		}
-		if(edge->word2 == node) {
-			childNodes.push_back(edge->word1);
-			edge = edges.erase(edge);
+		if(edge->word2 == q) {
+			children.push_back(edge->word1);
+			edge = remaining_edges.erase(edge);
 			continue;
 		}
 		edge++;
 	}
-	for(vector<int>::iterator childNode = childNodes.begin();
-			childNode != childNodes.end(); childNode++) {
-		recAddToTree(*childNode, node, trainData, edges);
-	}
-}
 
-bool ChowLiuTree::clNodeCompare(const clNode& first, const clNode& second) {
-	return first.nodeID < second.nodeID;
+	return children;
 }
 
 bool ChowLiuTree::sortInfoScores(const info& first, const info& second) {
 	return first.score > second.score;
 }
 
-double ChowLiuTree::calcMutInfo(TrainData& trainData, int word1, int word2) {
+double ChowLiuTree::calcMutInfo(int word1, int word2) {
 	double accumulation = 0;
-	double P00 = trainData.JP(word1, false, word2, false);
-	if(P00) accumulation += P00 * log(P00 /
-			(trainData.P(word1, false)*trainData.P(word2, false)));
 
-	double P01 = trainData.JP(word1, false, word2, true);
-	if(P01) accumulation += P01 * log(P01 /
-			(trainData.P(word1, false)*trainData.P(word2, true)));
+	double P00 = JP(word1, false, word2, false);
+	if(P00) accumulation += P00 * log(P00 / (P(word1, false)*P(word2, false)));
 
-	double P10 = trainData.JP(word1, true, word2, false);
-	if(P10) accumulation += P10 * log(P10 /
-			(trainData.P(word1, true)*trainData.P(word2, false)));
+	double P01 = JP(word1, false, word2, true);
+	if(P01) accumulation += P01 * log(P01 / (P(word1, false)*P(word2, true)));
 
-	double P11 = trainData.JP(word1, true, word2, true);
-	if(P11) accumulation += P11 * log(P11 /
-			(trainData.P(word1, true)*trainData.P(word2, true)));
+	double P10 = JP(word1, true, word2, false);
+	if(P10) accumulation += P10 * log(P10 / (P(word1, true)*P(word2, false)));
+
+	double P11 = JP(word1, true, word2, true);
+	if(P11) accumulation += P11 * log(P11 / (P(word1, true)*P(word2, true)));
 
 	return accumulation;
 }
 
-void ChowLiuTree::createBaseEdges(list<info>& edges, TrainData& trainData, double infoThreshold) {
+void ChowLiuTree::createBaseEdges(list<info>& edges, double infoThreshold) {
 
 	int nWords = imgDescriptors[0].cols;
 	info mutInfo;
@@ -225,7 +226,7 @@ void ChowLiuTree::createBaseEdges(list<info>& edges, TrainData& trainData, doubl
 		for(int word2 = word1 + 1; word2 < nWords; word2++) {
 			mutInfo.word1 = word1;
 			mutInfo.word2 = word2;
-			mutInfo.score = (float)calcMutInfo(trainData, word1, word2);
+			mutInfo.score = (float)calcMutInfo(word1, word2);
 			if(mutInfo.score >= infoThreshold)
 			edges.push_back(mutInfo);
 		}
