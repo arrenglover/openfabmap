@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------
  Copyright 2012 Arren Glover [aj.glover@qut.edu.au]
- Will Maddern [w.maddern@qut.edu.au]
+                Will Maddern [w.maddern@qut.edu.au]
 
  This file is part of OpenFABMAP. http://code.google.com/p/openfabmap/
 
@@ -237,7 +237,7 @@ protected:
 			std::map<int, std::vector<int> >& invertedMap);
 
 	std::vector<double> d1, d2, d3, d4;
-	std::map<int, std::vector<int> > children;
+	std::vector<std::vector<int> > children;
 
 	std::vector<double> trainingDefaults;
 	std::map<int, std::vector<int> > trainingInvertedMap;

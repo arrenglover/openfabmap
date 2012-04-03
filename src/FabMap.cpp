@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------
 Copyright 2012 Arren Glover [aj.glover@qut.edu.au]
-			   Will Maddern [w.maddern@qut.edu.au]
+               Will Maddern [w.maddern@qut.edu.au]
 
 This file is part of OpenFABMAP. http://code.google.com/p/openfabmap/
 
@@ -580,6 +580,8 @@ FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe,
 FabMap(_clTree, _PzGe, _PzGNe, _flags) {
 	CV_Assert(flags & SAMPLED);
 
+	children.resize(clTree.cols);
+
 	for (int q = 0; q < clTree.cols; q++) {
 		d1.push_back(log((this->*PzGL)(q, false, false, true) /
 				(this->*PzGL)(q, false, false, false)));
@@ -685,16 +687,14 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 					matches[*LwithI].likelihood += d3[q];
 				}
 			}
-			if (children.find(q) != children.end()) {
-				for (child = children[q].begin(); child != children[q].end();
-					child++) {
+			for (child = children[q].begin(); child != children[q].end();
+				child++) {
 
-					if (queryImgDescriptor.at<float>(0,*child) == 0) {
-						for (LwithI = invertedMap[*child].begin();
-							LwithI != invertedMap[*child].end(); LwithI++) {
+				if (queryImgDescriptor.at<float>(0,*child) == 0) {
+					for (LwithI = invertedMap[*child].begin();
+						LwithI != invertedMap[*child].end(); LwithI++) {
 
-							matches[*LwithI].likelihood += d2[*child];
-						}
+						matches[*LwithI].likelihood += d2[*child];
 					}
 				}
 			}

@@ -55,11 +55,11 @@ int main(int argc, char * argv[])
 	//of2::FabMapLUT fabMap = of2::FabMapLUT(clTree, 0.4, 0, of2::FabMap::SAMPLED |
 	//		of2::FabMap::CHOW_LIU,50);
 
-	of2::FabMapFBO fabMap = of2::FabMapFBO(clTree, 0.4, 0, of2::FabMap::SAMPLED |
-				of2::FabMap::CHOW_LIU,50);
+	//of2::FabMapFBO fabMap = of2::FabMapFBO(clTree, 0.4, 0, of2::FabMap::SAMPLED |
+	//			of2::FabMap::CHOW_LIU,50);
 
-	//of2::FabMap2 fabMap = of2::FabMap2(clTree, 0.4, 0, of2::FabMap::SAMPLED |
-	//	of2::FabMap::CHOW_LIU);
+	of2::FabMap2 fabMap = of2::FabMap2(clTree, 0.4, 0, of2::FabMap::SAMPLED |
+		of2::FabMap::CHOW_LIU);
 
 	fabMap.addTraining(trainbows);
 

@@ -1,6 +1,6 @@
 /*------------------------------------------------------------------------
 Copyright 2012 Arren Glover [aj.glover@qut.edu.au]
-			   Will Maddern [w.maddern@qut.edu.au]
+               Will Maddern [w.maddern@qut.edu.au]
 
 This file is part of OpenFABMAP. http://code.google.com/p/openfabmap/
 
