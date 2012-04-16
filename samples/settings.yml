@@ -1,0 +1,187 @@
+%YAML:1.0
+
+# openFABMAPexe Settings File
+
+# openFABMAP running mode:
+
+# "ShowFeatures"
+# "GenerateVocabTrainData"
+# "TrainVocabulary"
+# "GenerateFABMAPTrainData"
+# "TrainChowLiuTree"
+# "RunOpenFABMAP"
+
+Function: "ShowFeatures"
+
+# Method to add new location to the FabMap location list
+# "All"
+# "NewMaximumOnly"
+
+FabMapPlaceAddition: "All"
+
+
+#---------------------------------------------------------------------------
+
+FilePaths:
+   #The training data video should be of disjoint, non-overlapping scenes
+   #and should not visit the same location more than once
+
+   TrainPath: "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi"
+
+   #The test video should not overlap with the training video but should
+   #have similar environment types.
+
+   TestPath: "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi"
+
+   #All feature descriptors extracted from the training data. Used to
+   #create the vocabulary/codebook
+
+   TrainFeatDesc: "C:\\pioneer\\fabmaptest\\fm2test\\train_featdesc.yml"
+
+   #All bag-of-words type whole image descriptors extracted from the 
+   #training data. Used to create the chow-liu tree and used in the
+   #FabMap 'new place' likelihood calculation
+
+   TrainImagDesc: "C:\\pioneer\\fabmaptest\\fm2test\\train_imagdesc.yml"
+   
+   #The vocabulary/codebook data
+
+   Vocabulary: "C:\\pioneer\\fabmaptest\\fm2test\\vocabulary.yml"
+   
+   #The Chow-Liu Tree data
+
+   ChowLiuTree: "C:\\pioneer\\fabmaptest\\fm2test\\tree.yml"
+
+   #The FabMap results
+
+   FabMapResults: "C:\\pioneer\\fabmaptest\\fm2test\\fmresults.yml"
+
+#---------------------------------------------------------------------------
+
+FeatureOptions:
+
+   # Feature Detection Options
+   # "FAST"
+   # "STAR"
+   # "SIFT"
+   # "SURF"
+   # "ORB"
+   # "MSER"
+   # "GFTT"
+   # "HARRIS"
+   # "Dense"
+   # "SimpleBlob"
+
+   DetectorType: "ORB"
+
+   # Descriptor Extraction Options
+   # "SIFT"
+   # "SURF"
+   # "ORB"
+   # "BRIEF"
+
+   ExtractorType: "SURF"
+
+#---------------------------------------------------------------------------
+
+VocabTrainOptions:
+
+   # a smaller clustersize increases the specificity of each codeword
+   # and will increase the number of words in the vocabulary
+
+   ClusterSize: 0.8
+
+#---------------------------------------------------------------------------
+
+ChowLiuOptions:
+
+   # a large amount of data is required to store all mutual information from
+   # which the minimum spanning tree is created. e.g. an 8000 word codebook 
+   # requires 1.2 Gb RAM. Increasing the threshold results in information being 
+   # discarded, and a lower memory requirement. Too high a threshold may result 
+   # in necessary information being discarded and the tree not being created.
+   #A threshold of 0 takes longer and may fail due to memory requirements
+
+   LowerInfoBound: 0.0005
+
+#---------------------------------------------------------------------------
+
+openFabMapOptions:
+
+   #Detector Model
+
+   PzGe: 0.39
+   PzGne: 0
+
+   #The method to calculate the likelihood of a 'new location'
+   # "Sampled"
+   # "Meanfield"
+
+   NewPlaceMethod: "Sampled"
+
+   #if using "sampled" method how many samples from training data to use
+
+   NumSamples: 1000
+
+   # The option to switch off FabMap's feature dependency model (Chow-Liu tree)
+   # in the likelihood calculations
+   # "Naive"
+   # "ChowLiu"
+
+   BayesMethod: "ChowLiu"
+
+   # The option to switch on and off the addition of a simple motion model
+   # which assumes links between sequential additions to the query space.
+
+   SimpleMotion: No
+
+   # Which version of openFABMAP to run
+   # "FabMap1"
+   # "FabMapLUT"
+   # "FabMapFBO"
+   # "FabMap2"
+
+   FabMapVersion: "FabMap2"
+      
+   #FabMap1:
+
+      # no additional options
+      
+   FabMapLUT:
+
+      # precision with which to store precomputed values (decimal places)
+
+      Precision = 6
+
+   FabMapFBO:
+      # The loglikelihood bound beneath the best hypothesis at which other
+      # hypotheses are always retained
+
+      RejectionThreshold: 1e-6
+      
+      # The likelihood bound of a hypothesis 'overtaking' the current best 
+      # hypothesis, below which hypotheses are discarded. Used to compute delta
+
+      PsGd: 1e-6
+
+      # The largest value of delta when computing it via the bisection method
+
+      BisectionStart: 512
+
+      # The number of iterations to perform the bisection. Bisection accuracy = 
+      # BisectionStart / 2^BisectionIts
+
+      BisectionIts: 9
+      
+
+   #FabMap2:
+
+      # no additional options
+
+#---------------------------------------------------------------------------
+
+
+
+
+
+

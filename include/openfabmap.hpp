@@ -19,6 +19,8 @@
 
  Original Algorithm by Mark Cummins and Paul Newman:
  http://ijr.sagepub.com/content/27/6/647.short
+ http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=5613942
+ http://ijr.sagepub.com/content/30/9/1100.abstract
 
  You should have received a copy of the GNU General Public License along with
  OpenFABMAP. If not, see http://www.gnu.org/licenses/.
@@ -37,6 +39,9 @@
 
 namespace of2 {
 
+/*
+	Return data format of a FABMAP compare call
+*/
 struct IMatch {
 
 	IMatch() :
@@ -59,6 +64,9 @@ struct IMatch {
 
 };
 
+/*
+	Base FabMap class. Each FabMap method inherits from this class.
+*/
 class FabMap {
 public:
 
@@ -143,6 +151,10 @@ protected:
 
 };
 
+/*
+	The original FAB-MAP algorithm, developed based on: 
+	http://ijr.sagepub.com/content/27/6/647.short
+*/
 class FabMap1: public FabMap {
 public:
 	FabMap1(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
@@ -153,6 +165,10 @@ protected:
 			cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 };
 
+/*
+	A computationally faster version of the original FAB-MAP algorithm. A look-
+	up-table is used to precompute many of the reoccuring calculations
+*/
 class FabMapLUT: public FabMap {
 public:
 	FabMapLUT(const cv::Mat& clTree, double PzGe, double PzGNe,
@@ -167,6 +183,10 @@ protected:
 	int precision;
 };
 
+/*
+	The Accelerated FAB-MAP algorithm, developed based on:
+	http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=5613942
+*/
 class FabMapFBO: public FabMap {
 public:
 	FabMapFBO(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
@@ -210,6 +230,10 @@ protected:
 	int bisectionIts;
 };
 
+/*
+	The FAB-MAP2.0 algorithm, developed based on:
+	http://ijr.sagepub.com/content/30/9/1100.abstract
+*/
 class FabMap2: public FabMap {
 public:
 	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags);
@@ -239,6 +263,8 @@ protected:
 	std::vector<double> d1, d2, d3, d4;
 	std::vector<std::vector<int> > children;
 
+	// TODO: inverted map a vector?
+
 	std::vector<double> trainingDefaults;
 	std::map<int, std::vector<int> > trainingInvertedMap;
 
@@ -246,7 +272,11 @@ protected:
 	std::map<int, std::vector<int> > testInvertedMap;
 
 };
-
+/*
+	A Chow-Liu tree is required by FAB-MAP. The Chow-Liu tree provides an 
+	estimate of the	full distribution of visual words using a minimum spanning 
+	tree. The tree is generated through training data.
+*/
 class ChowLiuTree {
 public:
 	ChowLiuTree();
@@ -290,6 +320,10 @@ private:
 
 };
 
+/*
+	A custom vocabulary training method based on:
+	http://www.springerlink.com/content/d1h6j8x552532003/
+*/
 class BOWMSCTrainer: public cv::BOWTrainer {
 public:
 	BOWMSCTrainer(double clusterSize = 0.4);
