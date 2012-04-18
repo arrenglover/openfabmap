@@ -67,9 +67,11 @@ int trainChowLiuTree(std::string chowliutreePath,
 					 std::string fabmapTrainDataPath,
 					 double lowerInformationBound);
 
+of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings);
+
 int openFABMAP(std::string testPath,
+			   of2::FabMap *openFABMAP,
 			   std::string vocabPath,
-			   std::string chowliutreePath,
 			   std::string resultsPath,
 			   cv::Ptr<cv::FeatureDetector> &detector,
 			   cv::Ptr<cv::DescriptorExtractor> &extractor);
@@ -81,12 +83,12 @@ int main(int argc, char * argv[])
 		//assume settings in working directory
 		settfilename = "settings.yml";
 	} else if (argc == 3) {
-		if(std::string(argv[2]) != "-s") {
+		if(std::string(argv[1]) != "-s") {
 			//incorrect option
 			return help();
 		} else {
 			//settings provided as argument
-			settfilename = std::string(argv[3]);
+			settfilename = std::string(argv[2]);
 		}
 	} else {
 		//incorrect arguments
@@ -132,7 +134,13 @@ int main(int argc, char * argv[])
 			fs["ChowLiuOptions"]["LowerInfoBound"]);
 
 	} else if (function == "RunOpenFABMAP") {
-		//result = openFABMAP(void);
+		of2::FabMap *fabmap = generateFABMAPInstance(fs);
+		if(fabmap) {
+			result = openFABMAP(fs["FilePaths"]["TestPath"], fabmap,
+				fs["FilePaths"]["Vocabulary"],
+				fs["FilePaths"]["FabMapResults"], detector, extractor);
+		}
+			
 	} else {
 		std::cerr << "Incorrect Function Type" << std::endl;
 	}
@@ -144,109 +152,6 @@ int main(int argc, char * argv[])
 
 	fs.release();
 	return result;
-
-
-
-			
-//	return generateYMLsettings();
-	//return training();
-
-
-
-	fs.open(VOCAB_PATH,
-		cv::FileStorage::READ);
-	cv::Mat vocab;
-	fs["Vocabulary"] >> vocab;
-	fs.release();
-
-	//fs.open(DESCRIPTOR_PATH,
-	//	cv::FileStorage::READ);
-	//cv::Mat all_descriptors;
-	//fs["Training Data"] >> all_descriptors;
-	//fs.release();
-
-	fs.open(TREE_PATH,
-		cv::FileStorage::READ);
-	cv::Mat clTree;
-	fs["Tree"] >> clTree;
-	fs.release();
-
-	fs.open(TRAINBOWS_PATH,
-		cv::FileStorage::READ);
-	cv::Mat trainbows;
-	fs["Trainbows"] >> trainbows;
-	fs.release();
-
-	//of2::FabMap1 fabMap = of2::FabMap1(clTree, 0.4, 0, of2::FabMap::SAMPLED |
-	//		of2::FabMap::CHOW_LIU,50);
-
-	//of2::FabMapLUT fabMap = of2::FabMapLUT(clTree, 0.4, 0, of2::FabMap::SAMPLED |
-	//		of2::FabMap::CHOW_LIU,50);
-
-	//of2::FabMapFBO fabMap = of2::FabMapFBO(clTree, 0.4, 0, of2::FabMap::SAMPLED |
-	//			of2::FabMap::CHOW_LIU,50);
-
-	of2::FabMap2 fabMap = of2::FabMap2(clTree, 0.4, 0, of2::FabMap::SAMPLED |
-		of2::FabMap::CHOW_LIU);
-
-	fabMap.addTraining(trainbows);
-
-	cv::VideoCapture movie;
-	cv::FastFeatureDetector detector2(100);
-	cv::Ptr<cv::DescriptorExtractor>  extractor2 =
-		new cv::SurfDescriptorExtractor();
-	cv::Ptr<cv::DescriptorMatcher> matcher2 = new cv::FlannBasedMatcher();
-	cv::BOWImgDescriptorExtractor bide(extractor2, matcher2);
-		bide.setVocabulary(vocab);
-
-	movie.open(VIDEO_PATH);
-
-	if(!movie.isOpened()) {
-		std::cerr << "not found. exiting" << std::endl;
-		std::cin.ignore();
-		return -1;
-	}
-
-	cv::Mat frame;
-
-	std::vector<cv::KeyPoint> kpts;
-	cv::Mat bow;
-
-	movie.read(frame);
-	detector2.detect(frame, kpts);
-	bide.compute(frame, kpts, bow);
-
-	fabMap.add(bow);
-
-	while (movie.read(frame)) {
-
-
-		detector2.detect(frame, kpts);
-		bide.compute(frame, kpts, bow);
-		std::vector<of2::IMatch> matches;
-
-		fabMap.compare(bow,matches,true);
-
-		for (size_t i = 0; i < matches.size(); i++) {
-			std::cout << "QueryIdx " << matches[i].queryIdx <<
-					     " ImgIdx " << matches[i].imgIdx <<
-					     " Likelihood " << matches[i].likelihood <<
-					     " Match " << matches[i].match << std::endl;
-		}
-
-		cv::imshow("frame", frame);
-		char c = cv::waitKey(1);
-		if(c == 27) return 0;
-
-	}
-
-	
-
-
-
-
-	
-	return 0;
 
 }
 
@@ -499,8 +404,12 @@ int trainChowLiuTree(std::string chowliutreePath,
 
 }
 
-of2::FabMap generateFABMAPInstance(cv::FileStorage &fs)
+of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 {
+
+	cv::FileStorage fs;
+	std::string fabmapTrainDataPath = settings["FilePaths"]["TrainImagDesc"];
+	std::string chowliutreePath = settings["FilePaths"]["ChowLiuTree"];
 
 	std::cout << "Loading FabMap Training Data" << std::endl;
 	fs.open(fabmapTrainDataPath, cv::FileStorage::READ);
@@ -509,17 +418,7 @@ of2::FabMap generateFABMAPInstance(cv::FileStorage &fs)
 	if (fabmapTrainData.empty()) {
 		std::cerr << fabmapTrainDataPath << ": FabMap Training Data not found" 
 			<< std::endl;
-		return -1;
-	}
-	fs.release();
-
-	std::cout << "Loading Vocabulary" << std::endl;
-	fs.open(vocabPath, cv::FileStorage::READ);
-	cv::Mat vocab;
-	fs["Vocabulary"] >> vocab;
-	if (vocab.empty()) {
-		std::cerr << vocabPath << ": Vocabulary not found" << std::endl;
-		return -1;
+		return NULL;
 	}
 	fs.release();
 
@@ -530,63 +429,73 @@ of2::FabMap generateFABMAPInstance(cv::FileStorage &fs)
 	if (clTree.empty()) {
 		std::cerr << chowliutreePath << ": Chow-Liu tree not found" << 
 			std::endl;
-		return -1;
+		return NULL;
 	}
 	fs.release();
 
 	//create options
-	std::string newPlaceMethod = fs["openFabMapOptions"]["NewPlaceMethod"];
-	std::string bayesMethod = fs["openFabMapOptions"]["BayesMethod"];
-	bool simpleMotionModel = fs["openFabMapOptions"]["SimpleMotion"];
+	std::string newPlaceMethod = 
+		settings["openFabMapOptions"]["NewPlaceMethod"];
+	std::string bayesMethod = settings["openFabMapOptions"]["BayesMethod"];
+	int simpleMotionModel = settings["openFabMapOptions"]["SimpleMotion"];
 	int options = 0;
 	if(newPlaceMethod == "Sampled") {
-		options |= SAMPLED;
+		options |= of2::FabMap::SAMPLED;
 	} else {
-		options |= MEAN_FIELD;
+		options |= of2::FabMap::MEAN_FIELD;
 	}
 	if(bayesMethod == "ChowLiu") {
-		options |= CHOW_LIU;
+		options |= of2::FabMap::CHOW_LIU;
 	} else {
-		options |= NAIVE_BAYES;
+		options |= of2::FabMap::NAIVE_BAYES;
 	}
 	if(simpleMotionModel) {
-		options |= MOTION_MODEL;
+		options |= of2::FabMap::MOTION_MODEL;
 	}
 
-	of2::FabMap *openFABMAP;
+	of2::FabMap *fabmap;
 
-	std::string fabMapVersion = fs["openFabMapOptions"]["FabMapVersion"];
+	std::string fabMapVersion = settings["openFabMapOptions"]["FabMapVersion"];
 	if(fabMapVersion == "FABMAP1") {
-		openFABMAP = new of2::FabMap1(clTree, 
-			fs["openFabMapOptions"]["PzGe"],
-			fs["openFabMapOptions"]["PzGne"],
+		fabmap = new of2::FabMap1(clTree, 
+			settings["openFabMapOptions"]["PzGe"],
+			settings["openFabMapOptions"]["PzGne"],
 			options,
-			fs["openFabMapOptions"]["NumSamples"]);
+			settings["openFabMapOptions"]["NumSamples"]);
 	} else if(fabMapVersion == "FABMAPLUT") {
-		openFABMAP = new of2::FabMapLUT(clTree, 
-			fs["openFabMapOptions"]["PzGe"],
-			fs["openFabMapOptions"]["PzGne"],
+		fabmap = new of2::FabMapLUT(clTree, 
+			settings["openFabMapOptions"]["PzGe"],
+			settings["openFabMapOptions"]["PzGne"],
 			options,
-			fs["openFabMapOptions"]["NumSamples"]);
+			settings["openFabMapOptions"]["NumSamples"],
+			settings["openFabMapOptions"]["FabMapLUT"]["Precision"]);
 	} else if(fabMapVersion == "FABMAPFBO") {
-		openFABMAP = new of2::FabMap1(clTree, 
-			fs["openFabMapOptions"]["PzGe"],
-			fs["openFabMapOptions"]["PzGne"],
+		fabmap = new of2::FabMapFBO(clTree, 
+			settings["openFabMapOptions"]["PzGe"],
+			settings["openFabMapOptions"]["PzGne"],
 			options,
-			fs["openFabMapOptions"]["NumSamples"]);
+			settings["openFabMapOptions"]["NumSamples"],
+			settings["openFabMapOptions"]["FabMapFBO"]["RejectionThreshold"],
+			settings["openFabMapOptions"]["FabMapFBO"]["PsGd"],
+			settings["openFabMapOptions"]["FabMapFBO"]["BisectionStart"],
+			settings["openFabMapOptions"]["FabMapFBO"]["BisectionIts"]);
 	} else {
-		openFABMAP = new of2::FabMap1(clTree, 
-			fs["openFabMapOptions"]["PzGe"],
-			fs["openFabMapOptions"]["PzGne"],
-			options,
-			fs["openFabMapOptions"]["NumSamples"]);
+		fabmap = new of2::FabMap2(clTree, 
+			settings["openFabMapOptions"]["PzGe"],
+			settings["openFabMapOptions"]["PzGne"],
+			options);
 	}
+
+	fabmap->addTraining(fabmapTrainData);
+
+	return fabmap;
 
 }
 
 
 int openFABMAP(std::string testPath,
-			   of2::FabMap openFABMAP,
+			   of2::FabMap *fabmap,
+			   std::string vocabPath,
 			   std::string resultsPath,
 			   cv::Ptr<cv::FeatureDetector> &detector,
 			   cv::Ptr<cv::DescriptorExtractor> &extractor)
@@ -595,7 +504,7 @@ int openFABMAP(std::string testPath,
 	cv::FileStorage fs;	
 
 	//ensure not overwriting results
-	fs.open(chowliutreePath, cv::FileStorage::READ);
+	fs.open(resultsPath, cv::FileStorage::READ);
 	cv::Mat results;
 	fs["openFabMapResults"] >> results;
 	if (!results.empty()) {
@@ -605,34 +514,12 @@ int openFABMAP(std::string testPath,
 	}
 	fs.release();
 
-	std::cout << "Loading FabMap Training Data" << std::endl;
-	fs.open(fabmapTrainDataPath, cv::FileStorage::READ);
-	cv::Mat fabmapTrainData;
-	fs["FabmapTrainData"] >> fabmapTrainData;
-	if (fabmapTrainData.empty()) {
-		std::cerr << fabmapTrainDataPath << ": FabMap Training Data not found" 
-			<< std::endl;
-		return -1;
-	}
-	fs.release();
-
 	std::cout << "Loading Vocabulary" << std::endl;
 	fs.open(vocabPath, cv::FileStorage::READ);
 	cv::Mat vocab;
 	fs["Vocabulary"] >> vocab;
 	if (vocab.empty()) {
 		std::cerr << vocabPath << ": Vocabulary not found" << std::endl;
-		return -1;
-	}
-	fs.release();
-
-	std::cout << "Loading Chow-Liu Tree" << std::endl;
-	fs.open(chowliutreePath, cv::FileStorage::READ);
-	cv::Mat clTree;
-	fs["ChowLiuTree"] >> clTree;
-	if (clTree.empty()) {
-		std::cerr << chowliutreePath << ": Chow-Liu tree not found" << 
-			std::endl;
 		return -1;
 	}
 	fs.release();
@@ -650,185 +537,32 @@ int openFABMAP(std::string testPath,
 	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
 	bide.setVocabulary(vocab);
 
-	int options = 0;
-	if(
-
-}
-
-
-
-
-
-int generateYMLsettings(void)
-{
-
-	cv::FileStorage fs;
-	fs.open("settings.yml", cv::FileStorage::WRITE);
-	if(!fs.isOpened()) {
-		std::cerr << "Could not open settings file" << std::endl;
-		return -1;
-	}
-
-	fs << "Function" << 1;
-	fs << "Options" << "{";
-	fs << "Function 1" << "View Features Detected";
-	fs << "}";
-
-	fs << "File_Paths" << "{";
-	fs << "Train_Path" << "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi";
-	fs << "Test_Path" << "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi";
-	fs << "Train_FeatDesc" << "C:\\pioneer\\fabmaptest\\train_featdesc.yml";
-	fs << "Train_ImagDesc" << "C:\\pioneer\\fabmaptest\\train_imagdesc.yml";
-	fs << "Vocabulary" << "C:\\pioneer\\fabmaptest\\vocabulary.yml";
-	fs << "CLtree" << "C:\\pioneer\\fabmaptest\\tree.yml";
-	fs << "}";
-	
-
-	return 0;
-}
-
-
-
-
-int training()
-{
-
-	//cv::Mat tree; cv::Mat book;
-	//of2::FabMap1 fmtest(tree, 0.4, 0, of2::FabMap::MEAN_FIELD, 0);
-
-	cv::VideoCapture movie;
-	cv::FastFeatureDetector detector(100);
-	//cv::SurfDescriptorExtractor extractor;
-	cv::Ptr<cv::DescriptorExtractor>  extractor = 
-		new cv::SurfDescriptorExtractor();
-	
-	cv::Ptr<cv::DescriptorMatcher> matcher = new cv::FlannBasedMatcher();
-	
-	of2::BOWMSCTrainer trainer(0.6);
-	cv::FileStorage fs;
-
-	std::cout << "reading vocab" << std::endl;
-	
-	fs.open(VOCAB_PATH,
-		cv::FileStorage::READ);
-
-	cv::Mat vocab;
-	fs["Vocabulary"] >> vocab;
-	fs.release();
-
-	if(vocab.empty()) {
-
-		std::cout << "not found. reading training data" << std::endl;
-		fs.open(DESCRIPTOR_PATH,
-			cv::FileStorage::READ);
-
-		cv::Mat all_descriptors;
-		fs["Training Data"] >> all_descriptors;
-		fs.release();
-
-		if(all_descriptors.empty()) {
-			std::cout << "not found. extracting data" << std::endl;
-
- 
-			movie.open(VIDEO_PATH);
-
-			if(!movie.isOpened()) {
-				std::cerr << "not found. exiting" << std::endl;
-				std::cin.ignore();
-				return -1;
-			}
-
-			cv::Mat descriptors;
-			std::vector<cv::KeyPoint> kpts;
-			cv::Mat frame, feats;
-
-			while(movie.read(frame)) {
-
-				detector.detect(frame, kpts);
-				extractor->compute(frame, kpts, descriptors);
-				//all_descriptors.push_back(descriptors);
-				trainer.add(descriptors);
-
-				cv::drawKeypoints(frame, kpts, feats);
-
-				cv::imshow("frame", feats);
-				char c = cv::waitKey(10);
-				if(c == 27) return 0;
-			}
-
-			fs.open(DESCRIPTOR_PATH,
-				cv::FileStorage::WRITE);
-			fs << "Training Data" << all_descriptors;
-			fs.release();
-		} else {
-			trainer.add(all_descriptors);
-		}
-
-		std::cout << "training codebook" << std::endl;
-
-		vocab = trainer.cluster();
-		std::cout << "writing vocab" << std::endl;
-		fs.open(VOCAB_PATH,
-			cv::FileStorage::WRITE);
-		fs << "Vocabulary" << vocab;
-		fs.release();
-	}
-
-	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
-	bide.setVocabulary(vocab);
-
-	of2::ChowLiuTree tree;
-
-	movie.open(VIDEO_PATH);
-
-	if(!movie.isOpened()) {
-		std::cerr << "not found. exiting" << std::endl;
-		std::cin.ignore();
-		return -1;
-	}
-
-	cv::Mat frame;
-
 	std::vector<cv::KeyPoint> kpts;
-	cv::Mat bow; cv::Mat bows;
-	while(movie.read(frame)) {
+	cv::Mat frame, bow;
+	while (movie.read(frame)) {
 
-
-		detector.detect(frame, kpts);
+		detector->detect(frame, kpts);
 		bide.compute(frame, kpts, bow);
-		bows.push_back(bow);
-		//tree.add(bow);
+		std::vector<of2::IMatch> matches;
+
+		fabmap->compare(bow, matches, true);
+
+		for (size_t i = 0; i < matches.size(); i++) {
+			std::cout << "QueryIdx " << matches[i].queryIdx <<
+					     " ImgIdx " << matches[i].imgIdx <<
+					     " Likelihood " << matches[i].likelihood <<
+					     " Match " << matches[i].match << std::endl;
+		}
+		std::cout << std::endl;
 
 		cv::imshow("frame", frame);
-		char c = cv::waitKey(1);
+		char c = cv::waitKey();
 		if(c == 27) return 0;
 
-		for(int i = 0; i < 10; i++) {
-			if(!movie.read(frame)) {
-				break;
-			}
-		}
-
 	}
-
-	movie.release();
-
-	tree.add(bows);
-	cv::Mat clTree = tree.make(0);
-
-	fs.open(TREE_PATH,
-		cv::FileStorage::WRITE);
-	fs << "Tree" << clTree;
-	fs.release();
-
-	fs.open(TRAINBOWS_PATH,
-		cv::FileStorage::WRITE);
-	fs << "Trainbows" << bows;
-	fs.release();
 
 	return 0;
 
 
-	
-
 }
+

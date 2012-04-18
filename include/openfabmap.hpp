@@ -236,6 +236,9 @@ protected:
 */
 class FabMap2: public FabMap {
 public:
+
+	//TODO: Tell Arren why there is no num_samples here.
+
 	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags);
 	virtual ~FabMap2();
 

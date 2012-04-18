@@ -200,7 +200,7 @@ void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor,
 
 	vector<IMatch> queryMatches;
 	queryMatches.push_back(IMatch(queryIndex,-1,
-			getNewPlaceLikelihood(queryImgDescriptor),0));
+		getNewPlaceLikelihood(queryImgDescriptor),0));
 	getLikelihoods(queryImgDescriptor,testImgDescriptors,queryMatches);
 	normaliseDistribution(queryMatches);
 	for (size_t j = 1; j < queryMatches.size(); j++) {
@@ -295,16 +295,23 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 							+ priorMatches[priorMatches.size()-1].match)/3);
 		}
 
+		//calculate the normalising constant
 		for (size_t i = 0; i < matches.size(); i++) {
 			logsum = logsumexp(logsum, matches[i].match);
 		}
+
+		//normalise
 		for (size_t i = 0; i < matches.size(); i++) {
 			matches[i].match = exp(matches[i].match - logsum);
 		}
+
+		//smooth final probabilities
 		for (size_t i = 0; i < matches.size(); i++) {
 			matches[i].match = sFactor*matches[i].match +
 			(1 - sFactor)/matches.size();
 		}
+
+		//update our location priors
 		priorMatches = matches;
 
 	} else {
@@ -607,6 +614,7 @@ FabMap(_clTree, _PzGe, _PzGNe, _flags) {
 FabMap2::~FabMap2() {
 }
 
+
 void FabMap2::addTraining(const vector<Mat>& queryImgDescriptors) {
 	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
 		CV_Assert(!queryImgDescriptors[i].empty());
@@ -617,6 +625,7 @@ void FabMap2::addTraining(const vector<Mat>& queryImgDescriptors) {
 		addToIndex(queryImgDescriptors[i], trainingDefaults, trainingInvertedMap);
 	}
 }
+
 
 void FabMap2::add(const vector<Mat>& queryImgDescriptors) {
 	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
@@ -631,7 +640,8 @@ void FabMap2::add(const vector<Mat>& queryImgDescriptors) {
 
 void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
-	if (testImgDescriptors[0].data == this->testImgDescriptors[0].data) {
+
+	if (&testImgDescriptors== &(this->testImgDescriptors)) {
 		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
 	} else {
 		CV_Assert(!(flags & MOTION_MODEL));
@@ -652,12 +662,13 @@ double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 	getIndexLikelihoods(queryImgDescriptor, trainingDefaults,
 			trainingInvertedMap, matches);
 
-	double averageLikelihood = 0;
+	double averageLogLikelihood = 0;
 	for (size_t i = 0; i < matches.size(); i++) {
-		averageLikelihood += matches[i].likelihood;
+		averageLogLikelihood = 
+			logsumexp(matches[i].likelihood, averageLogLikelihood);
 	}
 
-	return averageLikelihood / (double)trainingDefaults.size();
+	return averageLogLikelihood - log((double)trainingDefaults.size());
 
 }
 
@@ -668,7 +679,7 @@ void FabMap2::addToIndex(const Mat& queryImgDescriptor,
 	for (int q = 0; q < clTree.cols; q++) {
 		if (queryImgDescriptor.at<float>(0,q) > 0) {
 			defaults.back() += d1[q];
-			invertedMap[q].push_back((int)defaults.size());
+			invertedMap[q].push_back((int)defaults.size()-1);
 		}
 	}
 }
@@ -680,9 +691,7 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 
 	vector<int>::iterator LwithI, child;
 
-	for (size_t i = 0; i < defaults.size(); i++) {
-		matches.push_back(IMatch(0,i,defaults[i],0));
-	}
+	std::vector<double> likelihoods = defaults;
 
 	for (int q = 0; q < clTree.cols; q++) {
 		if (queryImgDescriptor.at<float>(0,q) > 0) {
@@ -690,9 +699,9 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 				LwithI != invertedMap[q].end(); LwithI++) {
 
 				if (queryImgDescriptor.at<float>(0,pq(q)) > 0) {
-					matches[*LwithI].likelihood += d4[q];
+					likelihoods[*LwithI] += d4[q];
 				} else {
-					matches[*LwithI].likelihood += d3[q];
+					likelihoods[*LwithI] += d3[q];
 				}
 			}
 			for (child = children[q].begin(); child != children[q].end();
@@ -702,11 +711,15 @@ void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
 					for (LwithI = invertedMap[*child].begin();
 						LwithI != invertedMap[*child].end(); LwithI++) {
 
-						matches[*LwithI].likelihood += d2[*child];
+						likelihoods[*LwithI] += d2[*child];
 					}
 				}
 			}
 		}
+	}
+
+	for (size_t i = 0; i < likelihoods.size(); i++) {
+		matches.push_back(IMatch(0,i,likelihoods[i],0));
 	}
 }
 

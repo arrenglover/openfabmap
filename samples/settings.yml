@@ -11,7 +11,7 @@
 # "TrainChowLiuTree"
 # "RunOpenFABMAP"
 
-Function: "ShowFeatures"
+Function: "RunOpenFABMAP"
 
 # Method to add new location to the FabMap location list
 # "All"
@@ -72,7 +72,7 @@ FeatureOptions:
    # "Dense"
    # "SimpleBlob"
 
-   DetectorType: "ORB"
+   DetectorType: "SURF"
 
    # Descriptor Extraction Options
    # "SIFT"
@@ -132,8 +132,9 @@ openFabMapOptions:
 
    # The option to switch on and off the addition of a simple motion model
    # which assumes links between sequential additions to the query space.
+   # 0 for False, 1 for True
 
-   SimpleMotion: No
+   SimpleMotion: 1
 
    # Which version of openFABMAP to run
    # "FabMap1"
