@@ -27,24 +27,7 @@
 ------------------------------------------------------------------------*/
 
 #include "../include/openfabmap.hpp"
-
-int training(void);
-void loading(void);
-
-/*
-#define VIDEO_PATH "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi"
-#define VOCAB_PATH "C:\\pioneer\\fabmaptest\\fm2test\\vocab.yml"
-#define TREE_PATH "C:\\pioneer\\fabmaptest\\fm2test\\tree2.yml"
-#define TRAINBOWS_PATH "C:\\pioneer\\fabmaptest\\fm2test\\trainbows2.yml"
-#define DESCRIPTOR_PATH "C:\\pioneer\\fabmaptest\\fm2test\\descriptordata.yml"
-*/
-
-#define VIDEO_PATH "/home/will/Data/StLucia/stlucia_testloop.avi"
-#define VOCAB_PATH "/home/will/Data/StLucia/vocab.yml"
-#define TREE_PATH "/home/will/Data/StLucia/tree.yml"
-#define TRAINBOWS_PATH "/home/will/Data/StLucia/trainbows.yml"
-#define DESCRIPTOR_PATH "/home/will/Data/StLucia/descriptordata.yml"
-
+#include <fstream>
 
 int help(void);
 int showFeatures(std::string trainPath, 
@@ -73,11 +56,17 @@ int openFABMAP(std::string testPath,
 			   of2::FabMap *openFABMAP,
 			   std::string vocabPath,
 			   std::string resultsPath,
+			   bool addNewOnly,
 			   cv::Ptr<cv::FeatureDetector> &detector,
 			   cv::Ptr<cv::DescriptorExtractor> &extractor);
 
+/*
+The openFabMapcli accepts a YML settings file, an example of which is provided.
+Modify options in the settings file for desired operation
+*/
 int main(int argc, char * argv[])
 {
+	//load the settings file
 	std::string settfilename;
 	if (argc == 1) {
 		//assume settings in working directory
@@ -103,12 +92,47 @@ int main(int argc, char * argv[])
 		return -1;
 	}
 
-	cv::Ptr<cv::FeatureDetector> detector = 
-		cv::FeatureDetector::create(fs["FeatureOptions"]["DetectorType"]);
+	//create common feature detector and descriptor extractor
+	std::string detectorType = fs["FeatureOptions"]["DetectorType"];
+	cv::Ptr<cv::FeatureDetector> detector;
+	if(detectorType == "STAR") {	
+		detector = new cv::StarFeatureDetector(
+			fs["FeatureOptions"]["StarDetector"]["MaxSize"],
+			fs["FeatureOptions"]["StarDetector"]["Response"],
+			fs["FeatureOptions"]["StarDetector"]["LineTreshold"],
+			fs["FeatureOptions"]["StarDetector"]["LineBinarized"],
+			fs["FeatureOptions"]["StarDetector"]["Suppression"]);
+	} else if(detectorType == "FAST") {
+		detector = new cv::FastFeatureDetector(
+			fs["FeatureOptions"]["FastDetector"]["Threshold"],
+			(int)fs["FeatureOptions"]["FastDetector"]["NonMaxSuppression"] > 0);
+	} else if(detectorType == "SURF") {
+		detector = new cv::SurfFeatureDetector(
+			fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+			(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+	} else if(detectorType == "SIFT") {
+		detector = new cv::SiftFeatureDetector(
+			fs["FeatureOptions"]["SiftDetector"]["Threshold"],
+			fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"]);
+	} else {
+		detector = new cv::MserFeatureDetector(
+			fs["FeatureOptions"]["MSERDetector"]["Delta"],
+			fs["FeatureOptions"]["MSERDetector"]["MinArea"],
+			fs["FeatureOptions"]["MSERDetector"]["MaxArea"],
+			fs["FeatureOptions"]["MSERDetector"]["MaxVariation"],
+			fs["FeatureOptions"]["MSERDetector"]["MinDiversity"],
+			fs["FeatureOptions"]["MSERDetector"]["MaxEvolution"],
+			fs["FeatureOptions"]["MSERDetector"]["AreaThreshold"],
+			fs["FeatureOptions"]["MSERDetector"]["MinMargin"],
+			fs["FeatureOptions"]["MSERDetector"]["EdgeBlurSize"]);
+	}
 
 	cv::Ptr<cv::DescriptorExtractor> extractor = 
 		cv::DescriptorExtractor::create(fs["FeatureOptions"]["ExtractorType"]);	
 
+	//run desired function
 	int result = 0;
 	std::string function = fs["Function"];
 	if (function == "ShowFeatures") {
@@ -134,11 +158,14 @@ int main(int argc, char * argv[])
 			fs["ChowLiuOptions"]["LowerInfoBound"]);
 
 	} else if (function == "RunOpenFABMAP") {
+		std::string placeAddOption = fs["FabMapPlaceAddition"];
+		bool addNewOnly = (placeAddOption == "NewMaximumOnly");
 		of2::FabMap *fabmap = generateFABMAPInstance(fs);
 		if(fabmap) {
 			result = openFABMAP(fs["FilePaths"]["TestPath"], fabmap,
 				fs["FilePaths"]["Vocabulary"],
-				fs["FilePaths"]["FabMapResults"], detector, extractor);
+				fs["FilePaths"]["FabMapResults"], addNewOnly, 
+				detector, extractor);
 		}
 			
 	} else {
@@ -155,16 +182,23 @@ int main(int argc, char * argv[])
 
 }
 
+/*
+displays the usage message
+*/
 int help(void)
 {
 	std::cout << "Usage: openFABMAPexe -s settingsfile" << std::endl;
 	return 0;
 }
 
+/*
+shows the features detected on the training video
+*/
 int showFeatures(std::string trainPath, 
 				 cv::Ptr<cv::FeatureDetector> &detector)
 {
 	
+	//open the movie
 	cv::VideoCapture movie;
 	movie.open(trainPath);
 
@@ -175,6 +209,7 @@ int showFeatures(std::string trainPath,
 
 	std::cout << "Press Esc to Exit" << std::endl;
 
+	//detect and show features
 	cv::Mat frame, kptsImg;
 	std::vector<cv::KeyPoint> kpts;
 	while (movie.read(frame)) {
@@ -190,23 +225,26 @@ int showFeatures(std::string trainPath,
 	return 0;
 }
 
+/*
+generate the data needed to train a codebook/vocabulary for bag-of-words methods
+*/
 int generateVocabTrainData(std::string trainPath,
 						   std::string vocabTrainDataPath,
 						   cv::Ptr<cv::FeatureDetector> &detector,
 						   cv::Ptr<cv::DescriptorExtractor> &extractor)
 {
 
-	cv::FileStorage fs;	
-	fs.open(vocabTrainDataPath, cv::FileStorage::READ);
-
-	cv::Mat vocabTrainData;
-	fs["VocabTrainData"] >> vocabTrainData;
-	if (!vocabTrainData.empty()) {
+	//Do not overwrite any files
+	std::ifstream checker;
+	checker.open(vocabTrainDataPath.c_str());
+	if(checker.is_open()) {	
 		std::cerr << vocabTrainDataPath << ": Training Data already present" <<
 			std::endl;
+		checker.close();
 		return -1;
 	}
 
+	//load training movie
 	cv::VideoCapture movie;
 	movie.open(trainPath);
 
@@ -215,23 +253,41 @@ int generateVocabTrainData(std::string trainPath,
 		return -1;
 	}
 
-	cv::Mat frame, descs;
-	std::vector<cv::KeyPoint> kpts;
-
+	//extract data
 	std::cout << "Extracting Descriptors" << std::endl;
+	cv::Mat vocabTrainData;
+	cv::Mat frame, descs, feats;
+	std::vector<cv::KeyPoint> kpts;
 	
 	std::cout.setf(std::ios_base::fixed); 
 	std::cout.precision(0);
 
 	while(movie.read(frame)) {
+
+		//detect & extract features
 		detector->detect(frame, kpts);
 		extractor->compute(frame, kpts, descs);
+
+		//add all descriptors to the training data 
 		vocabTrainData.push_back(descs);
+
+		//show progress
+		cv::drawKeypoints(frame, kpts, feats);
+		cv::imshow("Training Data", feats);
 		std::cout << 100 * movie.get(CV_CAP_PROP_POS_AVI_RATIO) << "%. " << 
 			vocabTrainData.rows << " descriptors         \r";
-	}
-	std::cout << "Done                                       " << std::endl;
+		if(cv::waitKey(5) == 27) {
+			cv::destroyWindow("Training Data");
+			std::cout << std::endl;
+			return -1;
+		}
 
+	}
+	cv::destroyWindow("Training Data");
+	std::cout << "Done: " << vocabTrainData.rows << " Descriptors" << std::endl;
+
+	//save the training data
+	cv::FileStorage fs;	
 	fs.open(vocabTrainDataPath, cv::FileStorage::WRITE);
 	fs << "VocabTrainData" << vocabTrainData;
 	fs.release();
@@ -239,25 +295,28 @@ int generateVocabTrainData(std::string trainPath,
 	return 0;
 }
 
+/*
+use training data to build a codebook/vocabulary
+*/
 int trainVocabulary(std::string vocabPath,
 					std::string vocabTrainDataPath,
 					double clusterRadius)
 {
-	cv::FileStorage fs;	
 
 	//ensure not overwriting a vocabulary
-	fs.open(vocabPath, cv::FileStorage::READ);
-	cv::Mat vocab;
-	fs["Vocabulary"] >> vocab;
-	if(!vocab.empty()) {
+	std::ifstream checker;
+	checker.open(vocabPath.c_str());
+	if(checker.is_open()) {	
 		std::cerr << vocabPath << ": Vocabulary already present" <<
 			std::endl;
+		checker.close();
 		return -1;
 	}
-	fs.release();
 
 	std::cout << "Loading vocabulary training data" << std::endl;
 	
+	cv::FileStorage fs;	
+
 	//load in vocab training data
 	fs.open(vocabTrainDataPath, cv::FileStorage::READ);
 	cv::Mat vocabTrainData;
@@ -271,13 +330,13 @@ int trainVocabulary(std::string vocabPath,
 
 	std::cout << "Performing clustering" << std::endl;
 
-	//perform training
+	//uses Modified Sequential Clustering to train a vocabulary
 	of2::BOWMSCTrainer trainer(clusterRadius);
 	trainer.add(vocabTrainData);
-	vocab = trainer.cluster();
+	cv::Mat vocab = trainer.cluster();
 
+	//dave the vocabulary
 	std::cout << "Saving vocabulary" << std::endl;
-
 	fs.open(vocabPath, cv::FileStorage::WRITE);
 	fs << "Vocabulary" << vocab;
 	fs.release();
@@ -285,6 +344,9 @@ int trainVocabulary(std::string vocabPath,
 	return 0;
 }
 
+/*
+generate FabMap training data : a bag-of-words image descriptor for each frame
+*/
 int generateFabMapTrainData(std::string trainPath,
 							std::string fabmapTrainDataPath,
 							std::string vocabPath,
@@ -295,16 +357,16 @@ int generateFabMapTrainData(std::string trainPath,
 	cv::FileStorage fs;	
 
 	//ensure not overwriting training data
-	fs.open(fabmapTrainDataPath, cv::FileStorage::READ);
-	cv::Mat fabmapTrainData;
-	fs["FabmapTrainData"] >> fabmapTrainData;
-	if (!fabmapTrainData.empty()) {
+	std::ifstream checker;
+	checker.open(fabmapTrainDataPath.c_str());
+	if(checker.is_open()) {	
 		std::cerr << fabmapTrainDataPath << ": FabMap Training Data "
 			"already present" << std::endl;
+		checker.close();
 		return -1;
 	}
-	fs.release();
 
+	//load vocabulary
 	std::cout << "Loading Vocabulary" << std::endl;
 	fs.open(vocabPath, cv::FileStorage::READ);
 	cv::Mat vocab;
@@ -315,12 +377,13 @@ int generateFabMapTrainData(std::string trainPath,
 	}
 	fs.release();
 
+	//use a FLANN matcher to generate bag-of-words representations
 	cv::Ptr<cv::DescriptorMatcher> matcher = 
 		cv::DescriptorMatcher::create("FlannBased");
-
 	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
 	bide.setVocabulary(vocab);
 
+	//load movie
 	cv::VideoCapture movie;
 	movie.open(trainPath);
 
@@ -329,6 +392,8 @@ int generateFabMapTrainData(std::string trainPath,
 		return -1;
 	}
 
+	//extract image descriptors
+	cv::Mat fabmapTrainData;
 	std::cout << "Extracting Bag-of-words Image Descriptors" << std::endl;
 	std::cout.setf(std::ios_base::fixed);
 	std::cout.precision(0);
@@ -345,21 +410,17 @@ int generateFabMapTrainData(std::string trainPath,
 	
 	movie.release();
 
+	//save training data
 	fs.open(fabmapTrainDataPath, cv::FileStorage::WRITE);
 	fs << "FabmapTrainData" << fabmapTrainData;
 	fs.release();
 
-	//std::cout << "Making Chow-Liu Tree" << std::endl;
-	//cv::Mat clTree = tree.make(lowerInformationBound);
-
-	//std::cout <<"Saving Chow-Liu Tree" << std::endl;
-	//fs.open(fabmapTrainDataPath, cv::FileStorage::WRITE);
-	//fs << "ChowLiuTree" << clTree;
-	//fs.release();
-
 	return 0;	
 }
 
+/*
+generate a Chow-Liu tree from FabMap Training data
+*/
 int trainChowLiuTree(std::string chowliutreePath,
 					 std::string fabmapTrainDataPath,
 					 double lowerInformationBound)
@@ -368,16 +429,16 @@ int trainChowLiuTree(std::string chowliutreePath,
 	cv::FileStorage fs;	
 
 	//ensure not overwriting training data
-	fs.open(chowliutreePath, cv::FileStorage::READ);
-	cv::Mat clTree;
-	fs["ChowLiuTree"] >> clTree;
-	if (!clTree.empty()) {
+	std::ifstream checker;
+	checker.open(chowliutreePath.c_str());
+	if(checker.is_open()) {	
 		std::cerr << chowliutreePath << ": Chow-Liu Tree already present" << 
 			std::endl;
+		checker.close();
 		return -1;
 	}
-	fs.release();
 
+	//load FabMap training data
 	std::cout << "Loading FabMap Training Data" << std::endl;
 	fs.open(fabmapTrainDataPath, cv::FileStorage::READ);
 	cv::Mat fabmapTrainData;
@@ -389,12 +450,13 @@ int trainChowLiuTree(std::string chowliutreePath,
 	}
 	fs.release();
 
+	//generate the tree from the data
+	std::cout << "Making Chow-Liu Tree" << std::endl;
 	of2::ChowLiuTree tree;
 	tree.add(fabmapTrainData);
+	cv::Mat clTree = tree.make(lowerInformationBound);
 
-	std::cout << "Making Chow-Liu Tree" << std::endl;
-	clTree = tree.make(lowerInformationBound);
-
+	//save the resulting tree
 	std::cout <<"Saving Chow-Liu Tree" << std::endl;
 	fs.open(chowliutreePath, cv::FileStorage::WRITE);
 	fs << "ChowLiuTree" << clTree;
@@ -404,10 +466,15 @@ int trainChowLiuTree(std::string chowliutreePath,
 
 }
 
+/*
+create an instance of a FabMap class with the options given in the settings file
+*/
 of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 {
 
 	cv::FileStorage fs;
+
+	//load FabMap training data
 	std::string fabmapTrainDataPath = settings["FilePaths"]["TrainImagDesc"];
 	std::string chowliutreePath = settings["FilePaths"]["ChowLiuTree"];
 
@@ -422,6 +489,7 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 	}
 	fs.release();
 
+	//load a chow-liu tree
 	std::cout << "Loading Chow-Liu Tree" << std::endl;
 	fs.open(chowliutreePath, cv::FileStorage::READ);
 	cv::Mat clTree;
@@ -433,7 +501,7 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 	}
 	fs.release();
 
-	//create options
+	//create options flags
 	std::string newPlaceMethod = 
 		settings["openFabMapOptions"]["NewPlaceMethod"];
 	std::string bayesMethod = settings["openFabMapOptions"]["BayesMethod"];
@@ -455,6 +523,7 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 
 	of2::FabMap *fabmap;
 
+	//create an instance of the desired type of FabMap
 	std::string fabMapVersion = settings["openFabMapOptions"]["FabMapVersion"];
 	if(fabMapVersion == "FABMAP1") {
 		fabmap = new of2::FabMap1(clTree, 
@@ -486,17 +555,21 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 			options);
 	}
 
+	//add the training data for use with the sampling method
 	fabmap->addTraining(fabmapTrainData);
 
 	return fabmap;
 
 }
 
-
+/*
+Run FabMap on a test dataset
+*/
 int openFABMAP(std::string testPath,
 			   of2::FabMap *fabmap,
 			   std::string vocabPath,
 			   std::string resultsPath,
+			   bool addNewOnly,
 			   cv::Ptr<cv::FeatureDetector> &detector,
 			   cv::Ptr<cv::DescriptorExtractor> &extractor)
 {
@@ -504,16 +577,15 @@ int openFABMAP(std::string testPath,
 	cv::FileStorage fs;	
 
 	//ensure not overwriting results
-	fs.open(resultsPath, cv::FileStorage::READ);
-	cv::Mat results;
-	fs["openFabMapResults"] >> results;
-	if (!results.empty()) {
-		std::cerr << resultsPath << ": Results already present" << 
-			std::endl;
+	std::ifstream checker;
+	checker.open(resultsPath.c_str());
+	if(checker.is_open()) {
+		std::cerr << resultsPath << ": Results already present" << std::endl;
+		checker.close();
 		return -1;
 	}
-	fs.release();
 
+	//load the vocabulary
 	std::cout << "Loading Vocabulary" << std::endl;
 	fs.open(vocabPath, cv::FileStorage::READ);
 	cv::Mat vocab;
@@ -524,6 +596,7 @@ int openFABMAP(std::string testPath,
 	}
 	fs.release();
 
+	//load the test movie
 	cv::VideoCapture movie;
 	movie.open(testPath);
 	if(!movie.isOpened()) {
@@ -531,38 +604,69 @@ int openFABMAP(std::string testPath,
 		return -1;
 	}
 
+	//using a FLANN matcher for Bag-of-words generation
 	cv::Ptr<cv::DescriptorMatcher> matcher = 
 		cv::DescriptorMatcher::create("FlannBased");
-
 	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
 	bide.setVocabulary(vocab);
 
+	//running openFABMAP
+	std::cout << "Running openFABMAP" << std::endl;
+	int frameCount = (int)movie.get(CV_CAP_PROP_FRAME_COUNT);
+	std::ofstream writer(resultsPath.c_str());
+
 	std::vector<cv::KeyPoint> kpts;
-	cv::Mat frame, bow;
+	cv::Mat frame, feats, bow;
 	while (movie.read(frame)) {
 
+		//extract bag-of-words
 		detector->detect(frame, kpts);
 		bide.compute(frame, kpts, bow);
 		std::vector<of2::IMatch> matches;
 
-		fabmap->compare(bow, matches, true);
+		//generate match probabilities
+		fabmap->compare(bow, matches);
 
-		for (size_t i = 0; i < matches.size(); i++) {
-			std::cout << "QueryIdx " << matches[i].queryIdx <<
-					     " ImgIdx " << matches[i].imgIdx <<
-					     " Likelihood " << matches[i].likelihood <<
-					     " Match " << matches[i].match << std::endl;
+		//save result
+		for(size_t i = 0; i < matches.size(); i++) {
+			writer << matches[i].match << " ";
 		}
-		std::cout << std::endl;
+		for(int i = matches.size(); i < frameCount; i++) {
+			writer << "0 ";
+		}
+		writer << std::endl;
 
-		cv::imshow("frame", frame);
-		char c = cv::waitKey();
-		if(c == 27) return 0;
+		//add the frame with desired method
+		if(addNewOnly) {
+			bool add = true;
+			for(size_t i = 0; i < matches.size(); i++) {
+				if(matches[i].match > matches.front().match) {
+					add = false;
+					break;
+				}
+			}
+			if(add) {
+				fabmap->add(bow);
+			}
+		} else {
+			fabmap->add(bow);
+		}
+
+		//display progress
+		std::cout << 100 * movie.get(CV_CAP_PROP_POS_AVI_RATIO) << 
+			"%          \r";
+		cv::drawKeypoints(frame, kpts, feats);
+		cv::imshow("frame", feats);
+		if(cv::waitKey(5) == 27) {
+			cv::destroyWindow("frame");
+			return 0;
+		}
 
 	}
+	cv::destroyWindow("frame");
+
+	writer.close();
 
 	return 0;
-
-
 }
 

@@ -35,12 +35,14 @@ using std::multiset;
 using std::valarray;
 using cv::Mat;
 
-double logsumexp(double a, double b) {
-	return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
-}
+
 
 namespace of2 {
 
+double of2::logsumexp(double a, double b) {
+	return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
+}
+	
 FabMap::FabMap(const Mat& _clTree, double _PzGe,
 		double _PzGNe, int _flags, int _numSamples) :
 	clTree(_clTree), PzGe(_PzGe), PzGNe(_PzGNe), flags(
@@ -262,12 +264,13 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 		vector<IMatch> matches;
 		getLikelihoods(queryImgDescriptor,sampledImgDescriptors,matches);
 
-		double averageLikelihood = 0;
+		double averageLogLikelihood = -DBL_MAX + matches.front().likelihood + 1;
 		for (int i = 0; i < numSamples; i++) {
-			averageLikelihood += matches[i].likelihood;
+			averageLogLikelihood = 
+				logsumexp(matches[i].likelihood, averageLogLikelihood);
 		}
 
-		return averageLikelihood / (double)numSamples;
+		return averageLogLikelihood - log((double)numSamples);
 	}
 	return 0;
 }
@@ -275,25 +278,40 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 	CV_Assert(!matches.empty());
 
-	double logsum = -DBL_MAX;
-
 	if (flags & MOTION_MODEL) {
 
 		matches[0].match = matches[0].likelihood + log(Pnew);
 
 		if (priorMatches.size() > 2) {
-			matches[1].match += log((priorMatches[1].match +
-							2 * mBias * priorMatches[2].match) / 3);
+			matches[1].match = matches[1].likelihood;
+			matches[1].match += log(
+				(2 * (1-mBias) * priorMatches[1].match +
+				priorMatches[1].match +
+				2 * mBias * priorMatches[2].match) / 3);
 			for (size_t i = 2; i < priorMatches.size()-1; i++) {
-				matches[i].match += log((2 * (1-mBias) *
-								priorMatches[i-1].match +
-								priorMatches[i].match +
-								2 * mBias * priorMatches[i+1].match)/3);
+				matches[i].match = matches[i].likelihood;
+				matches[i].match += log(
+					(2 * (1-mBias) * priorMatches[i-1].match +
+					priorMatches[i].match +
+					2 * mBias * priorMatches[i+1].match)/3);
 			}
-			matches[priorMatches.size()-1].match +=
-			log((2 * (1-mBias) * priorMatches[priorMatches.size()-2].match
-							+ priorMatches[priorMatches.size()-1].match)/3);
+			matches[priorMatches.size()-1].match = 
+				matches[priorMatches.size()-1].likelihood;
+			matches[priorMatches.size()-1].match += log(
+				(2 * (1-mBias) * priorMatches[priorMatches.size()-2].match +
+				priorMatches[priorMatches.size()-1].match + 
+				2 * mBias * priorMatches[priorMatches.size()-1].match)/3);
+
+			for(size_t i = priorMatches.size(); i < matches.size(); i++) {
+				matches[i].match = matches[i].likelihood;
+			}
+		} else {
+			for(size_t i = 1; i < matches.size(); i++) {
+				matches[i].match = matches[i].likelihood;
+			}
 		}
+
+		double logsum = -DBL_MAX + matches.front().match + 1;
 
 		//calculate the normalising constant
 		for (size_t i = 0; i < matches.size(); i++) {
@@ -315,6 +333,9 @@ void FabMap::normaliseDistribution(vector<IMatch>& matches) {
 		priorMatches = matches;
 
 	} else {
+
+		double logsum = -DBL_MAX + matches.front().likelihood + 1;
+
 		for (size_t i = 0; i < matches.size(); i++) {
 			logsum = logsumexp(logsum, matches[i].likelihood);
 		}
@@ -642,7 +663,8 @@ void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
 		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
 
 	if (&testImgDescriptors== &(this->testImgDescriptors)) {
-		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, matches);
+		getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap, 
+			matches);
 	} else {
 		CV_Assert(!(flags & MOTION_MODEL));
 		vector<double> defaults;
@@ -662,7 +684,7 @@ double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 	getIndexLikelihoods(queryImgDescriptor, trainingDefaults,
 			trainingInvertedMap, matches);
 
-	double averageLogLikelihood = 0;
+	double averageLogLikelihood = -DBL_MAX + matches.front().likelihood + 1;
 	for (size_t i = 0; i < matches.size(); i++) {
 		averageLogLikelihood = 
 			logsumexp(matches[i].likelihood, averageLogLikelihood);

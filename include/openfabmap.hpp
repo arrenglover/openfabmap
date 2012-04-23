@@ -40,6 +40,11 @@
 namespace of2 {
 
 /*
+	Calculate the sum of two log likelihoods
+*/
+double logsumexp(double a, double b);
+
+/*
 	Return data format of a FABMAP compare call
 */
 struct IMatch {
@@ -52,11 +57,11 @@ struct IMatch {
 				_match) {
 	}
 
-	int queryIdx;
-	int imgIdx;
+	int queryIdx;	//query index
+	int imgIdx;		//test index 
 
-	double likelihood;
-	double match;
+	double likelihood;	//raw loglikelihood
+	double match;		//normalised probability
 
 	bool operator<(const IMatch& m) const {
 		return match < m.match;
@@ -70,6 +75,7 @@ struct IMatch {
 class FabMap {
 public:
 
+	//FabMap options
 	enum {
 		MEAN_FIELD = 1,
 		SAMPLED = 2,
@@ -82,15 +88,19 @@ public:
 			int numSamples = 0);
 	virtual ~FabMap();
 
+	//methods to add training data for sampling method
 	virtual void addTraining(const cv::Mat& queryImgDescriptor);
 	virtual void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
 
+	//methods to add to the test data
 	virtual void add(const cv::Mat& queryImgDescriptor);
 	virtual void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
+	//accessors
 	const std::vector<cv::Mat>& getTrainingImgDescriptors() const;
 	const std::vector<cv::Mat>& getTestImgDescriptors() const;
 
+	//Main FabMap image comparison
 	void compare(const cv::Mat& queryImgDescriptor,
 			std::vector<IMatch>& matches, bool addQuery = false,
 			const cv::Mat& mask = cv::Mat());
@@ -115,10 +125,14 @@ protected:
 
 	void addImgDescriptor(const cv::Mat& queryImgDescriptor);
 
+	//the getLikelihoods method is overwritten for each different FabMap
+	//method.
 	virtual void getLikelihoods(const cv::Mat& queryImgDescriptor,
 			const std::vector<cv::Mat>& testImgDescriptors,
 			std::vector<IMatch>& matches);
 	virtual double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
+	
+	//turn likelihoods into probabilities (also add in motion model if used)
 	void normaliseDistribution(std::vector<IMatch>& matches);
 
 	//Chow-Liu Tree
@@ -133,12 +147,13 @@ protected:
 	double PzqGzpqL(int q, bool zq, bool zpq, bool Lzq);
 	double (FabMap::*PzGL)(int q, bool zq, bool zpq, bool Lzq);
 
+	//data
 	cv::Mat clTree;
-
 	std::vector<cv::Mat> trainingImgDescriptors;
 	std::vector<cv::Mat> testImgDescriptors;
 	std::vector<IMatch> priorMatches;
 
+	//parameters
 	double PzGe;
 	double PzGNe;
 	double Pnew;
@@ -161,6 +176,8 @@ public:
 			int numSamples = 0);
 	virtual ~FabMap1();
 protected:
+
+	//FabMap1 implementation of likelihood comparison
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
 			cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 };
@@ -175,11 +192,15 @@ public:
 			int flags, int numSamples = 0, int precision = 6);
 	virtual ~FabMapLUT();
 protected:
+
+	//FabMap look-up-table implementation of the likelihood comparison
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
 			cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
+	//procomputed data
 	int (*table)[8];
 
+	//data precision
 	int precision;
 };
 
@@ -195,9 +216,12 @@ public:
 	virtual ~FabMapFBO();
 
 protected:
+
+	//FabMap Fast Bail-out implementation of the likelihood comparison
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
 			cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
+	//stucture used to determine word comparison order
 	struct WordStats {
 		WordStats() :
 			q(0), info(0), V(0), M(0) {
@@ -218,12 +242,14 @@ protected:
 
 	};
 
+	//private fast bail-out necessary functions
 	void setWordStatistics(const cv::Mat& queryImgDescriptor, std::multiset<
 			WordStats>& wordData);
 	double limitbisection(double v, double m);
 	double bennettInequality(double v, double m, double delta);
 	static bool compInfo(const WordStats& first, const WordStats& second);
 
+	//parameters
 	double PsGd;
 	double rejectionThreshold;
 	int bisectionStart;
@@ -237,11 +263,11 @@ protected:
 class FabMap2: public FabMap {
 public:
 
-	//TODO: Tell Arren why there is no num_samples here.
-
 	FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags);
 	virtual ~FabMap2();
 
+	//FabMap2 builds the inverted index and requires an additional training/test
+	//add function
 	void addTraining(const cv::Mat& queryImgDescriptors) {
 		FabMap::addTraining(queryImgDescriptors);
 	}
@@ -253,9 +279,13 @@ public:
 	void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
 protected:
+
+	//FabMap2 implementation of the likelihood comparison
 	void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
 			cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 	double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
+	
+	//the likelihood function using the inverted index
 	void getIndexLikelihoods(const cv::Mat& queryImgDescriptor, std::vector<
 			double>& defaults, std::map<int, std::vector<int> >& invertedMap,
 			std::vector<IMatch>& matches);
@@ -263,6 +293,7 @@ protected:
 			std::vector<double>& defaults,
 			std::map<int, std::vector<int> >& invertedMap);
 
+	//data
 	std::vector<double> d1, d2, d3, d4;
 	std::vector<std::vector<int> > children;
 
@@ -285,6 +316,7 @@ public:
 	ChowLiuTree();
 	virtual ~ChowLiuTree();
 
+	//add data to the chow-liu tree before calling make
 	void add(const cv::Mat& imgDescriptor);
 	void add(const std::vector<cv::Mat>& imgDescriptors);
 
