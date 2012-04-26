@@ -47,6 +47,7 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 		double _PzGNe, int _flags, int _numSamples) :
 	clTree(_clTree), PzGe(_PzGe), PzGNe(_PzGNe), flags(
 			_flags), numSamples(_numSamples) {
+	
 	CV_Assert(flags & MEAN_FIELD || flags & SAMPLED);
 	CV_Assert(flags & NAIVE_BAYES || flags & CHOW_LIU);
 	if (flags & NAIVE_BAYES) {
@@ -54,6 +55,12 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 	} else {
 		PzGL = &FabMap::PzqGzpqL;
 	}
+
+	//check for a valid Chow-Liu tree
+	cv::checkRange(clTree.row(0), false, NULL, 0, clTree.cols - 1);
+	cv::checkRange(clTree.row(1), false, NULL, DBL_MIN, 1);
+	cv::checkRange(clTree.row(2), false, NULL, DBL_MIN, 1);
+	cv::checkRange(clTree.row(3), false, NULL, DBL_MIN, 1);
 
 	// TODO: Add default values for member variables
 	Pnew = 0.9;
