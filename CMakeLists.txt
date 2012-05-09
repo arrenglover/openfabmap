@@ -34,33 +34,14 @@ AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src OPENFABMAP_FILES)
 file(GLOB OPENFABMAP_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 
 # tell cmake about the library
-ADD_LIBRARY(openFABMAP SHARED ${OPENFABMAP_FILES} ${OPENFABMAP_INCS})
+ADD_LIBRARY(openFABMAP ${OPENFABMAP_FILES} ${OPENFABMAP_INCS})
 ############ end openFABMAP library ##################
-
 
 # Tell CMake where the headers are
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-
-IF(OPENCV_FOUND AND USE_OPENCV_1)
-    SET( OPENCV_INSTALLED 1)
-    message( STATUS "Using OpenCV <= 2.1" )
-	IF(WIN32)
-		FOREACH (LIB ${OPENCV_DEBUG_LIBS})
-			TARGET_LINK_LIBRARIES(openFABMAP
-			debug ${LIB})
-		ENDFOREACH(LIB)
-		FOREACH (LIB ${OPENCV_RELEASE_LIBS})
-			TARGET_LINK_LIBRARIES(openFABMAP
-			optimized ${LIB})
-		ENDFOREACH(LIB)
-	ELSE(WIN32)
-		TARGET_LINK_LIBRARIES(openFABMAP highgui cxcore)
-	ENDIF(WIN32)
-ENDIF(OPENCV_FOUND AND USE_OPENCV_1)
-
 # Link against the required libraries in OpenCV >=2.2
-IF(OPENCV2_FOUND AND NOT USE_OPENCV_1)
+IF(OPENCV2_FOUND)
     SET( OPENCV2_INSTALLED 1)
     message( STATUS "Using OpenCV >= 2.2" )
 	IF(WIN32)
@@ -75,15 +56,14 @@ IF(OPENCV2_FOUND AND NOT USE_OPENCV_1)
 	ELSE(WIN32)
 		TARGET_LINK_LIBRARIES(openFABMAP opencv_highgui opencv_core opencv_features2d)
 	ENDIF(WIN32)
-ENDIF(OPENCV2_FOUND AND NOT USE_OPENCV_1)
+ENDIF(OPENCV2_FOUND)
 
 
 ############ openFABMAPcli executable ##################
-if(OPENCV_FOUND OR OPENCV2_FOUND)
+if(OPENCV2_FOUND)
 
 	# tell the project where the settings file is
 	file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
-	
 	FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 
     # tell cmake about the binary
@@ -92,7 +72,7 @@ if(OPENCV_FOUND OR OPENCV2_FOUND)
 	# Tell openFABMAPcli to link against its required libs
     TARGET_LINK_LIBRARIES(openFABMAPcli openFABMAP)
 	
-endif(OPENCV_FOUND OR OPENCV2_FOUND)
+endif(OPENCV2_FOUND)
 
 ############ end openFABMAP executable ##################
 
