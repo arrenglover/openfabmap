@@ -35,14 +35,15 @@ using std::multiset;
 using std::valarray;
 using cv::Mat;
 
-
+/*
+	Calculate the sum of two log likelihoods
+*/
+double logsumexp(double a, double b) {
+	return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
+}
 
 namespace of2 {
 
-double of2::logsumexp(double a, double b) {
-	return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
-}
-	
 FabMap::FabMap(const Mat& _clTree, double _PzGe,
 		double _PzGNe, int _flags, int _numSamples) :
 	clTree(_clTree), PzGe(_PzGe), PzGNe(_PzGNe), flags(
@@ -57,7 +58,7 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 	}
 
 	//check for a valid Chow-Liu tree
-	cv::checkRange(clTree.row(0), false, NULL, 0, clTree.cols - 1);
+	cv::checkRange(clTree.row(0), false, NULL, 0, clTree.cols);
 	cv::checkRange(clTree.row(1), false, NULL, DBL_MIN, 1);
 	cv::checkRange(clTree.row(2), false, NULL, DBL_MIN, 1);
 	cv::checkRange(clTree.row(3), false, NULL, DBL_MIN, 1);
@@ -160,7 +161,7 @@ void FabMap::compare(const Mat& queryImgDescriptor,
 void FabMap::compare(const vector<Mat>& queryImgDescriptors, vector<
 		IMatch>& matches, bool addQuery, const Mat& mask) {
 
-	// TODO: add first query if empty
+	// TODO: add first query if empty (is this necessary)
 
 	for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
 		CV_Assert(!queryImgDescriptors[i].empty());

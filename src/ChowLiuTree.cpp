@@ -174,8 +174,7 @@ void ChowLiuTree::recAddToTree(cv::Mat &cltree, int q, int pq,
 	}
 }
 
-vector<int> ChowLiuTree::extractChildren(list<info> &remaining_edges, 
-											  int q) {
+vector<int> ChowLiuTree::extractChildren(list<info> &remaining_edges, int q) {
 
 	vector<int> children;
 	list<info>::iterator edge = remaining_edges.begin();

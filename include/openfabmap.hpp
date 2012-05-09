@@ -39,10 +39,6 @@
 
 namespace of2 {
 
-/*
-	Calculate the sum of two log likelihoods
-*/
-double logsumexp(double a, double b);
 
 /*
 	Return data format of a FABMAP compare call

@@ -40,7 +40,7 @@ int trainVocabulary(std::string vocabPath,
 					std::string vocabTrainDataPath,
 					double clusterRadius);
 
-int generateFabMapTrainData(std::string trainPath,
+int generateBOWImageDescs(std::string trainPath,
 							std::string fabmapTrainDataPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
@@ -56,9 +56,7 @@ int openFABMAP(std::string testPath,
 			   of2::FabMap *openFABMAP,
 			   std::string vocabPath,
 			   std::string resultsPath,
-			   bool addNewOnly,
-			   cv::Ptr<cv::FeatureDetector> &detector,
-			   cv::Ptr<cv::DescriptorExtractor> &extractor);
+			   bool addNewOnly);
 
 /*
 The openFabMapcli accepts a YML settings file, an example of which is provided.
@@ -129,8 +127,17 @@ int main(int argc, char * argv[])
 			fs["FeatureOptions"]["MSERDetector"]["EdgeBlurSize"]);
 	}
 
-	cv::Ptr<cv::DescriptorExtractor> extractor = 
-		cv::DescriptorExtractor::create(fs["FeatureOptions"]["ExtractorType"]);	
+	std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
+	cv::Ptr<cv::DescriptorExtractor> extractor;
+	if(detectorType == "SIFT") {
+		extractor = new cv::SiftDescriptorExtractor();
+	} else {
+		extractor = new cv::SurfDescriptorExtractor(
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+			(int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
+			(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+	}
 
 	//run desired function
 	int result = 0;
@@ -148,7 +155,7 @@ int main(int argc, char * argv[])
 			fs["VocabTrainOptions"]["ClusterSize"]);
 
 	} else if (function == "GenerateFABMAPTrainData") {
-		result = generateFabMapTrainData(fs["FilePaths"]["TrainPath"],
+		result = generateBOWImageDescs(fs["FilePaths"]["TrainPath"],
 			fs["FilePaths"]["TrainImagDesc"], 
 			fs["FilePaths"]["Vocabulary"], detector, extractor);
 
@@ -157,15 +164,19 @@ int main(int argc, char * argv[])
 			fs["FilePaths"]["TrainImagDesc"],
 			fs["ChowLiuOptions"]["LowerInfoBound"]);
 
+	} else if (function == "GenerateFABMAPTestData") {
+		result = generateBOWImageDescs(fs["FilePaths"]["TestPath"],
+			fs["FilePaths"]["TestImageDesc"],
+			fs["FilePaths"]["Vocabulary"], detector, extractor);
+
 	} else if (function == "RunOpenFABMAP") {
 		std::string placeAddOption = fs["FabMapPlaceAddition"];
 		bool addNewOnly = (placeAddOption == "NewMaximumOnly");
 		of2::FabMap *fabmap = generateFABMAPInstance(fs);
 		if(fabmap) {
-			result = openFABMAP(fs["FilePaths"]["TestPath"], fabmap,
+			result = openFABMAP(fs["FilePaths"]["TestImageDesc"], fabmap,
 				fs["FilePaths"]["Vocabulary"],
-				fs["FilePaths"]["FabMapResults"], addNewOnly, 
-				detector, extractor);
+				fs["FilePaths"]["FabMapResults"], addNewOnly);
 		}
 			
 	} else {
@@ -335,7 +346,7 @@ int trainVocabulary(std::string vocabPath,
 	trainer.add(vocabTrainData);
 	cv::Mat vocab = trainer.cluster();
 
-	//dave the vocabulary
+	//save the vocabulary
 	std::cout << "Saving vocabulary" << std::endl;
 	fs.open(vocabPath, cv::FileStorage::WRITE);
 	fs << "Vocabulary" << vocab;
@@ -347,7 +358,7 @@ int trainVocabulary(std::string vocabPath,
 /*
 generate FabMap training data : a bag-of-words image descriptor for each frame
 */
-int generateFabMapTrainData(std::string trainPath,
+int generateBOWImageDescs(std::string trainPath,
 							std::string fabmapTrainDataPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
@@ -412,7 +423,7 @@ int generateFabMapTrainData(std::string trainPath,
 
 	//save training data
 	fs.open(fabmapTrainDataPath, cv::FileStorage::WRITE);
-	fs << "FabmapTrainData" << fabmapTrainData;
+	fs << "BOWImageDescs" << fabmapTrainData;
 	fs.release();
 
 	return 0;	
@@ -548,11 +559,15 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 			settings["openFabMapOptions"]["FabMapFBO"]["PsGd"],
 			settings["openFabMapOptions"]["FabMapFBO"]["BisectionStart"],
 			settings["openFabMapOptions"]["FabMapFBO"]["BisectionIts"]);
-	} else {
+	} else if(fabMapVersion == "FABMAP2") {
 		fabmap = new of2::FabMap2(clTree, 
 			settings["openFabMapOptions"]["PzGe"],
 			settings["openFabMapOptions"]["PzGne"],
 			options);
+	} else {
+		std::cerr << "Could not identify openFABMAPVersion from settings"
+			" file" << std::endl;
+		return NULL;
 	}
 
 	//add the training data for use with the sampling method
@@ -569,9 +584,7 @@ int openFABMAP(std::string testPath,
 			   of2::FabMap *fabmap,
 			   std::string vocabPath,
 			   std::string resultsPath,
-			   bool addNewOnly,
-			   cv::Ptr<cv::FeatureDetector> &detector,
-			   cv::Ptr<cv::DescriptorExtractor> &extractor)
+			   bool addNewOnly)
 {
 
 	cv::FileStorage fs;	
@@ -596,74 +609,93 @@ int openFABMAP(std::string testPath,
 	}
 	fs.release();
 
-	//load the test movie
-	cv::VideoCapture movie;
-	movie.open(testPath);
-	if(!movie.isOpened()) {
-		std::cerr << testPath << ": test movie not found" << std::endl;
+	//load the test data
+	fs.open(testPath, cv::FileStorage::READ);
+	cv::Mat testImageDescs;
+	fs["BOWImageDescs"] >> testImageDescs;
+	if(testImageDescs.empty()) {
+		std::cerr << testPath << ": Test data not found" << std::endl;
 		return -1;
 	}
-
-	//using a FLANN matcher for Bag-of-words generation
-	cv::Ptr<cv::DescriptorMatcher> matcher = 
-		cv::DescriptorMatcher::create("FlannBased");
-	cv::BOWImgDescriptorExtractor bide(extractor, matcher);
-	bide.setVocabulary(vocab);
+	fs.release();
 
 	//running openFABMAP
 	std::cout << "Running openFABMAP" << std::endl;
-	int frameCount = (int)movie.get(CV_CAP_PROP_FRAME_COUNT);
+	std::vector<of2::IMatch> matches;
+
 	std::ofstream writer(resultsPath.c_str());
 
-	std::vector<cv::KeyPoint> kpts;
-	cv::Mat frame, feats, bow;
-	while (movie.read(frame)) {
+	if (!addNewOnly) {
 
-		//extract bag-of-words
-		detector->detect(frame, kpts);
-		bide.compute(frame, kpts, bow);
-		std::vector<of2::IMatch> matches;
+		////simple batch comparison, adding frames as they are compared
+		//fabmap->compare(testImageDescs, matches, true);
 
-		//generate match probabilities
-		fabmap->compare(bow, matches);
+		////save result
+		//int start = 0;
+		//for(int i = 0; i < testImageDescs.rows; i++) {
+		//	start += i;
+		//	for(int j = 0; j < i; j++) {
+		//		writer << matches[start + j].match << " ";
+		//	}
+		//	writer << matches[start].match << " ";
+		//	for(int j = i + 1; j < testImageDescs.rows; j++) {
+		//		writer << "0 ";
+		//	}	
+		//}
 
-		//save result
-		for(size_t i = 0; i < matches.size(); i++) {
-			writer << matches[i].match << " ";
+		for(int i = 0; i < testImageDescs.rows; i++) {
+			matches.clear();
+			//compare images individually
+			fabmap->compare(testImageDescs.row(i), matches);
+			fabmap->add(testImageDescs.row(i));
+
+
+			//save result
+			for(size_t j = 1; j < matches.size(); j++) {
+				writer << matches[j].match << " ";
+			}
+			writer << matches[0].match << " ";
+			for(int j = matches.size(); j < testImageDescs.rows; j++) {
+				writer << "0 ";
+			}
+			writer << std::endl;
 		}
-		for(int i = matches.size(); i < frameCount; i++) {
-			writer << "0 ";
-		}
-		writer << std::endl;
 
-		//add the frame with desired method
-		if(addNewOnly) {
+
+
+
+	} else {
+
+		//criteria for adding locations used
+		for(int i = 0; i < testImageDescs.rows; i++) {
+			matches.clear();
+			//compare images individually
+			fabmap->compare(testImageDescs.row(i), matches);
+			
+			//add if 'new place' most probable
 			bool add = true;
-			for(size_t i = 0; i < matches.size(); i++) {
-				if(matches[i].match > matches.front().match) {
+			for(size_t j = 0; j < matches.size(); j++) {
+				if(matches[j].match > matches.front().match) {
 					add = false;
 					break;
 				}
 			}
 			if(add) {
-				fabmap->add(bow);
+				fabmap->add(testImageDescs.row(i));
 			}
-		} else {
-			fabmap->add(bow);
-		}
 
-		//display progress
-		std::cout << 100 * movie.get(CV_CAP_PROP_POS_AVI_RATIO) << 
-			"%          \r";
-		cv::drawKeypoints(frame, kpts, feats);
-		cv::imshow("frame", feats);
-		if(cv::waitKey(5) == 27) {
-			cv::destroyWindow("frame");
-			return 0;
+			//save result
+			for(size_t j = 1; j < matches.size(); j++) {
+				writer << matches[j].match << " ";
+			}
+			writer << matches[0].match << " ";
+			for(int j = matches.size(); j < testImageDescs.rows; j++) {
+				writer << "0 ";
+			}
+			writer << std::endl;
 		}
-
 	}
-	cv::destroyWindow("frame");
+
 
 	writer.close();
 

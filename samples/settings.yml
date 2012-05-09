@@ -8,35 +8,39 @@ FilePaths:
    #The training data video should be of disjoint, non-overlapping scenes
    #and should not visit the same location more than once
 
-   TrainPath: "C:\\pioneer\\fabmaptest\\MTODtrain.avi"
+   TrainPath: "C:\\pioneer\\fabmaptest\\vsmark\\MTODtrain.avi"
 
    #The test video should not overlap with the training video but should
    #have similar environment types.
 
-   TestPath: "C:\\pioneer\\fabmaptest\\MTOD_1x5.avi"
+   TestPath: "C:\\pioneer\\fabmaptest\\vsmark\\MTOD_testdata\\MTOD_test.avi"
 
    #All feature descriptors extracted from the training data. Used to
    #create the vocabulary/codebook
 
-   TrainFeatDesc: "C:\\pioneer\\fabmaptest\\fm2test\\MTOD_train_book.yml"
+   TrainFeatDesc: "C:\\pioneer\\fabmaptest\\validation\\codebooktrain.save.yml"
 
    #All bag-of-words type whole image descriptors extracted from the 
    #training data. Used to create the chow-liu tree and used in the
    #FabMap 'new place' likelihood calculation
 
-   TrainImagDesc: "C:\\pioneer\\fabmaptest\\fm2test\\MTOD_train_fabmap.yml"
+   TrainImagDesc: "C:\\pioneer\\fabmaptest\\validation\\tree.savetrain.yml"
    
-   #The vocabulary/codebook data
+   #The vocabulary/codebook itself
 
-   Vocabulary: "C:\\pioneer\\fabmaptest\\fm2test\\MTOD_vocab.yml"
+   Vocabulary: "C:\\pioneer\\fabmaptest\\validation\\codebook.of2.yml"
    
-   #The Chow-Liu Tree data
+   #The Chow-Liu Tree itself
 
-   ChowLiuTree: "C:\\pioneer\\fabmaptest\\fm2test\\MTOD_tree.yml"
+   ChowLiuTree: "C:\\pioneer\\fabmaptest\\validation\\tree.of2.yml"
+
+   #The FabMap Test
+
+   TestImageDesc: "C:\\pioneer\\fabmaptest\\validation\\testdata.yml"
 
    #The FabMap results
 
-   FabMapResults: "C:\\pioneer\\fabmaptest\\fm2test\\MTOD_results_NewMaxOnly.txt"
+   FabMapResults: "C:\\pioneer\\fabmaptest\\validation\\openFABMAP_MTOD.txt"
 
 #---------------------------------------------------------------------------
 
@@ -47,6 +51,7 @@ FilePaths:
 # "TrainVocabulary"
 # "GenerateFABMAPTrainData"
 # "TrainChowLiuTree"
+# "GenerateFABMAPTestData"
 # "RunOpenFABMAP"
 
 Function: "RunOpenFABMAP"
@@ -80,10 +85,11 @@ FeatureOptions:
       EdgeThreshold: 10
 
    SurfDetector:
-      HessianThreshold: 3000 #400
+      HessianThreshold: 1000 #400
       NumOctaves: 4
       NumOctaveLayers: 2 
       Upright: 1
+      Extended: 0
 
    MSERDetector:
       Delta: 5
@@ -109,7 +115,7 @@ VocabTrainOptions:
    # a smaller clustersize increases the specificity of each codeword
    # and will increase the number of words in the vocabulary
 
-   ClusterSize: 0.4
+   ClusterSize: 0.8
 
 #---------------------------------------------------------------------------
 
@@ -122,7 +128,7 @@ ChowLiuOptions:
    # in necessary information being discarded and the tree not being created.
    #A threshold of 0 takes longer and may fail due to memory requirements
 
-   LowerInfoBound: 0.0005
+   LowerInfoBound: 0 #0.0005
 
 #---------------------------------------------------------------------------
 
@@ -140,14 +146,15 @@ openFabMapOptions:
    PzGne: 0
 
    #The method to calculate the likelihood of a 'new location'
+   #Note, FAB-MAP2.0 cannot use mean-field
    # "Sampled"
    # "Meanfield"
 
-   NewPlaceMethod: "Sampled"
+   NewPlaceMethod: "Meanfield"
 
    #if using "sampled" method how many samples from training data to use
 
-   NumSamples: 1000
+   NumSamples: 3000
 
    # The option to switch off FabMap's feature dependency model (Chow-Liu tree)
    # in the likelihood calculations
@@ -163,12 +170,12 @@ openFabMapOptions:
    SimpleMotion: 0
 
    # Which version of openFABMAP to run
-   # "FabMap1"
-   # "FabMapLUT"
-   # "FabMapFBO"
-   # "FabMap2"
+   # "FABMAP1"
+   # "FABMAPLUT"
+   # "FABMAPFBO"
+   # "FABMAP2"
 
-   FabMapVersion: "FabMap2"
+   FabMapVersion: "FABMAPFBO"
       
    #FabMap1:
 
