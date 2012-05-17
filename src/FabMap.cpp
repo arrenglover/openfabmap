@@ -389,7 +389,7 @@ double FabMap::PeqGL(int q, bool Lzq, bool eq) {
 	if (eq) {
 		return alpha / (alpha + beta);
 	} else {
-		return 1 - alpha / (alpha + beta);
+		return 1 - (alpha / (alpha + beta));
 	}
 }
 
@@ -513,8 +513,8 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 	double currBest;
 	double bailedOut = DBL_MAX;
 
-	for (multiset<WordStats>::reverse_iterator wordIter = wordData.rbegin();
-			wordIter != wordData.rend(); wordIter++) {
+	for (multiset<WordStats>::iterator wordIter = wordData.begin();
+			wordIter != wordData.end(); wordIter++) {
 		bool zq = queryImgDescriptor.at<float>(0,wordIter->q) > 0;
 		bool zpq = queryImgDescriptor.at<float>(0,pq(wordIter->q)) > 0;
 
@@ -525,7 +525,8 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 				testImgDescriptors[matchIndices[i]].at<float>(0,wordIter->q) > 0;
 			queryMatches[matchIndices[i]].likelihood +=
 				log((this->*PzGL)(wordIter->q,zq,zpq,Lzq));
-			currBest = std::max(queryMatches[matchIndices[i]].likelihood,currBest);
+			currBest = 
+				std::max(queryMatches[matchIndices[i]].likelihood, currBest);
 		}
 
 		if (matchIndices.size() == 1)
@@ -534,13 +535,11 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 		double delta = std::max(limitbisection(wordIter->V, wordIter->M), 
 			-log(rejectionThreshold));
 
-		vector<int>::iterator matchIter = matchIndices.begin(), removeIter;
+		vector<int>::iterator matchIter = matchIndices.begin();
 		while (matchIter != matchIndices.end()) {
 			if (currBest - queryMatches[*matchIter].likelihood > delta) {
 				queryMatches[*matchIter].likelihood = bailedOut;
-				removeIter = matchIter;
-				matchIter++;
-				matchIndices.erase(removeIter);
+				matchIter = matchIndices.erase(matchIter);
 			} else {
 				matchIter++;
 			}
@@ -558,6 +557,8 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 
 void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
 	multiset<WordStats>& wordData) {
+	//words are sorted according to information = -ln(P(zq|zpq))
+	//in non-log format this is lowest probability first
 	for (int q = 0; q < clTree.cols; q++) {
 		wordData.insert(WordStats(q,PzqGzpq(q,
 				queryImgDescriptor.at<float>(0,q) > 0,
@@ -567,17 +568,17 @@ void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
 	double d = 0, V = 0, M = 0;
 	bool zq, zpq;
 
-	for (multiset<WordStats>::iterator wordIter = wordData.begin();
-			wordIter != wordData.end(); wordIter++) {
+	for (multiset<WordStats>::reverse_iterator wordIter = wordData.rbegin();
+			wordIter != wordData.rend(); wordIter++) {
 
 		zq = queryImgDescriptor.at<float>(0,wordIter->q) > 0;
 		zpq = queryImgDescriptor.at<float>(0,pq(wordIter->q)) > 0;
 
-		d = (this->*PzGL)(wordIter->q, zq, zpq, true) - 
-			(this->*PzGL)(wordIter->q, zq, zpq, false);
+		d = log((this->*PzGL)(wordIter->q, zq, zpq, true)) - 
+			log((this->*PzGL)(wordIter->q, zq, zpq, false));
 
-		V += pow(d, 2.0) * 2 * (Pzq(wordIter->q, true) - 
-			pow(Pzq(wordIter->q, true), 2.0));
+		V += pow(d, 2.0) * 2 * 
+			(Pzq(wordIter->q, true) - pow(Pzq(wordIter->q, true), 2.0));
 		M = std::max(M, fabs(d));
 
 		wordIter->V = V;
@@ -603,8 +604,6 @@ double FabMapFBO::limitbisection(double v, double m) {
 			right = midpoint;
 		}
 	}
-
-	// TODO: check I don't need to add PsGd to the result
 
 	return (right + left) * 0.5;
 }

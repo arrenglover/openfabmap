@@ -93,11 +93,11 @@ int main(int argc, char * argv[])
 	//create common feature detector and descriptor extractor
 	std::string detectorType = fs["FeatureOptions"]["DetectorType"];
 	cv::Ptr<cv::FeatureDetector> detector;
-	if(detectorType == "STAR") {	
+	if(detectorType == "STAR") {
 		detector = new cv::StarFeatureDetector(
 			fs["FeatureOptions"]["StarDetector"]["MaxSize"],
 			fs["FeatureOptions"]["StarDetector"]["Response"],
-			fs["FeatureOptions"]["StarDetector"]["LineTreshold"],
+			fs["FeatureOptions"]["StarDetector"]["LineThreshold"],
 			fs["FeatureOptions"]["StarDetector"]["LineBinarized"],
 			fs["FeatureOptions"]["StarDetector"]["Suppression"]);
 	} else if(detectorType == "FAST") {
@@ -114,7 +114,7 @@ int main(int argc, char * argv[])
 		detector = new cv::SiftFeatureDetector(
 			fs["FeatureOptions"]["SiftDetector"]["Threshold"],
 			fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"]);
-	} else {
+	} else if(detectorType == "MSER") {
 		detector = new cv::MserFeatureDetector(
 			fs["FeatureOptions"]["MSERDetector"]["Delta"],
 			fs["FeatureOptions"]["MSERDetector"]["MinArea"],
@@ -125,6 +125,9 @@ int main(int argc, char * argv[])
 			fs["FeatureOptions"]["MSERDetector"]["AreaThreshold"],
 			fs["FeatureOptions"]["MSERDetector"]["MinMargin"],
 			fs["FeatureOptions"]["MSERDetector"]["EdgeBlurSize"]);
+	} else {
+		std::cerr << "Could not create detector class. Specify detector "
+			"options in the settings file" << std::endl;
 	}
 
 	std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
@@ -181,6 +184,7 @@ int main(int argc, char * argv[])
 			
 	} else {
 		std::cerr << "Incorrect Function Type" << std::endl;
+		result = -1;
 	}
 	
 
@@ -409,11 +413,19 @@ int generateBOWImageDescs(std::string trainPath,
 	std::cout.setf(std::ios_base::fixed);
 	std::cout.precision(0);
 
+	std::ofstream maskw(std::string(fabmapTrainDataPath + "mask.txt").c_str());
+
 	cv::Mat frame, bow;
 	std::vector<cv::KeyPoint> kpts;
 	while(movie.read(frame)) {
 		detector->detect(frame, kpts);
 		bide.compute(frame, kpts, bow);
+		if(cv::countNonZero(bow) < 40) {
+			maskw << "0" << std::endl;
+			continue;
+		} else {
+			maskw << "1" << std::endl;
+		}
 		fabmapTrainData.push_back(bow);
 		std::cout << 100 * movie.get(CV_CAP_PROP_POS_AVI_RATIO) << "%    \r";
 	}
@@ -453,7 +465,7 @@ int trainChowLiuTree(std::string chowliutreePath,
 	std::cout << "Loading FabMap Training Data" << std::endl;
 	fs.open(fabmapTrainDataPath, cv::FileStorage::READ);
 	cv::Mat fabmapTrainData;
-	fs["FabmapTrainData"] >> fabmapTrainData;
+	fs["BOWImageDescs"] >> fabmapTrainData;
 	if (fabmapTrainData.empty()) {
 		std::cerr << fabmapTrainDataPath << ": FabMap Training Data not found" 
 			<< std::endl;
@@ -492,7 +504,7 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 	std::cout << "Loading FabMap Training Data" << std::endl;
 	fs.open(fabmapTrainDataPath, cv::FileStorage::READ);
 	cv::Mat fabmapTrainData;
-	fs["FabmapTrainData"] >> fabmapTrainData;
+	fs["BOWImageDescs"] >> fabmapTrainData;
 	if (fabmapTrainData.empty()) {
 		std::cerr << fabmapTrainDataPath << ": FabMap Training Data not found" 
 			<< std::endl;
@@ -543,7 +555,7 @@ of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings)
 			options,
 			settings["openFabMapOptions"]["NumSamples"]);
 	} else if(fabMapVersion == "FABMAPLUT") {
-		fabmap = new of2::FabMapLUT(clTree, 
+		fabmap = new of2::FabMapLUT(clTree,
 			settings["openFabMapOptions"]["PzGe"],
 			settings["openFabMapOptions"]["PzGne"],
 			options,
@@ -624,6 +636,10 @@ int openFABMAP(std::string testPath,
 	std::vector<of2::IMatch> matches;
 
 	std::ofstream writer(resultsPath.c_str());
+	std::ofstream lwriter(std::string(resultsPath + "like.txt").c_str());
+	double timer;
+	double frequency = cv::getTickFrequency() / 1000; //for millisecs
+	std::ofstream twriter(std::string(resultsPath + "time.txt").c_str());
 
 	if (!addNewOnly) {
 
@@ -642,27 +658,33 @@ int openFABMAP(std::string testPath,
 		//		writer << "0 ";
 		//	}	
 		//}
+		
+		
 
 		for(int i = 0; i < testImageDescs.rows; i++) {
 			matches.clear();
 			//compare images individually
+			timer = (double)cv::getTickCount();
 			fabmap->compare(testImageDescs.row(i), matches);
+			timer = (double)cv::getTickCount() - timer;
+			twriter << timer / frequency << " ";
 			fabmap->add(testImageDescs.row(i));
 
 
 			//save result
 			for(size_t j = 1; j < matches.size(); j++) {
 				writer << matches[j].match << " ";
+				lwriter << matches[j].likelihood << " ";
 			}
 			writer << matches[0].match << " ";
+			lwriter << matches[0].likelihood << " ";
 			for(int j = matches.size(); j < testImageDescs.rows; j++) {
 				writer << "0 ";
+				lwriter << "0 ";
 			}
 			writer << std::endl;
+			lwriter << std::endl;
 		}
-
-
-
 
 	} else {
 
@@ -698,6 +720,8 @@ int openFABMAP(std::string testPath,
 
 
 	writer.close();
+	twriter.close();
+	lwriter.close();
 
 	return 0;
 }
