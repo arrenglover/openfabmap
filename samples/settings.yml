@@ -8,39 +8,39 @@ FilePaths:
    #The training data video should be of disjoint, non-overlapping scenes
    #and should not visit the same location more than once
 
-   TrainPath: "C:\\pioneer\\fabmaptest\\MTODtrain.avi"
+   TrainPath: "C:\\openFABMAP\\trainvideo.avi"
 
    #The test video should not overlap with the training video but should
    #have similar environment types.
 
-   TestPath: "C:\\pioneer\\fabmaptest\\stlucia_testloop.avi"
+   TestPath: "C:\\openFABMAP\\testvideo.avi"
 
    #All feature descriptors extracted from the training data. Used to
    #create the vocabulary/codebook
 
-   TrainFeatDesc: "C:\\pioneer\\fabmaptest\\worktest\\bookdata.yml"
+   TrainFeatDesc: "C:\\openFABMAP\\vocabularytraindata.yml"
 
    #All bag-of-words type whole image descriptors extracted from the 
    #training data. Used to create the chow-liu tree and used in the
    #FabMap 'new place' likelihood calculation
 
-   TrainImagDesc: "C:\\pioneer\\fabmaptest\\validation\\trainBOWs.yml"
+   TrainImagDesc: "C:\\openFABMAP\\BOWtraindata.yml"
    
    #The vocabulary/codebook itself
 
-   Vocabulary: "C:\\pioneer\\fabmaptest\\validation\\book.yml"
+   Vocabulary: "C:\\openFABMAP\\vocabulary.yml"
    
    #The Chow-Liu Tree itself
 
-   ChowLiuTree: "C:\\pioneer\\fabmaptest\\validation\\tree.yml"
+   ChowLiuTree: "C:\\openFABMAP\\tree.yml"
 
    #The FabMap Test
 
-   TestImageDesc: "C:\\pioneer\\fabmaptest\\validation\\shorttestBOWs.yml"
+   TestImageDesc: "C:\\openFABMAP\\BOWtestdata.yml"
 
    #The FabMap results
 
-   FabMapResults: "C:\\pioneer\\fabmaptest\\validation\\time\\2.txt"
+   FabMapResults: "C:\\openFABMAP\\results.yml"
 
 #---------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ FilePaths:
 # "GenerateFABMAPTestData"
 # "RunOpenFABMAP"
 
-Function: "RunOpenFABMAP"
+Function: "ShowFeatures"
 
 #---------------------------------------------------------------------------
 
@@ -128,7 +128,7 @@ ChowLiuOptions:
    # in necessary information being discarded and the tree not being created.
    #A threshold of 0 takes longer and may fail due to memory requirements
 
-   LowerInfoBound: 0 #0.0005
+   LowerInfoBound: 0.0005
 
 #---------------------------------------------------------------------------
 

@@ -636,55 +636,44 @@ int openFABMAP(std::string testPath,
 	std::vector<of2::IMatch> matches;
 
 	std::ofstream writer(resultsPath.c_str());
-	std::ofstream lwriter(std::string(resultsPath + "like.txt").c_str());
-	double timer;
-	double frequency = cv::getTickFrequency() / 1000; //for millisecs
-	std::ofstream twriter(std::string(resultsPath + "time.txt").c_str());
 
 	if (!addNewOnly) {
 
-		////simple batch comparison, adding frames as they are compared
-		//fabmap->compare(testImageDescs, matches, true);
+		//automatically comparing a whole dataset
+		fabmap->compare(testImageDescs, matches, true);
 
-		////save result
-		//int start = 0;
-		//for(int i = 0; i < testImageDescs.rows; i++) {
-		//	start += i;
-		//	for(int j = 0; j < i; j++) {
-		//		writer << matches[start + j].match << " ";
-		//	}
-		//	writer << matches[start].match << " ";
-		//	for(int j = i + 1; j < testImageDescs.rows; j++) {
-		//		writer << "0 ";
-		//	}	
-		//}
-		
-		
-
+		//save result
+		int start = 0;
 		for(int i = 0; i < testImageDescs.rows; i++) {
-			matches.clear();
-			//compare images individually
-			timer = (double)cv::getTickCount();
-			fabmap->compare(testImageDescs.row(i), matches);
-			timer = (double)cv::getTickCount() - timer;
-			twriter << timer / frequency << " ";
-			fabmap->add(testImageDescs.row(i));
-
-
-			//save result
-			for(size_t j = 1; j < matches.size(); j++) {
-				writer << matches[j].match << " ";
-				lwriter << matches[j].likelihood << " ";
+			start += i;
+			for(int j = 0; j < i; j++) {
+				writer << matches[start + j].match << " ";
 			}
-			writer << matches[0].match << " ";
-			lwriter << matches[0].likelihood << " ";
-			for(int j = matches.size(); j < testImageDescs.rows; j++) {
+			writer << matches[start].match << " ";
+			for(int j = i + 1; j < testImageDescs.rows; j++) {
 				writer << "0 ";
-				lwriter << "0 ";
-			}
-			writer << std::endl;
-			lwriter << std::endl;
+			}	
 		}
+		
+		//manually comparing frames individually
+		
+		//for(int i = 0; i < testImageDescs.rows; i++) {
+		//	matches.clear();
+		//	//compare images individually
+		//	fabmap->compare(testImageDescs.row(i), matches);
+		//	fabmap->add(testImageDescs.row(i));
+
+
+		//	//save result
+		//	for(size_t j = 1; j < matches.size(); j++) {
+		//		writer << matches[j].match << " ";
+		//	}
+		//	writer << matches[0].match << " ";
+		//	for(int j = matches.size(); j < testImageDescs.rows; j++) {
+		//		writer << "0 ";
+		//	}
+		//	writer << std::endl;
+		//}
 
 	} else {
 
@@ -720,8 +709,6 @@ int openFABMAP(std::string testPath,
 
 
 	writer.close();
-	twriter.close();
-	lwriter.close();
 
 	return 0;
 }
