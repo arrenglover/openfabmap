@@ -1,24 +1,25 @@
-# Locate OpenCV >=2.2 install directory
-# Written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# This Cmake file written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# https://wiki.qut.edu.au/display/cyphy/Michael+Warren
 # Last updated 17/05/12
+
+# FindOpenCV.cmake: Locate OpenCV >=2.2 headers and libs (for Windows and Linux)
+
 # This module defines
 # OPENCV2_FOUND whether the OpenCV 2.2 was found
-
 # OPENCV2_PATH where the OpenCV 2.2 or greater files are (WIN32 only)
-
 # OPENCV2_INCLUDE_PATH where the OpenCV 2.2 or greater header files are
-
 # OPENCV2_LIB_PATH where the OpenCV 2.2 or greater library files are
-
-# OPENCV2_RELEASE_LIBS the list of OpenCV 2.2 or greater release version libs (WIN32 only)
-# OPENCV2_DEBUG_LIBS the list of OpenCV 2.2 or greater debug version libs (WIN32 only)
+# OPENCV2_RELEASE_LIBS the list of OpenCV 2.2 or greater release version libs (WIN32 MSVC compiler only)
+# OPENCV2_DEBUG_LIBS the list of OpenCV 2.2 or greater debug version libs (WIN32 MSVC compiler only)
+# OPENCV2_LIBS the list of OpenCV 2.2 or greater libs (WIN32 MINGW compiler only)
 
 IF(WIN32)
 
-	FIND_PATH( OPENCV2_PATH include/opencv.hpp
-	$ENV{OPENCV_HOME}
-	C:/OpenCV2.2/
-	C:/OpenCV2.3/
+	FIND_PATH( OPENCV2_PATH include/opencv2/opencv.hpp
+		$ENV{OPENCV_HOME}
+		C:/OpenCV2.2/
+		C:/OpenCV2.3/
+		C:/OpenCV2.4/
 	)
 	
 	if( OPENCV2_PATH )
