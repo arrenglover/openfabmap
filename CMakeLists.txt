@@ -1,7 +1,10 @@
+# This Cmake file written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# https://wiki.qut.edu.au/display/cyphy/Michael+Warren
+# Last updated 17/05/12
+
 PROJECT(openFABMAP)
 
 cmake_minimum_required(VERSION 2.6)
-
 
 ############ Cmake setup ##################
 
@@ -45,14 +48,18 @@ IF(OPENCV2_FOUND)
     SET( OPENCV2_INSTALLED 1)
     message( STATUS "Using OpenCV >= 2.2" )
 	IF(WIN32)
-		FOREACH (LIB ${OPENCV2_DEBUG_LIBS})
-			TARGET_LINK_LIBRARIES(openFABMAP
-			debug ${LIB})
-		ENDFOREACH(LIB)
-		FOREACH (LIB ${OPENCV2_RELEASE_LIBS})
-			TARGET_LINK_LIBRARIES(openFABMAP
-			optimized ${LIB})
-		ENDFOREACH(LIB)
+		IF(MINGW)
+			TARGET_LINK_LIBRARIES(openFABMAP ${OPENCV2_LIBS})
+		ELSE(MINGW)
+			FOREACH (LIB ${OPENCV2_DEBUG_LIBS})
+				TARGET_LINK_LIBRARIES(openFABMAP
+				debug ${LIB})
+			ENDFOREACH(LIB)
+			FOREACH (LIB ${OPENCV2_RELEASE_LIBS})
+				TARGET_LINK_LIBRARIES(openFABMAP
+				optimized ${LIB})
+			ENDFOREACH(LIB)
+		ENDIF(MINGW)
 	ELSE(WIN32)
 		TARGET_LINK_LIBRARIES(openFABMAP opencv_highgui opencv_core opencv_features2d)
 	ENDIF(WIN32)
@@ -62,9 +69,9 @@ ENDIF(OPENCV2_FOUND)
 ############ openFABMAPcli executable ##################
 if(OPENCV2_FOUND)
 
-	# tell the project where the settings file is
-	file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
-	FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+	# tell the project where the settings file is  and copy it across when building (not used for now)
+	#file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
+	#FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 
     # tell cmake about the binary
     ADD_EXECUTABLE(openFABMAPcli ${CMAKE_SOURCE_DIR}/samples/openFABMAPcli.cpp ${SETTINGS_FILE})
