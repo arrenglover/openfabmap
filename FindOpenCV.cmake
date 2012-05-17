@@ -1,5 +1,6 @@
 # Locate OpenCV >=2.2 install directory
-
+# Written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# Last updated 17/05/12
 # This module defines
 # OPENCV2_FOUND whether the OpenCV 2.2 was found
 
@@ -24,16 +25,44 @@ IF(WIN32)
 		MESSAGE( STATUS "Looking for OpenCV2.2 or greater - found")
 		MESSAGE( STATUS "OpenCV2.2 path: "${OPENCV2_PATH} )
 		SET ( OPENCV2_FOUND 1 )
-		SET(OPENCV2_INCLUDE_PATH ${OPENCV2_PATH}/include/opencv2 ${OPENCV2_PATH}/include)
-		SET(OPENCV2_LIB_PATH ${OPENCV2_PATH}/lib/)
-		file(GLOB OPENCV2_RELEASE_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9].lib")
-		file(GLOB OPENCV2_DEBUG_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9]d.lib")
+		
+		# test for 64 or 32 bit
+		if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+			SET( BUILD_DIR ${OPENCV2_PATH}/build/x64 )
+		else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+			SET( BUILD_DIR ${OPENCV2_PATH}/build/x86 )
+		endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+		
+		# MINGW
+		if(MINGW)
+			SET(OPENCV2_LIB_PATH ${BUILD_DIR}/mingw/lib/)
+			file(GLOB OPENCV2_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9].dll.a")
+		endif(MINGW)
+		
+		# Visual Studio 9
+		if(MSVC90)
+			SET(OPENCV2_LIB_PATH ${BUILD_DIR}/vc9/lib/)
+			file(GLOB OPENCV2_RELEASE_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9].lib")
+			file(GLOB OPENCV2_DEBUG_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9]d.lib")
+		endif(MSVC90)
+		
+		# Visual Studio 10
+		if(MSVC10)
+			SET(OPENCV2_LIB_PATH ${BUILD_DIR}/vc10/lib/)
+			file(GLOB OPENCV2_RELEASE_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9].lib")
+			file(GLOB OPENCV2_DEBUG_LIBS "${OPENCV2_LIB_PATH}*[0-9][0-9][0-9]d.lib")
+		endif(MSVC10)
+
+		# Set the includes
+		SET(OPENCV2_INCLUDE_PATH ${OPENCV2_PATH}/build/include/opencv2 ${OPENCV2_PATH}/build/include)
+		
+
 	else( OPENCV2_PATH )
 		message( STATUS "Looking for OpenCV2.2 or greater  - not found" )
 		SET ( OPENCV2_FOUND 0 )
 	endif( OPENCV2_PATH )
 
-ELSE(WIN32)
+ELSE(WIN32) # Linux
 	FIND_PATH( OPENCV2_INCLUDE_PATH opencv.hpp
 	# installation selected by user
 	$ENV{OPENCV_HOME}/include
