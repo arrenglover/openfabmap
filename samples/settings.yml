@@ -68,7 +68,10 @@ FeatureOptions:
    # "MSER"
 
    DetectorType: "STAR"
-
+   MaxSize: 0 #50
+   MinFeatures: 0
+   MaxFeatures: 0 #500
+   
    FastDetector:
       Threshold: 50
       NonMaxSuppression: 1

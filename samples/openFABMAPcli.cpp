@@ -31,10 +31,12 @@
 
 int help(void);
 int showFeatures(std::string trainPath, 
-				 cv::Ptr<cv::FeatureDetector> &detector);
+				 cv::Ptr<cv::FeatureDetector> &detector,
+				 int maxSize, int maxFeatures);
 int generateVocabTrainData(std::string trainPath,
 						   std::string vocabTrainDataPath,
 						   cv::Ptr<cv::FeatureDetector> &detector,
+						   int maxSize, int maxFeatures,
 						   cv::Ptr<cv::DescriptorExtractor> &extractor);
 int trainVocabulary(std::string vocabPath,
 					std::string vocabTrainDataPath,
@@ -44,6 +46,7 @@ int generateBOWImageDescs(std::string trainPath,
 							std::string fabmapTrainDataPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
+							int maxSize, int maxFeatures,
 							cv::Ptr<cv::DescriptorExtractor> &extractor);
 
 int trainChowLiuTree(std::string chowliutreePath,
@@ -57,6 +60,13 @@ int openFABMAP(std::string testPath,
 			   std::string vocabPath,
 			   std::string resultsPath,
 			   bool addNewOnly);
+			   
+/*
+Tools for keypoint detection and visualization
+*/
+void drawRichKeypoints(const cv::Mat& src, std::vector<cv::KeyPoint>& kpts, cv::Mat& dst);
+void filterKeypoints(std::vector<cv::KeyPoint>& kpts, int maxSize = 0, int maxFeatures = 0);
+void sortKeypoints(std::vector<cv::KeyPoint>& keypoints);
 
 /*
 The openFabMapcli accepts a YML settings file, an example of which is provided.
@@ -94,22 +104,37 @@ int main(int argc, char * argv[])
 	std::string detectorType = fs["FeatureOptions"]["DetectorType"];
 	cv::Ptr<cv::FeatureDetector> detector;
 	if(detectorType == "STAR") {
-		detector = new cv::StarFeatureDetector(
+		if ((int)fs["FeatureOptions"]["MaxFeatures"] > 0) {
+			detector = new cv::DynamicAdaptedFeatureDetector(cv::AdjusterAdapter::create("STAR"), (int)fs["FeatureOptions"]["MinFeatures"], (int)fs["FeatureOptions"]["MaxFeatures"], 10);
+		} else {
+			detector = new cv::StarFeatureDetector(
 			fs["FeatureOptions"]["StarDetector"]["MaxSize"],
 			fs["FeatureOptions"]["StarDetector"]["Response"],
 			fs["FeatureOptions"]["StarDetector"]["LineThreshold"],
 			fs["FeatureOptions"]["StarDetector"]["LineBinarized"],
 			fs["FeatureOptions"]["StarDetector"]["Suppression"]);
+		}
+		
 	} else if(detectorType == "FAST") {
-		detector = new cv::FastFeatureDetector(
-			fs["FeatureOptions"]["FastDetector"]["Threshold"],
-			(int)fs["FeatureOptions"]["FastDetector"]["NonMaxSuppression"] > 0);
+		if ((int)fs["FeatureOptions"]["MaxFeatures"] > 0) {
+			detector = new cv::DynamicAdaptedFeatureDetector(cv::AdjusterAdapter::create("FAST"), (int)fs["FeatureOptions"]["MinFeatures"], (int)fs["FeatureOptions"]["MaxFeatures"], 50);
+		} else {
+			detector = new cv::FastFeatureDetector(
+				fs["FeatureOptions"]["FastDetector"]["Threshold"],
+				(int)fs["FeatureOptions"]["FastDetector"]["NonMaxSuppression"] > 0);
+		}
+		
 	} else if(detectorType == "SURF") {
-		detector = new cv::SurfFeatureDetector(
-			fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
-			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
-			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
-			(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+		if ((int)fs["FeatureOptions"]["MaxFeatures"] > 0) {
+			detector = new cv::DynamicAdaptedFeatureDetector(cv::AdjusterAdapter::create("SURF"), (int)fs["FeatureOptions"]["MinFeatures"], (int)fs["FeatureOptions"]["MaxFeatures"], 20);
+		} else {
+			detector = new cv::SurfFeatureDetector(
+				fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
+				fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+				fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+				(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+		}
+		
 	} else if(detectorType == "SIFT") {
 		detector = new cv::SiftFeatureDetector(
 			fs["FeatureOptions"]["SiftDetector"]["Threshold"],
@@ -146,11 +171,11 @@ int main(int argc, char * argv[])
 	int result = 0;
 	std::string function = fs["Function"];
 	if (function == "ShowFeatures") {
-		result = showFeatures(fs["FilePaths"]["TrainPath"], detector);
+		result = showFeatures(fs["FilePaths"]["TrainPath"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"]);
 
 	} else if (function == "GenerateVocabTrainData") {
 		result = generateVocabTrainData(fs["FilePaths"]["TrainPath"],
-			fs["FilePaths"]["TrainFeatDesc"], detector, extractor);
+			fs["FilePaths"]["TrainFeatDesc"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor);
 
 	} else if (function == "TrainVocabulary") {
 		result = trainVocabulary(fs["FilePaths"]["Vocabulary"],
@@ -160,7 +185,7 @@ int main(int argc, char * argv[])
 	} else if (function == "GenerateFABMAPTrainData") {
 		result = generateBOWImageDescs(fs["FilePaths"]["TrainPath"],
 			fs["FilePaths"]["TrainImagDesc"], 
-			fs["FilePaths"]["Vocabulary"], detector, extractor);
+			fs["FilePaths"]["Vocabulary"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor);
 
 	} else if (function == "TrainChowLiuTree") {
 		result = trainChowLiuTree(fs["FilePaths"]["ChowLiuTree"],
@@ -170,7 +195,7 @@ int main(int argc, char * argv[])
 	} else if (function == "GenerateFABMAPTestData") {
 		result = generateBOWImageDescs(fs["FilePaths"]["TestPath"],
 			fs["FilePaths"]["TestImageDesc"],
-			fs["FilePaths"]["Vocabulary"], detector, extractor);
+			fs["FilePaths"]["Vocabulary"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor);
 
 	} else if (function == "RunOpenFABMAP") {
 		std::string placeAddOption = fs["FabMapPlaceAddition"];
@@ -207,10 +232,156 @@ int help(void)
 }
 
 /*
+draws keypoints to scale with coloring proportional to feature strength
+*/
+void drawRichKeypoints(const cv::Mat& src, std::vector<cv::KeyPoint>& kpts, cv::Mat& dst) {
+	
+	cv::Mat grayFrame;
+	cvtColor(src, grayFrame, CV_RGB2GRAY);
+	cvtColor(grayFrame, dst, CV_GRAY2RGB);
+	
+	if (kpts.size() == 0) {
+		return;
+	}
+	
+	std::vector<cv::KeyPoint> kpts_cpy, kpts_sorted;
+	
+	kpts_cpy.insert(kpts_cpy.end(), kpts.begin(), kpts.end());
+	
+	double maxResponse = kpts_cpy.at(0).response;
+	double minResponse = kpts_cpy.at(0).response;
+	
+	while (kpts_cpy.size() > 0) {
+		
+		double maxR = 0.0;
+		unsigned int idx = 0;
+		
+		for (unsigned int iii = 0; iii < kpts_cpy.size(); iii++) {
+			
+			if (kpts_cpy.at(iii).response > maxR) {
+				maxR = kpts_cpy.at(iii).response;
+				idx = iii;
+			}
+			
+			if (kpts_cpy.at(iii).response > maxResponse) {
+				maxResponse = kpts_cpy.at(iii).response;
+			}
+			
+			if (kpts_cpy.at(iii).response < minResponse) {
+				minResponse = kpts_cpy.at(iii).response;
+			}
+		}
+		
+		kpts_sorted.push_back(kpts_cpy.at(idx));
+		kpts_cpy.erase(kpts_cpy.begin() + idx);
+		
+	}
+	
+	int thickness = 1;
+	cv::Point center;
+	cv::Scalar colour;
+	int red = 0, blue = 0, green = 0;
+	int radius;
+	double normalizedScore;
+	
+	if (minResponse == maxResponse) {
+		colour = CV_RGB(255, 0, 0);
+	}
+	
+	for (int iii = kpts_sorted.size()-1; iii >= 0; iii--) {
+
+		if (minResponse != maxResponse) {
+			normalizedScore = pow((kpts_sorted.at(iii).response - minResponse) / (maxResponse - minResponse), 0.25);
+			red = int(255.0 * normalizedScore);
+			green = int(255.0 - 255.0 * normalizedScore);
+			colour = CV_RGB(red, green, blue);
+		}
+		
+		center = kpts_sorted.at(iii).pt;
+        center.x *= 16.0;
+        center.y *= 16.0;
+        
+        radius = 16.0 * (double(kpts_sorted.at(iii).size)/2.0);
+        
+        if (radius > 0) {
+            circle(dst, center, radius, colour, thickness, CV_AA, 4);
+        }
+		
+	}
+	
+}
+
+/*
+Removes surplus features and those with invalid size
+*/
+void filterKeypoints(std::vector<cv::KeyPoint>& kpts, int maxSize, int maxFeatures) {
+	
+	if (maxSize == 0) {
+		return;
+	}
+	
+	sortKeypoints(kpts);
+	
+	for (unsigned int iii = 0; iii < kpts.size(); iii++) {
+		
+		if (kpts.at(iii).size > float(maxSize)) { 
+			kpts.erase(kpts.begin() + iii);
+			iii--;
+		}
+	}
+	
+	if ((maxFeatures != 0) && (kpts.size() > maxFeatures)) {
+        kpts.erase(kpts.begin()+maxFeatures, kpts.end());
+    }
+	
+}
+
+/*
+Sorts keypoints in descending order of response (strength)
+*/
+void sortKeypoints(std::vector<cv::KeyPoint>& keypoints) {
+	
+	if (keypoints.size() <= 1) {
+        return;
+    }
+	
+	std::vector<cv::KeyPoint> sortedKeypoints;
+
+    // Add the first one
+    sortedKeypoints.push_back(keypoints.at(0));
+
+    for (unsigned int i = 1; i < keypoints.size(); i++) {
+
+        unsigned int j = 0;
+        bool hasBeenAdded = false;
+
+        while ((j < sortedKeypoints.size()) && (!hasBeenAdded)) {
+
+            if (abs(keypoints.at(i).response) > abs(sortedKeypoints.at(j).response)) {
+                sortedKeypoints.insert(sortedKeypoints.begin() + j, keypoints.at(i));
+
+                hasBeenAdded = true;
+            }
+
+            j++;
+        }
+
+        if (!hasBeenAdded) {
+            sortedKeypoints.push_back(keypoints.at(i));
+        }
+
+    }
+
+    keypoints.swap(sortedKeypoints);
+	
+}
+
+/*
 shows the features detected on the training video
 */
 int showFeatures(std::string trainPath, 
-				 cv::Ptr<cv::FeatureDetector> &detector)
+				 cv::Ptr<cv::FeatureDetector> &detector,
+				 int maxSize, int maxFeatures)
 {
 	
 	//open the movie
@@ -228,8 +399,16 @@ int showFeatures(std::string trainPath,
 	cv::Mat frame, kptsImg;
 	std::vector<cv::KeyPoint> kpts;
 	while (movie.read(frame)) {
+		
 		detector->detect(frame, kpts);
-		cv::drawKeypoints(frame, kpts, kptsImg);
+		filterKeypoints(kpts, maxSize, maxFeatures);
+		
+		std::cout << kpts.size() << " keypoints detected...         \r";
+		fflush(stdout);
+		
+		drawRichKeypoints(frame, kpts, kptsImg);
+		// cv::drawKeypoints(colFrame, kpts, kptsImg);
+		
 		cv::imshow("Features", kptsImg);
 		if(cv::waitKey(5) == 27) {
 			break;
@@ -246,6 +425,7 @@ generate the data needed to train a codebook/vocabulary for bag-of-words methods
 int generateVocabTrainData(std::string trainPath,
 						   std::string vocabTrainDataPath,
 						   cv::Ptr<cv::FeatureDetector> &detector,
+						   int maxSize, int maxFeatures,
 						   cv::Ptr<cv::DescriptorExtractor> &extractor)
 {
 
@@ -262,6 +442,9 @@ int generateVocabTrainData(std::string trainPath,
 	//load training movie
 	cv::VideoCapture movie;
 	movie.open(trainPath);
+	
+	// std::cout << "Video framerate: " << movie.get(CV_CAP_PROP_FPS) << std::endl;
+	// movie.set(CV_CAP_PROP_FPS, 25.0);
 
 	if (!movie.isOpened()) {
 		std::cerr << trainPath << ": training movie not found" << std::endl;
@@ -276,21 +459,33 @@ int generateVocabTrainData(std::string trainPath,
 	
 	std::cout.setf(std::ios_base::fixed); 
 	std::cout.precision(0);
-
+	
+	double progress;
+	unsigned int frameCount = 0;
 	while(movie.read(frame)) {
+		
+		frameCount++;
 
 		//detect & extract features
 		detector->detect(frame, kpts);
+		filterKeypoints(kpts, maxSize, maxFeatures);
 		extractor->compute(frame, kpts, descs);
 
 		//add all descriptors to the training data 
 		vocabTrainData.push_back(descs);
 
 		//show progress
-		cv::drawKeypoints(frame, kpts, feats);
+		drawRichKeypoints(frame, kpts, feats);
+		//cv::drawKeypoints(frame, kpts, feats);
 		cv::imshow("Training Data", feats);
-		std::cout << 100 * movie.get(CV_CAP_PROP_POS_AVI_RATIO) << "%. " << 
-			vocabTrainData.rows << " descriptors         \r";
+		
+		// Hacked to deal with OpenCV bug:
+		//progress = movie.get(CV_CAP_PROP_POS_FRAMES) / (1000000000.0*movie.get(CV_CAP_PROP_FRAME_COUNT));
+		progress = (double)frameCount / movie.get(CV_CAP_PROP_FRAME_COUNT);
+		
+		std::cout << 100.0*progress << "%. " << vocabTrainData.rows << " descriptors         \r";
+		fflush(stdout); 
+		
 		if(cv::waitKey(5) == 27) {
 			cv::destroyWindow("Training Data");
 			std::cout << std::endl;
@@ -360,12 +555,13 @@ int trainVocabulary(std::string vocabPath,
 }
 
 /*
-generate FabMap training data : a bag-of-words image descriptor for each frame
+generate FabMap training/testing data : a bag-of-words image descriptor for each frame
 */
 int generateBOWImageDescs(std::string trainPath,
 							std::string fabmapTrainDataPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
+							int maxSize, int maxFeatures,
 							cv::Ptr<cv::DescriptorExtractor> &extractor)
 {
 	
@@ -375,7 +571,7 @@ int generateBOWImageDescs(std::string trainPath,
 	std::ifstream checker;
 	checker.open(fabmapTrainDataPath.c_str());
 	if(checker.is_open()) {	
-		std::cerr << fabmapTrainDataPath << ": FabMap Training Data "
+		std::cerr << fabmapTrainDataPath << ": FabMap Training/Testing Data "
 			"already present" << std::endl;
 		checker.close();
 		return -1;
@@ -403,7 +599,7 @@ int generateBOWImageDescs(std::string trainPath,
 	movie.open(trainPath);
 
 	if(!movie.isOpened()) {
-		std::cerr << trainPath << ": training movie not found" << std::endl;
+		std::cerr << trainPath << ": training/testing movie not found" << std::endl;
 		return -1;
 	}
 
@@ -417,8 +613,14 @@ int generateBOWImageDescs(std::string trainPath,
 
 	cv::Mat frame, bow;
 	std::vector<cv::KeyPoint> kpts;
+	double progress;
+	unsigned int frameCount = 0;
+	
 	while(movie.read(frame)) {
+		frameCount++;
+		
 		detector->detect(frame, kpts);
+		filterKeypoints(kpts, maxSize, maxFeatures);
 		bide.compute(frame, kpts, bow);
 		if(cv::countNonZero(bow) < 40) {
 			maskw << "0" << std::endl;
@@ -427,7 +629,13 @@ int generateBOWImageDescs(std::string trainPath,
 			maskw << "1" << std::endl;
 		}
 		fabmapTrainData.push_back(bow);
-		std::cout << 100 * movie.get(CV_CAP_PROP_POS_AVI_RATIO) << "%    \r";
+		
+		// Hacked to deal with OpenCV bug:
+		//progress = movie.get(CV_CAP_PROP_POS_FRAMES) / (1000000000.0*movie.get(CV_CAP_PROP_FRAME_COUNT));
+		progress = (double)frameCount / movie.get(CV_CAP_PROP_FRAME_COUNT);
+		
+		std::cout << 100*progress << "%    \r";
+		fflush(stdout); 
 	}
 	std::cout << "Done                                       " << std::endl;
 	
@@ -712,4 +920,3 @@ int openFABMAP(std::string testPath,
 
 	return 0;
 }
-
