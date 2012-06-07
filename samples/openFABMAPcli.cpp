@@ -28,6 +28,10 @@
 
 #include "../include/openfabmap.hpp"
 #include <fstream>
+//#include <opencv2/nonfree/nonfree.hpp>
+
+#define TRAINING_MODE 	0
+#define TESTING_MODE  	1
 
 int help(void);
 int showFeatures(std::string trainPath, 
@@ -47,7 +51,8 @@ int generateBOWImageDescs(std::string trainPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
 							int maxSize, int maxFeatures,
-							cv::Ptr<cv::DescriptorExtractor> &extractor);
+							cv::Ptr<cv::DescriptorExtractor> &extractor,
+							int mode = TRAINING_MODE);
 
 int trainChowLiuTree(std::string chowliutreePath,
 					 std::string fabmapTrainDataPath,
@@ -126,7 +131,7 @@ int main(int argc, char * argv[])
 		
 	} else if(detectorType == "SURF") {
 		if ((int)fs["FeatureOptions"]["MaxFeatures"] > 0) {
-			detector = new cv::DynamicAdaptedFeatureDetector(cv::AdjusterAdapter::create("SURF"), (int)fs["FeatureOptions"]["MinFeatures"], (int)fs["FeatureOptions"]["MaxFeatures"], 20);
+			detector = new cv::DynamicAdaptedFeatureDetector(cv::AdjusterAdapter::create("SURF"), (int)fs["FeatureOptions"]["MinFeatures"], (int)fs["FeatureOptions"]["MaxFeatures"], 5);
 		} else {
 			detector = new cv::SurfFeatureDetector(
 				fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
@@ -134,7 +139,6 @@ int main(int argc, char * argv[])
 				fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
 				(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 		}
-		
 	} else if(detectorType == "SIFT") {
 		detector = new cv::SiftFeatureDetector(
 			fs["FeatureOptions"]["SiftDetector"]["Threshold"],
@@ -185,7 +189,8 @@ int main(int argc, char * argv[])
 	} else if (function == "GenerateFABMAPTrainData") {
 		result = generateBOWImageDescs(fs["FilePaths"]["TrainPath"],
 			fs["FilePaths"]["TrainImagDesc"], 
-			fs["FilePaths"]["Vocabulary"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor);
+			fs["FilePaths"]["Vocabulary"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor,
+			TRAINING_MODE);
 
 	} else if (function == "TrainChowLiuTree") {
 		result = trainChowLiuTree(fs["FilePaths"]["ChowLiuTree"],
@@ -195,7 +200,8 @@ int main(int argc, char * argv[])
 	} else if (function == "GenerateFABMAPTestData") {
 		result = generateBOWImageDescs(fs["FilePaths"]["TestPath"],
 			fs["FilePaths"]["TestImageDesc"],
-			fs["FilePaths"]["Vocabulary"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor);
+			fs["FilePaths"]["Vocabulary"], detector, fs["FeatureOptions"]["MaxSize"], fs["FeatureOptions"]["MaxFeatures"], extractor,
+			TESTING_MODE);
 
 	} else if (function == "RunOpenFABMAP") {
 		std::string placeAddOption = fs["FabMapPlaceAddition"];
@@ -394,12 +400,11 @@ int showFeatures(std::string trainPath,
 	}
 
 	std::cout << "Press Esc to Exit" << std::endl;
-
-	//detect and show features
 	cv::Mat frame, kptsImg;
+	
+	movie.read(frame);
 	std::vector<cv::KeyPoint> kpts;
 	while (movie.read(frame)) {
-		
 		detector->detect(frame, kpts);
 		filterKeypoints(kpts, maxSize, maxFeatures);
 		
@@ -460,11 +465,7 @@ int generateVocabTrainData(std::string trainPath,
 	std::cout.setf(std::ios_base::fixed); 
 	std::cout.precision(0);
 	
-	double progress;
-	unsigned int frameCount = 0;
 	while(movie.read(frame)) {
-		
-		frameCount++;
 
 		//detect & extract features
 		detector->detect(frame, kpts);
@@ -479,11 +480,7 @@ int generateVocabTrainData(std::string trainPath,
 		//cv::drawKeypoints(frame, kpts, feats);
 		cv::imshow("Training Data", feats);
 		
-		// Hacked to deal with OpenCV bug:
-		//progress = movie.get(CV_CAP_PROP_POS_FRAMES) / (1000000000.0*movie.get(CV_CAP_PROP_FRAME_COUNT));
-		progress = (double)frameCount / movie.get(CV_CAP_PROP_FRAME_COUNT);
-		
-		std::cout << 100.0*progress << "%. " << vocabTrainData.rows << " descriptors         \r";
+		std::cout << 100.0*(movie.get(CV_CAP_PROP_POS_FRAMES) / movie.get(CV_CAP_PROP_FRAME_COUNT)) << "%. " << vocabTrainData.rows << " descriptors         \r";
 		fflush(stdout); 
 		
 		if(cv::waitKey(5) == 27) {
@@ -562,7 +559,8 @@ int generateBOWImageDescs(std::string trainPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
 							int maxSize, int maxFeatures,
-							cv::Ptr<cv::DescriptorExtractor> &extractor)
+							cv::Ptr<cv::DescriptorExtractor> &extractor,
+							int mode)
 {
 	
 	cv::FileStorage fs;	
@@ -613,28 +611,32 @@ int generateBOWImageDescs(std::string trainPath,
 
 	cv::Mat frame, bow;
 	std::vector<cv::KeyPoint> kpts;
-	double progress;
-	unsigned int frameCount = 0;
 	
 	while(movie.read(frame)) {
-		frameCount++;
-		
 		detector->detect(frame, kpts);
 		filterKeypoints(kpts, maxSize, maxFeatures);
-		bide.compute(frame, kpts, bow);
+
+		if (kpts.size() == 0) {
+			if (mode == TRAINING_MODE) {
+				continue;
+			} else {
+				bow = cv::Mat::zeros(1, vocab.rows, CV_32FC1);
+			} 
+		} else {
+			bide.compute(frame, kpts, bow);
+		}
+
 		if(cv::countNonZero(bow) < 40) {
 			maskw << "0" << std::endl;
-			continue;
+			if (mode == TRAINING_MODE) {
+				continue;
+			}
 		} else {
 			maskw << "1" << std::endl;
 		}
 		fabmapTrainData.push_back(bow);
 		
-		// Hacked to deal with OpenCV bug:
-		//progress = movie.get(CV_CAP_PROP_POS_FRAMES) / (1000000000.0*movie.get(CV_CAP_PROP_FRAME_COUNT));
-		progress = (double)frameCount / movie.get(CV_CAP_PROP_FRAME_COUNT);
-		
-		std::cout << 100*progress << "%    \r";
+		std::cout << 100.0*(movie.get(CV_CAP_PROP_POS_FRAMES) / movie.get(CV_CAP_PROP_FRAME_COUNT)) << "%    \r";
 		fflush(stdout); 
 	}
 	std::cout << "Done                                       " << std::endl;
