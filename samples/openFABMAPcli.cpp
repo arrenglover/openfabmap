@@ -766,8 +766,8 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
 			fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
 			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
 			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
-			fs["FeatureOptions"]["SurfDetector"]["Extended"],
-			fs["FeatureOptions"]["SurfDetector"]["Upright"]);
+			(int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
+			(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
 #else
 		extractor = new cv::SurfDescriptorExtractor(
