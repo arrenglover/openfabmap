@@ -691,8 +691,8 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
 				fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
 				fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
 				fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
-				fs["FeatureOptions"]["SurfDetector"]["Extended"],
-				fs["FeatureOptions"]["SurfDetector"]["Upright"]);
+				(int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
+				(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
 #else
 			detector = new cv::SurfFeatureDetector(
@@ -703,7 +703,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
 #endif
 		} else if(detectorType == "SIFT") {
 #ifdef OPENCV2P4
-			detector = new SIFT(
+			detector = new cv::SIFT(
 				fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
 				fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
 				fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
