@@ -40,7 +40,7 @@ FilePaths:
 
    #The FabMap results
 
-   FabMapResults: "C:\\openFABMAP\\results.yml"
+   FabMapResults: "C:\\openFABMAP\\results.txt"
 
 #---------------------------------------------------------------------------
 
@@ -78,9 +78,8 @@ FeatureOptions:
    #ADAPTIVE SETTINGS
    
    Adaptive:
-      MaxSize: 0 #50
       MinFeatures: 300
-      MaxFeatures: 500 #500
+      MaxFeatures: 500
       MaxIters: 5
       
    # STATIC SETTINGS
@@ -97,8 +96,13 @@ FeatureOptions:
       Suppression: 20 #5
 
    SiftDetector:
-      Threshold: 0.04 #0.04
       EdgeThreshold: 10
+      ContrastThreshold: 0.04
+      
+      #OPENCV2.4only
+      NumFeatures: 200
+      NumOctaveLayers: 3
+      Sigma: 1.6
 
    SurfDetector:
       HessianThreshold: 1000 #400

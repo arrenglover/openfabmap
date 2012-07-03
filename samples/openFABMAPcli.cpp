@@ -26,32 +26,34 @@
  OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 ------------------------------------------------------------------------*/
 
+//#define OPENCV2P4
+
 #include "../include/openfabmap.hpp"
 #include <fstream>
-//#include <opencv2/nonfree/nonfree.hpp>
+#ifdef OPENCV2P4
+#include <opencv2/nonfree/nonfree.hpp>
+#endif
 
 /*
 openFABMAP procedural functions
 */
 int help(void);
 int showFeatures(std::string trainPath, 
-				 cv::Ptr<cv::FeatureDetector> &detector,
-				 int maxSize, int maxFeatures);
+				 cv::Ptr<cv::FeatureDetector> &detector);
 int generateVocabTrainData(std::string trainPath,
 						   std::string vocabTrainDataPath,
 						   cv::Ptr<cv::FeatureDetector> &detector,
-						   int maxSize, int maxFeatures,
 						   cv::Ptr<cv::DescriptorExtractor> &extractor);
 int trainVocabulary(std::string vocabPath,
 					std::string vocabTrainDataPath,
 					double clusterRadius);
 
-int generateBOWImageDescs(std::string trainPath,
-							std::string fabmapTrainDataPath,
+int generateBOWImageDescs(std::string dataPath,
+							std::string bowImageDescPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
-							int maxSize, int maxFeatures,
-							cv::Ptr<cv::DescriptorExtractor> &extractor);
+							cv::Ptr<cv::DescriptorExtractor> &extractor,
+							int minWords);
 
 int trainChowLiuTree(std::string chowliutreePath,
 					 std::string fabmapTrainDataPath,
@@ -67,10 +69,12 @@ int openFABMAP(std::string testPath,
 helper functions
 */
 of2::FabMap *generateFABMAPInstance(cv::FileStorage &settings);
-cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &settings);
+cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs);
+cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs);
 			   
 /*
-Tools for keypoint detection and visualization
+Advanced tools for keypoint manipulation. These tools are not currently in the
+functional code but are available for use if desired.
 */
 void drawRichKeypoints(const cv::Mat& src, std::vector<cv::KeyPoint>& kpts, 
 					   cv::Mat& dst);
@@ -115,23 +119,29 @@ int main(int argc, char * argv[])
 	if(!detector) {
 		std::cerr << "Feature Detector error" << std::endl;
 		return -1;
-	}	
+	}
 
-	std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
-	cv::Ptr<cv::DescriptorExtractor> extractor;
-	if(extractorType == "SIFT") {
-		extractor = new cv::SiftDescriptorExtractor();
-	} else if(extractorType == "SURF") {
-		extractor = new cv::SurfDescriptorExtractor(
-			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
-			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
-			(int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
-			(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
-	} else {
-		std::cerr << "Could not create Descriptor Extractor. Please specify "
-			"extractor type in settings file" << std::endl;
+	cv::Ptr<cv::DescriptorExtractor> extractor = generateExtractor(fs);
+	if(!extractor) {
+		std::cerr << "Feature Extractor error" << std::endl;
 		return -1;
 	}
+
+	//std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
+	//cv::Ptr<cv::DescriptorExtractor> extractor;
+	//if(extractorType == "SIFT") {
+	//	extractor = new cv::SiftDescriptorExtractor();
+	//} else if(extractorType == "SURF") {
+	//	extractor = new cv::SurfDescriptorExtractor(
+	//		fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+	//		fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+	//		(int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
+	//		(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+	//} else {
+	//	std::cerr << "Could not create Descriptor Extractor. Please specify "
+	//		"extractor type in settings file" << std::endl;
+	//	return -1;
+	//}
 
 	//run desired function
 	int result = 0;
@@ -139,16 +149,12 @@ int main(int argc, char * argv[])
 	if (function == "ShowFeatures") {
 		result = showFeatures(
 			fs["FilePaths"]["TrainPath"],
-			detector, 
-			fs["FeatureOptions"]["MaxSize"], 
-			fs["FeatureOptions"]["MaxFeatures"]);
+			detector);
 
 	} else if (function == "GenerateVocabTrainData") {
 		result = generateVocabTrainData(fs["FilePaths"]["TrainPath"],
 			fs["FilePaths"]["TrainFeatDesc"], 
-			detector, 
-			fs["FeatureOptions"]["MaxSize"], 
-			fs["FeatureOptions"]["MaxFeatures"], extractor);
+			detector, extractor);
 
 	} else if (function == "TrainVocabulary") {
 		result = trainVocabulary(fs["FilePaths"]["Vocabulary"],
@@ -158,9 +164,8 @@ int main(int argc, char * argv[])
 	} else if (function == "GenerateFABMAPTrainData") {
 		result = generateBOWImageDescs(fs["FilePaths"]["TrainPath"],
 			fs["FilePaths"]["TrainImagDesc"], 
-			fs["FilePaths"]["Vocabulary"], detector, 
-			fs["FeatureOptions"]["MaxSize"], 
-			fs["FeatureOptions"]["MaxFeatures"], extractor);
+			fs["FilePaths"]["Vocabulary"], detector, extractor,
+			fs["BOWOptions"]["MinWords"]);
 
 	} else if (function == "TrainChowLiuTree") {
 		result = trainChowLiuTree(fs["FilePaths"]["ChowLiuTree"],
@@ -170,9 +175,8 @@ int main(int argc, char * argv[])
 	} else if (function == "GenerateFABMAPTestData") {
 		result = generateBOWImageDescs(fs["FilePaths"]["TestPath"],
 			fs["FilePaths"]["TestImageDesc"],
-			fs["FilePaths"]["Vocabulary"], detector, 
-			fs["FeatureOptions"]["MaxSize"], 
-			fs["FeatureOptions"]["MaxFeatures"], extractor);
+			fs["FilePaths"]["Vocabulary"], detector, extractor,
+			fs["BOWOptions"]["MinWords"]);
 
 	} else if (function == "RunOpenFABMAP") {
 		std::string placeAddOption = fs["FabMapPlaceAddition"];
@@ -197,8 +201,6 @@ int main(int argc, char * argv[])
 
 }
 
-
-
 /*
 displays the usage message
 */
@@ -208,14 +210,10 @@ int help(void)
 	return 0;
 }
 
-
-
 /*
 shows the features detected on the training video
 */
-int showFeatures(std::string trainPath, 
-				 cv::Ptr<cv::FeatureDetector> &detector,
-				 int maxSize, int maxFeatures)
+int showFeatures(std::string trainPath, cv::Ptr<cv::FeatureDetector> &detector)
 {
 	
 	//open the movie
@@ -234,19 +232,18 @@ int showFeatures(std::string trainPath,
 	std::vector<cv::KeyPoint> kpts;
 	while (movie.read(frame)) {
 		detector->detect(frame, kpts);
-		filterKeypoints(kpts, maxSize, maxFeatures);
 		
 		std::cout << kpts.size() << " keypoints detected...         \r";
 		fflush(stdout);
 		
-		drawRichKeypoints(frame, kpts, kptsImg);
-		// cv::drawKeypoints(colFrame, kpts, kptsImg);
+		cv::drawKeypoints(frame, kpts, kptsImg);
 		
 		cv::imshow("Features", kptsImg);
 		if(cv::waitKey(5) == 27) {
 			break;
 		}
 	}
+	std::cout << std::endl;
 
 	cv::destroyWindow("Features");
 	return 0;
@@ -258,7 +255,6 @@ generate the data needed to train a codebook/vocabulary for bag-of-words methods
 int generateVocabTrainData(std::string trainPath,
 						   std::string vocabTrainDataPath,
 						   cv::Ptr<cv::FeatureDetector> &detector,
-						   int maxSize, int maxFeatures,
 						   cv::Ptr<cv::DescriptorExtractor> &extractor)
 {
 
@@ -293,18 +289,18 @@ int generateVocabTrainData(std::string trainPath,
 
 		//detect & extract features
 		detector->detect(frame, kpts);
-		filterKeypoints(kpts, maxSize, maxFeatures);
 		extractor->compute(frame, kpts, descs);
 
 		//add all descriptors to the training data 
 		vocabTrainData.push_back(descs);
 
 		//show progress
-		drawRichKeypoints(frame, kpts, feats);
-		//cv::drawKeypoints(frame, kpts, feats);
+		cv::drawKeypoints(frame, kpts, feats);
 		cv::imshow("Training Data", feats);
 		
-		std::cout << 100.0*(movie.get(CV_CAP_PROP_POS_FRAMES) / movie.get(CV_CAP_PROP_FRAME_COUNT)) << "%. " << vocabTrainData.rows << " descriptors         \r";
+		std::cout << 100.0*(movie.get(CV_CAP_PROP_POS_FRAMES) / 
+			movie.get(CV_CAP_PROP_FRAME_COUNT)) << "%. " << 
+			vocabTrainData.rows << " descriptors         \r";
 		fflush(stdout); 
 		
 		if(cv::waitKey(5) == 27) {
@@ -376,23 +372,23 @@ int trainVocabulary(std::string vocabPath,
 }
 
 /*
-generate FabMap training/testing data : a bag-of-words image descriptor for each frame
+generate FabMap bag-of-words data : an image descriptor for each frame
 */
-int generateBOWImageDescs(std::string trainPath,
-							std::string fabmapTrainDataPath,
+int generateBOWImageDescs(std::string dataPath,
+							std::string bowImageDescPath,
 							std::string vocabPath,
 							cv::Ptr<cv::FeatureDetector> &detector,
-							int maxSize, int maxFeatures,
-							cv::Ptr<cv::DescriptorExtractor> &extractor)
+							cv::Ptr<cv::DescriptorExtractor> &extractor,
+							int minWords)
 {
 	
 	cv::FileStorage fs;	
 
 	//ensure not overwriting training data
 	std::ifstream checker;
-	checker.open(fabmapTrainDataPath.c_str());
+	checker.open(bowImageDescPath.c_str());
 	if(checker.is_open()) {	
-		std::cerr << fabmapTrainDataPath << ": FabMap Training/Testing Data "
+		std::cerr << bowImageDescPath << ": FabMap Training/Testing Data "
 			"already present" << std::endl;
 		checker.close();
 		return -1;
@@ -417,10 +413,10 @@ int generateBOWImageDescs(std::string trainPath,
 
 	//load movie
 	cv::VideoCapture movie;
-	movie.open(trainPath);
+	movie.open(dataPath);
 
 	if(!movie.isOpened()) {
-		std::cerr << trainPath << ": training/testing movie not found" << std::endl;
+		std::cerr << dataPath << ": movie not found" << std::endl;
 		return -1;
 	}
 
@@ -431,9 +427,9 @@ int generateBOWImageDescs(std::string trainPath,
 	std::cout.precision(0);
 
 	std::ofstream maskw;
-	int minWords = fs["BOWOptions"]["MinWords"];
+	
 	if(minWords) {
-		maskw.open(std::string(fabmapTrainDataPath + "mask.txt").c_str());
+		maskw.open(std::string(bowImageDescPath + "mask.txt").c_str());
 	}
 
 	cv::Mat frame, bow;
@@ -466,7 +462,7 @@ int generateBOWImageDescs(std::string trainPath,
 	movie.release();
 
 	//save training data
-	fs.open(fabmapTrainDataPath, cv::FileStorage::WRITE);
+	fs.open(bowImageDescPath, cv::FileStorage::WRITE);
 	fs << "BOWImageDescs" << fabmapTrainData;
 	fs.release();
 
@@ -579,13 +575,14 @@ int openFABMAP(std::string testPath,
 		int start = 0;
 		for(int i = 0; i < testImageDescs.rows; i++) {
 			start += i;
-			for(int j = 0; j < i; j++) {
-				writer << matches[start + j].match << " ";
+			for(int j = start + 1; j < start + i; j++) {
+				writer << matches[j].match << " ";
 			}
 			writer << matches[start].match << " ";
 			for(int j = i + 1; j < testImageDescs.rows; j++) {
 				writer << "0 ";
 			}	
+			writer << std::endl;
 		}
 		
 		//manually comparing frames individually
@@ -684,22 +681,39 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
 
 			detector = new cv::FastFeatureDetector(
 				fs["FeatureOptions"]["FastDetector"]["Threshold"],
-				(int)fs["FeatureOptions"]["FastDetector"]["NonMaxSuppression"] > 0);	
+				(int)fs["FeatureOptions"]["FastDetector"]
+						["NonMaxSuppression"] > 0);	
 
 		} else if(detectorType == "SURF") {
 
+#ifdef OPENCV2P4
+			detector = new cv::SURF(
+				fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
+				fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+				fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+				fs["FeatureOptions"]["SurfDetector"]["Extended"],
+				fs["FeatureOptions"]["SurfDetector"]["Upright"]);
+
+#else
 			detector = new cv::SurfFeatureDetector(
 				fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
 				fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
 				fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
 				(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
-
+#endif
 		} else if(detectorType == "SIFT") {
-
+#ifdef OPENCV2P4
+			detector = new SIFT(
+				fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
+				fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
+				fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
+				fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"],
+				fs["FeatureOptions"]["SiftDetector"]["Sigma"]);
+#else
 			detector = new cv::SiftFeatureDetector(
-				fs["FeatureOptions"]["SiftDetector"]["Threshold"],
+				fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
 				fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"]);
-
+#endif
 		} else if(detectorType == "MSER") {
 
 			detector = new cv::MserFeatureDetector(
@@ -725,6 +739,54 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
 	return detector;
 
 }
+
+/*
+generates a feature detector based on options in the settings file
+*/
+cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
+{
+	std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
+	cv::Ptr<cv::DescriptorExtractor> extractor = NULL;
+	if(extractorType == "SIFT") {
+#ifdef OPENCV2P4
+		extractor = new cv::SIFT(
+			fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
+			fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
+			fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
+			fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"],
+			fs["FeatureOptions"]["SiftDetector"]["Sigma"]);
+#else
+		extractor = new cv::SiftDescriptorExtractor();
+#endif
+
+	} else if(extractorType == "SURF") {
+
+#ifdef OPENCV2P4
+		extractor = new cv::SURF(
+			fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+			fs["FeatureOptions"]["SurfDetector"]["Extended"],
+			fs["FeatureOptions"]["SurfDetector"]["Upright"]);
+
+#else
+		extractor = new cv::SurfDescriptorExtractor(
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
+			fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
+			(int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
+			(int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+#endif
+
+	} else {
+		std::cerr << "Could not create Descriptor Extractor. Please specify "
+			"extractor type in settings file" << std::endl;
+	}
+
+	return extractor;
+
+}
+
+
 
 /*
 create an instance of a FabMap class with the options given in the settings file
@@ -895,10 +957,10 @@ void drawRichKeypoints(const cv::Mat& src, std::vector<cv::KeyPoint>& kpts, cv::
 		}
 		
 		center = kpts_sorted.at(iii).pt;
-        center.x *= 16.0;
-        center.y *= 16.0;
+        center.x *= 16;
+        center.y *= 16;
         
-        radius = 16.0 * (double(kpts_sorted.at(iii).size)/2.0);
+        radius = (int)(16.0 * ((double)(kpts_sorted.at(iii).size)/2.0));
         
         if (radius > 0) {
             circle(dst, center, radius, colour, thickness, CV_AA, 4);
@@ -927,7 +989,7 @@ void filterKeypoints(std::vector<cv::KeyPoint>& kpts, int maxSize, int maxFeatur
 		}
 	}
 	
-	if ((maxFeatures != 0) && (kpts.size() > maxFeatures)) {
+	if ((maxFeatures != 0) && ((int)kpts.size() > maxFeatures)) {
         kpts.erase(kpts.begin()+maxFeatures, kpts.end());
     }
 	
