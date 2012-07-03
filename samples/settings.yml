@@ -68,9 +68,22 @@ FeatureOptions:
    # "MSER"
 
    DetectorType: "STAR"
-   MaxSize: 0 #50
-   MinFeatures: 0
-   MaxFeatures: 0 #500
+   
+   # Feature Detection Modes
+   # "STATIC"
+   # "ADAPTIVE"
+   
+   DetectorMode: "STATIC"
+   
+   #ADAPTIVE SETTINGS
+   
+   Adaptive:
+      MaxSize: 0 #50
+      MinFeatures: 300
+      MaxFeatures: 500 #500
+      MaxIters: 5
+      
+   # STATIC SETTINGS
    
    FastDetector:
       Threshold: 50
@@ -110,6 +123,14 @@ FeatureOptions:
    # "SURF"
 
    ExtractorType: "SURF"
+#---------------------------------------------------------------------------
+
+#An option to throw away frames with low numbers of different words.
+#Setting this to 0 turns off this feature
+
+BOWOptions:
+
+   MinWords: 0
 
 #---------------------------------------------------------------------------
 
