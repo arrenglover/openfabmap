@@ -40,7 +40,7 @@ FilePaths:
 
    #The FabMap results
 
-   FabMapResults: "C:\\openFABMAP\\results.yml"
+   FabMapResults: "C:\\openFABMAP\\results.txt"
 
 #---------------------------------------------------------------------------
 
@@ -68,7 +68,22 @@ FeatureOptions:
    # "MSER"
 
    DetectorType: "STAR"
-
+   
+   # Feature Detection Modes
+   # "STATIC"
+   # "ADAPTIVE"
+   
+   DetectorMode: "STATIC"
+   
+   #ADAPTIVE SETTINGS
+   
+   Adaptive:
+      MinFeatures: 300
+      MaxFeatures: 500
+      MaxIters: 5
+      
+   # STATIC SETTINGS
+   
    FastDetector:
       Threshold: 50
       NonMaxSuppression: 1
@@ -81,8 +96,13 @@ FeatureOptions:
       Suppression: 20 #5
 
    SiftDetector:
-      Threshold: 0.04 #0.04
       EdgeThreshold: 10
+      ContrastThreshold: 0.04
+      
+      #OPENCV2.4only
+      NumFeatures: 200
+      NumOctaveLayers: 3
+      Sigma: 1.6
 
    SurfDetector:
       HessianThreshold: 1000 #400
@@ -107,6 +127,14 @@ FeatureOptions:
    # "SURF"
 
    ExtractorType: "SURF"
+#---------------------------------------------------------------------------
+
+#An option to throw away frames with low numbers of different words.
+#Setting this to 0 turns off this feature
+
+BOWOptions:
+
+   MinWords: 0
 
 #---------------------------------------------------------------------------
 

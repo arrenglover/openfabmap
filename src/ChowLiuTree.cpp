@@ -15,7 +15,7 @@
  details.
 
  For published work which uses all or part of OpenFABMAP, please cite:
- http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1
+ http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=6224843
 
  Original Algorithm by Mark Cummins and Paul Newman:
  http://ijr.sagepub.com/content/27/6/647.short

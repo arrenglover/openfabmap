@@ -61,7 +61,7 @@ IF(OPENCV2_FOUND)
 			ENDFOREACH(LIB)
 		ENDIF(MINGW)
 	ELSE(WIN32)
-		TARGET_LINK_LIBRARIES(openFABMAP opencv_highgui opencv_core opencv_features2d)
+		TARGET_LINK_LIBRARIES(openFABMAP opencv_highgui opencv_core opencv_features2d opencv_imgproc)
 	ENDIF(WIN32)
 ENDIF(OPENCV2_FOUND)
 

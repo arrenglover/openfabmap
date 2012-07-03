@@ -27,9 +27,16 @@
 
 Author Contact [aj.glover@qut.edu.au]
 
-version 2.0
+version 2.01
 
 please see  http://code.google.com/p/openfabmap/ for more information
+
+OPENCV2.4 Compatibility
+if using openCV2.4 you will need to replace
+//#define OPENCV2P4
+with
+#define OPENCV2P4
+at the beggining of openFABMAPcli.cpp
 
 Installation Instructions (using Cmake)
 
@@ -57,7 +64,7 @@ Linux (g++)
 2. make a build directory for your generated code
 3. use the command line to change into this directory
 4. run 'cmake /path/to/your/build/dir'
-5. Hopefully openCV wwas found. If not, you may have to specify the directory manually using ccmake
+5. Hopefully openCV was found. If not, you may have to specify the directory manually using ccmake. Try using the wizard option cmake -i.
 6. run 'make' in your build directory
 5. Alter the settings file for your application
 6. run openFABMAPcli in your build/bin directory
