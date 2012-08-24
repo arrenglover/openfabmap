@@ -182,7 +182,8 @@ void FabMap::compare(const vector<Mat>& queryImgDescriptors, vector<
 void FabMap::compare(const vector<Mat>& queryImgDescriptors,
 		const vector<Mat>& testImgDescriptors,
 		vector<IMatch>& matches, const Mat& mask) {
-	if (testImgDescriptors[0].data != this->testImgDescriptors[0].data) {
+
+	if (&testImgDescriptors != &(this->testImgDescriptors)) {
 		CV_Assert(!(flags & MOTION_MODEL));
 		for (size_t i = 0; i < testImgDescriptors.size(); i++) {
 			CV_Assert(!testImgDescriptors[i].empty());
