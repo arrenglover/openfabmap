@@ -58,6 +58,7 @@ FabMap::FabMap(const Mat& _clTree, double _PzGe,
 	}
 
 	//check for a valid Chow-Liu tree
+	CV_Assert(clTree.type() == CV_64FC1);
 	cv::checkRange(clTree.row(0), false, NULL, 0, clTree.cols);
 	cv::checkRange(clTree.row(1), false, NULL, DBL_MIN, 1);
 	cv::checkRange(clTree.row(2), false, NULL, DBL_MIN, 1);

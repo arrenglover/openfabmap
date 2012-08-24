@@ -563,47 +563,27 @@ int openFABMAP(std::string testPath,
 	//running openFABMAP
 	std::cout << "Running openFABMAP" << std::endl;
 	std::vector<of2::IMatch> matches;
+	std::vector<of2::IMatch>::iterator l;
 
-	std::ofstream writer(resultsPath.c_str());
+	
+	
+	cv::Mat confusion_mat(testImageDescs.rows, testImageDescs.rows, CV_64FC1);
+	confusion_mat = 0; // init to 0's
+
 
 	if (!addNewOnly) {
 
 		//automatically comparing a whole dataset
 		fabmap->compare(testImageDescs, matches, true);
 
-		//save result
-		int start = 0;
-		for(int i = 0; i < testImageDescs.rows; i++) {
-			start += i;
-			for(int j = start + 1; j < start + i; j++) {
-				writer << matches[j].match << " ";
+		for(l = matches.begin(); l != matches.end(); l++) {
+			if(l->imgIdx < 0) {
+				confusion_mat.at<double>(l->queryIdx, l->queryIdx) = l->match;
+
+			} else {
+				confusion_mat.at<double>(l->queryIdx, l->imgIdx) = l->match;
 			}
-			writer << matches[start].match << " ";
-			for(int j = i + 1; j < testImageDescs.rows; j++) {
-				writer << "0 ";
-			}	
-			writer << std::endl;
 		}
-		
-		//manually comparing frames individually
-		
-		//for(int i = 0; i < testImageDescs.rows; i++) {
-		//	matches.clear();
-		//	//compare images individually
-		//	fabmap->compare(testImageDescs.row(i), matches);
-		//	fabmap->add(testImageDescs.row(i));
-
-
-		//	//save result
-		//	for(size_t j = 1; j < matches.size(); j++) {
-		//		writer << matches[j].match << " ";
-		//	}
-		//	writer << matches[0].match << " ";
-		//	for(int j = matches.size(); j < testImageDescs.rows; j++) {
-		//		writer << "0 ";
-		//	}
-		//	writer << std::endl;
-		//}
 
 	} else {
 
@@ -612,32 +592,39 @@ int openFABMAP(std::string testPath,
 			matches.clear();
 			//compare images individually
 			fabmap->compare(testImageDescs.row(i), matches);
-			
-			//add if 'new place' most probable
-			bool add = true;
-			for(size_t j = 0; j < matches.size(); j++) {
-				if(matches[j].match > matches.front().match) {
-					add = false;
-					break;
+
+			bool new_place_max = true;
+			for(l = matches.begin(); l != matches.end(); l++) {
+				
+				if(l->imgIdx < 0) {
+					//add the new place to the confusion matrix 'diagonal'
+					confusion_mat.at<double>(i, matches.size()-1) = l->match;
+
+				} else {
+					//add the score to the confusion matrix
+					confusion_mat.at<double>(i, l->imgIdx) = l->match;
+				}
+
+				//test for new location maximum
+				if(l->match > matches.front().match) {
+					new_place_max = false;
 				}
 			}
-			if(add) {
+
+			if(new_place_max) {
 				fabmap->add(testImageDescs.row(i));
 			}
-
-			//save result
-			for(size_t j = 1; j < matches.size(); j++) {
-				writer << matches[j].match << " ";
-			}
-			writer << matches[0].match << " ";
-			for(int j = matches.size(); j < testImageDescs.rows; j++) {
-				writer << "0 ";
-			}
-			writer << std::endl;
 		}
 	}
 
-
+	//save the result as plain text for ease of import to Matlab
+	std::ofstream writer(resultsPath.c_str());
+	for(int i = 0; i < confusion_mat.rows; i++) {
+		for(int j = 0; j < confusion_mat.cols; j++) {
+			writer << confusion_mat.at<double>(i, j) << " ";
+		}
+		writer << std::endl;
+	}
 	writer.close();
 
 	return 0;
