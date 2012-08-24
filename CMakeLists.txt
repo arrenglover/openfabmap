@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.6)
 ############ Cmake setup ##################
 
 # tell cmake where the FindXXX.cmake functions are
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
 
 # make a lib directory in the build directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
