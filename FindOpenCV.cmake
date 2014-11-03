@@ -24,7 +24,7 @@ IF(WIN32)
 	
 	if( OPENCV2_PATH )
 		MESSAGE( STATUS "Looking for OpenCV2.2 or greater - found")
-		MESSAGE( STATUS "OpenCV2.2 path: "${OPENCV2_PATH} )
+		MESSAGE( STATUS "OpenCV2.2 path: " ${OPENCV2_PATH} )
 		SET ( OPENCV2_FOUND 1 )
 		
 		# test for 64 or 32 bit
@@ -75,7 +75,7 @@ ELSE(WIN32) # Linux
 	
 	if( OPENCV2_INCLUDE_PATH )
 		MESSAGE( STATUS "Looking for OpenCV2.2 or greater - found")
-		MESSAGE( STATUS "OpenCV2.2 include path: "${OPENCV2_INCLUDE_PATH} )
+		MESSAGE( STATUS "OpenCV2.2 include path: " ${OPENCV2_INCLUDE_PATH} )
 		SET ( OPENCV2_FOUND 1 )
 	else( OPENCV2_INCLUDE_PATH )
 		message( STATUS "Looking for OpenCV2.2 or greater  - not found" )

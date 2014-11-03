@@ -26,12 +26,12 @@
  OpenFABMAP. If not, see http://www.gnu.org/licenses/.
 ------------------------------------------------------------------------*/
 
-//#define OPENCV2P4
+#define OPENCV2P4
 
 #include "../include/openfabmap.hpp"
 #include <fstream>
 #ifdef OPENCV2P4
-#include <opencv2/nonfree/nonfree.hpp>
+//#include <opencv2/nonfree/nonfree.hpp>
 #endif
 
 /*
@@ -568,7 +568,7 @@ int openFABMAP(std::string testPath,
 	
 	
 	cv::Mat confusion_mat(testImageDescs.rows, testImageDescs.rows, CV_64FC1);
-	confusion_mat = 0; // init to 0's
+    confusion_mat.setTo(0); // init to 0's
 
 
 	if (!addNewOnly) {
