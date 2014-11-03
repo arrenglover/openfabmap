@@ -1,4 +1,5 @@
-# This Cmake file written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# This Cmake file written by Michael Warren,
+# Queensland University of Technology, Australia
 # https://wiki.qut.edu.au/display/cyphy/Michael+Warren
 # Last updated 2014-11-03
 
@@ -21,7 +22,7 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 # tell cmake that the binaries goes in the binary directory
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-# Compiler warning level
+# Compiler warning level /W3 (msvc) or -Wall (gcc)
 if(MSVC)
   # Force to always compile with W4
   if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
@@ -45,6 +46,8 @@ if(OPENMP_FOUND)
     message("FOUND OPENMP")
 endif(OPENMP_FOUND)
 
+# Find OpenCV.
+# If it's not found, set OpenCV_DIR to the directory with OpenCVConfig.cmake
 if(WIN32)
     set(OpenCV_HINTS $ENV{OPENCV_DIR}/../../)
 else() # Linux
@@ -75,14 +78,16 @@ target_link_libraries(openFABMAP ${OpenCV_LIBS})
 
 ## openFABMAPcli executable ####################################################
 
-# tell the project where the settings file is  and copy it across when building (not used for now)
+# Tell the project where settings / doxygen / readme files are (for Qt Creator)
 file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
-#FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 file(GLOB DOXY_FILES "${CMAKE_CURRENT_SOURCE_DIR}"
     "doxygen/*.dox" "doxygen/*.dox.*" "doxygen/*.xml")
 set(README_FILES "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
-# tell cmake about the binary
+# Copy the settings file across when building (not used for now)
+#FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+
+# Tell cmake about the binary
 add_executable(openFABMAPcli ${CMAKE_SOURCE_DIR}/samples/openFABMAPcli.cpp
     ${SETTINGS_FILE} ${DOXY_FILES} ${README_FILES})
 
@@ -92,7 +97,7 @@ target_link_libraries(openFABMAPcli openFABMAP ${OpenCV_LIBS} )
 
 ## Doxygen API documentation ###################################################
 
-# add a target to generate API documentation with Doxygen
+# Add the 'doc' target to generate API documentation with Doxygen
 set(DOXYGEN_CREATE_DOCS false CACHE BOOL "Create documentation with Doxygen")
 if(DOXYGEN_CREATE_DOCS)
     find_package(Doxygen)
@@ -105,10 +110,10 @@ if(DOXYGEN_CREATE_DOCS)
             ${DOXYGEN_EXECUTABLE}
             ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
             WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            COMMENT "Generating API documentation with Doxygen (in build folder)" VERBATIM
+            COMMENT "Generating API documentation with Doxygen" VERBATIM
         )
     else(DOXYGEN_FOUND)
-        message(WARNING "Doxygen package not found, no documentation will be generated")
+        message(WARNING "Doxygen package not found, no documentation target")
     endif(DOXYGEN_FOUND)
 endif(DOXYGEN_CREATE_DOCS)
 
