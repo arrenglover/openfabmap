@@ -1,4 +1,5 @@
-# This Cmake file written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# This Cmake file written by Michael Warren,
+# Queensland University of Technology, Australia
 # https://wiki.qut.edu.au/display/cyphy/Michael+Warren
 # Last updated 17/05/12
 
@@ -9,9 +10,12 @@
 # OPENCV2_PATH where the OpenCV 2.2 or greater files are (WIN32 only)
 # OPENCV2_INCLUDE_PATH where the OpenCV 2.2 or greater header files are
 # OPENCV2_LIB_PATH where the OpenCV 2.2 or greater library files are
-# OPENCV2_RELEASE_LIBS the list of OpenCV 2.2 or greater release version libs (WIN32 MSVC compiler only)
-# OPENCV2_DEBUG_LIBS the list of OpenCV 2.2 or greater debug version libs (WIN32 MSVC compiler only)
-# OPENCV2_LIBS the list of OpenCV 2.2 or greater libs (WIN32 MINGW compiler only)
+# OPENCV2_RELEASE_LIBS the list of OpenCV 2.2 or greater release version libs
+#       (WIN32 MSVC compiler only)
+# OPENCV2_DEBUG_LIBS the list of OpenCV 2.2 or greater debug version libs
+#       (WIN32 MSVC compiler only)
+# OPENCV2_LIBS the list of OpenCV 2.2 or greater libs
+#       (WIN32 MINGW compiler only)
 
 IF(WIN32)
 

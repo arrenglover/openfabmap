@@ -1,4 +1,5 @@
-# This Cmake file written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
+# This Cmake file written by Michael Warren,
+# Queensland University of Technology, Australia
 # https://wiki.qut.edu.au/display/cyphy/Michael+Warren
 # Last updated 17/05/12
 
