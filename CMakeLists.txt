@@ -1,16 +1,13 @@
-# This Cmake file written by Michael Warren,
-# Queensland University of Technology, Australia
+# This Cmake file written by Michael Warren, CyPhy Lab, Queensland University of Technology, Australia
 # https://wiki.qut.edu.au/display/cyphy/Michael+Warren
-# Last updated 17/05/12
+# Last updated 2014-11-03
 
-PROJECT(openFABMAP)
+project(openFABMAP)
 
 cmake_minimum_required(VERSION 2.6)
 
-############ Cmake setup ##################
 
-# tell cmake where the FindXXX.cmake functions are
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR})
+## Cmake setup #################################################################
 
 # make a lib directory in the build directory
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/lib)
@@ -24,64 +21,94 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin)
 # tell cmake that the binaries goes in the binary directory
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/bin)
 
-# required packages
-FIND_PACKAGE(OpenCV REQUIRED)
+# Compiler warning level
+if(MSVC)
+  # Force to always compile with W4
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W3" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3")
+  endif()
+elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+  # Update if necessary
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
+endif()
 
-############ end CMake setup ##################
+
+## Required Packages ###########################################################
+
+# OpenMP speedups
+find_package(OpenMP)
+if(OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    message("FOUND OPENMP")
+endif(OPENMP_FOUND)
+
+if(WIN32)
+    set(OpenCV_HINTS $ENV{OPENCV_DIR}/../../)
+else() # Linux
+    set(OpenCV_HINTS $ENV{OPENCV_HOME}/build)
+endif()
+find_package(OpenCV REQUIRED CONFIG HINTS OpenCV_HINTS)
 
 
-############ openFABMAP library ##################
+## openFABMAP library ##########################################################
+
+# List sources
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src OPENFABMAP_FILES)
+
+# Include the headers
+file(GLOB OPENFABMAP_IMPL_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
+file(GLOB OPENFABMAP_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
+
 # tell cmake about the library
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_SOURCE_DIR}/src OPENFABMAP_FILES) 
-
-# include the headers
-file(GLOB OPENFABMAP_INCS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
-
-# tell cmake about the library
-ADD_LIBRARY(openFABMAP ${OPENFABMAP_FILES} ${OPENFABMAP_INCS})
-############ end openFABMAP library ##################
+add_library(openFABMAP ${OPENFABMAP_FILES}
+    ${OPENFABMAP_IMPL_INCS} ${OPENFABMAP_INCS})
 
 # Tell CMake where the headers are
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Link against the required libraries in OpenCV >=2.2
-IF(OPENCV2_FOUND)
-    SET( OPENCV2_INSTALLED 1)
-    message( STATUS "Using OpenCV >= 2.2" )
-	IF(WIN32)
-		IF(MINGW)
-			TARGET_LINK_LIBRARIES(openFABMAP ${OPENCV2_LIBS})
-		ELSE(MINGW)
-			FOREACH (LIB ${OPENCV2_DEBUG_LIBS})
-				TARGET_LINK_LIBRARIES(openFABMAP
-				debug ${LIB})
-			ENDFOREACH(LIB)
-			FOREACH (LIB ${OPENCV2_RELEASE_LIBS})
-				TARGET_LINK_LIBRARIES(openFABMAP
-				optimized ${LIB})
-			ENDFOREACH(LIB)
-		ENDIF(MINGW)
-	ELSE(WIN32)
-		TARGET_LINK_LIBRARIES(openFABMAP opencv_highgui opencv_core opencv_features2d opencv_imgproc)
-	ENDIF(WIN32)
-ENDIF(OPENCV2_FOUND)
+target_link_libraries(openFABMAP ${OpenCV_LIBS})
 
 
-############ openFABMAPcli executable ##################
-if(OPENCV2_FOUND)
+## openFABMAPcli executable ####################################################
 
-	# tell the project where the settings file is  and copy it across when building (not used for now)
-	#file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
-	#FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+# tell the project where the settings file is  and copy it across when building (not used for now)
+file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
+#FILE(COPY ${SETTINGS_FILE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+file(GLOB DOXY_FILES "${CMAKE_CURRENT_SOURCE_DIR}"
+    "doxygen/*.dox" "doxygen/*.dox.*" "doxygen/*.xml")
+set(README_FILES "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
-    # tell cmake about the binary
-    ADD_EXECUTABLE(openFABMAPcli ${CMAKE_SOURCE_DIR}/samples/openFABMAPcli.cpp ${SETTINGS_FILE})
-	
-	# Tell openFABMAPcli to link against its required libs
-    TARGET_LINK_LIBRARIES(openFABMAPcli openFABMAP)
-	
-endif(OPENCV2_FOUND)
+# tell cmake about the binary
+add_executable(openFABMAPcli ${CMAKE_SOURCE_DIR}/samples/openFABMAPcli.cpp
+    ${SETTINGS_FILE} ${DOXY_FILES} ${README_FILES})
 
-############ end openFABMAP executable ##################
+# Tell openFABMAPcli to link against its required libs
+target_link_libraries(openFABMAPcli openFABMAP ${OpenCV_LIBS} )
 
+
+## Doxygen API documentation ###################################################
+
+# add a target to generate API documentation with Doxygen
+set(DOXYGEN_CREATE_DOCS false CACHE BOOL "Create documentation with Doxygen")
+if(DOXYGEN_CREATE_DOCS)
+    find_package(Doxygen)
+    if(DOXYGEN_FOUND)
+        # Process and copy configuration file
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doxygen/Doxyfile.in
+            ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
+        # Uncomment ALL to make every time. Otherwise use "make doc"
+        add_custom_target(doc #ALL
+            ${DOXYGEN_EXECUTABLE}
+            ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Generating API documentation with Doxygen (in build folder)" VERBATIM
+        )
+    else(DOXYGEN_FOUND)
+        message(WARNING "Doxygen package not found, no documentation will be generated")
+    endif(DOXYGEN_FOUND)
+endif(DOXYGEN_CREATE_DOCS)
 
