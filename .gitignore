@@ -1,0 +1,8 @@
+# OpenFABMAP git ignored files
+
+# Qt Creator
+CMakeLists.txt.user
+*.autosave
+
+# Gedit/emacs
+*~
