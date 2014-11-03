@@ -39,6 +39,7 @@ endif()
 ## Required Packages ###########################################################
 
 # OpenMP speedups
+message(STATUS "")
 find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
@@ -49,11 +50,19 @@ endif(OPENMP_FOUND)
 # Find OpenCV.
 # If it's not found, set OpenCV_DIR to the directory with OpenCVConfig.cmake
 if(WIN32)
-    set(OpenCV_HINTS $ENV{OPENCV_DIR}/../../)
+    set(OpenCV_PATHS
+		$ENV{OPENCV_HOME}
+		$ENV{OPENCV_DIR}/../../
+		C:/opencv/
+		C:/OpenCV2.2/
+		C:/OpenCV2.3/
+		C:/OpenCV2.4/
+		)
 else() # Linux
-    set(OpenCV_HINTS $ENV{OPENCV_HOME}/build)
+    set(OpenCV_PATHS "$ENV{OPENCV_HOME}/build")
 endif()
-find_package(OpenCV REQUIRED CONFIG HINTS OpenCV_HINTS)
+find_package(OpenCV REQUIRED CONFIG
+	PATHS ${OpenCV_PATHS})
 
 
 ## openFABMAP library ##########################################################
@@ -116,4 +125,3 @@ if(DOXYGEN_CREATE_DOCS)
         message(WARNING "Doxygen package not found, no documentation target")
     endif(DOXYGEN_FOUND)
 endif(DOXYGEN_CREATE_DOCS)
-
