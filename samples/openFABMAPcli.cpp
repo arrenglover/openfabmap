@@ -599,7 +599,7 @@ int openFABMAP(std::string testPath,
 	if (!addNewOnly) {
 
 		//automatically comparing a whole dataset
-		fabmap->compare(testImageDescs, matches, true);
+        fabmap->localize(testImageDescs, matches, true);
 
 		for(l = matches.begin(); l != matches.end(); l++) {
 			if(l->imgIdx < 0) {
@@ -616,14 +616,14 @@ int openFABMAP(std::string testPath,
 		for(int i = 0; i < testImageDescs.rows; i++) {
 			matches.clear();
 			//compare images individually
-			fabmap->compare(testImageDescs.row(i), matches);
+            fabmap->localize(testImageDescs.row(i), matches);
 
 			bool new_place_max = true;
 			for(l = matches.begin(); l != matches.end(); l++) {
 				
 				if(l->imgIdx < 0) {
 					//add the new place to the confusion matrix 'diagonal'
-					confusion_mat.at<double>(i, matches.size()-1) = l->match;
+                    confusion_mat.at<double>(i, (int)matches.size()-1) = l->match;
 
 				} else {
 					//add the score to the confusion matrix
@@ -959,7 +959,7 @@ void drawRichKeypoints(const cv::Mat& src, std::vector<cv::KeyPoint>& kpts, cv::
 		colour = CV_RGB(255, 0, 0);
 	}
 	
-	for (int iii = kpts_sorted.size()-1; iii >= 0; iii--) {
+    for (int iii = (int)kpts_sorted.size()-1; iii >= 0; iii--) {
 
 		if (minResponse != maxResponse) {
 			normalizedScore = pow((kpts_sorted.at(iii).response - minResponse) / (maxResponse - minResponse), 0.25);

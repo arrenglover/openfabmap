@@ -114,7 +114,7 @@ Mat BOWMSCTrainer::cluster(const Mat& descriptors) const {
 			dist = cv::Mahalanobis(descriptors.row(i),initialCentres[j],icovar);
 			if (dist < minDist) {
 				minDist = dist;
-				index = j;
+                index = (int)j;
 			}
 		}
 		clusters[index].push_back(descriptors.row(i));

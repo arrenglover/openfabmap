@@ -158,7 +158,7 @@ double ChowLiuTree::CP(int a, bool za, int b, bool zb){
 cv::Mat ChowLiuTree::buildTree(int root_word, list<info> &edges) {
 
 	int q = root_word;
-	cv::Mat cltree(4, edges.size()+1, CV_64F);
+    cv::Mat cltree(4, (int)edges.size()+1, CV_64F);
 
 	cltree.at<double>(0, q) = q;
 	cltree.at<double>(1, q) = P(q, true);
