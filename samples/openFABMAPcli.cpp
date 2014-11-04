@@ -54,10 +54,14 @@
 #define OPENCV2P4
 
 #include "../include/openfabmap.hpp"
-#include <fstream>
+
+#include <opencv2/opencv.hpp>
 #ifdef OPENCV2P4
 #include <opencv2/nonfree/nonfree.hpp>
 #endif
+
+#include <fstream>
+#include <iostream>
 
 /*
 openFABMAP procedural functions
