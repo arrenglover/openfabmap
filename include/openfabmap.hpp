@@ -32,7 +32,7 @@
 //
 //  * Redistribution's in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
-//    and/or other Materials provided with the distribution.
+//    and/or other materials provided with the distribution.
 //
 //  * The name of the copyright holders may not be used to endorse or promote
 //    products derived from this software without specific prior written
@@ -49,7 +49,7 @@
 // contract, strict liability,or tort (including negligence or otherwise)
 // arising in any way out of the use of this software, even if advised of the
 // possibility of such damage.
-//////////////////////////////////////////////////////////////////////////////*/
+////////////////////////////////////////////////////////////////////////////// */
 
 #ifndef OPENFABMAP_H_
 #define OPENFABMAP_H_
@@ -72,13 +72,7 @@
 #define DEPRECATED(func) func
 #endif
 
-using cv::Mat;
-
 namespace of2 {
-
-using std::list;
-using std::map;
-using std::multiset;
 
 ///
 /// \brief The return data format for FabMap comparisons and localizations.
@@ -88,8 +82,8 @@ struct CV_EXPORTS IMatch {
     /// Default constructor.
     IMatch() :
         queryIdx(-1), imgIdx(-1),
-        likelihood(-DBL_MAX), match(-DBL_MAX),
-        groupSize(0)
+        groupSize(0),
+        likelihood(-DBL_MAX), match(-DBL_MAX)
     {
     }
     ///
@@ -104,8 +98,8 @@ struct CV_EXPORTS IMatch {
            double _likelihood, double _match,
            unsigned int _groupSize = 0) :
         queryIdx(_queryIdx), imgIdx(_imgIdx),
-        likelihood(_likelihood), match(_match),
-        groupSize(_groupSize)
+        groupSize(_groupSize),
+        likelihood(_likelihood), match(_match)
     {
     }
 
@@ -136,7 +130,7 @@ struct CV_EXPORTS Place
 public:
     typedef std::pair<Place*,Place*> placePtrPair_t;
     /// The generator state p(e)
-    Mat generators;
+    cv::Mat generators;
     /// The indices for the observation descriptors at this location
     std::list<int> descriptorIdx;
     ///
@@ -195,6 +189,9 @@ public:
         places.back().placesPrevNext.push_back(Place::placePtrPair_t(lastPlace, NULL));
         // Update last place
         lastPlace = &places.back();
+
+        // Incomplete
+        return NULL;
     }
 
     ///
@@ -242,12 +239,13 @@ protected:
 class CV_EXPORTS InferBase
 {
 public:
-    InferBase (cv::Ptr<Mat> _clTreePtr,
+    InferBase (cv::Ptr<cv::Mat> _clTreePtr,
                const double & _PzGe,
                const double & _PzGNe,
                const bool & _naiveBayes)
         : PzGe(_PzGe), PzGNe(_PzGNe),
-          clTreePtr(_clTreePtr), clTree(*clTreePtr), naiveBayes(_naiveBayes)
+          naiveBayes(_naiveBayes),
+          clTreePtr(_clTreePtr), clTree(*clTreePtr)
     {
         //check for a valid Chow-Liu tree
         CV_Assert(clTree.type() == CV_64FC1);
@@ -285,7 +283,7 @@ public:
     /// \brief Get the Chow-Liu tree
     /// \return A const reference to the Chow-Liu tree
     ///
-    const Mat & getClTree()
+    const cv::Mat & getClTree()
     {
         return clTree;
     }
@@ -301,25 +299,25 @@ public:
 
 protected:
 
-    /// Are we using naiveBayes?
-    bool naiveBayes;
-    /// A pointer to the Chow-Liu tree stored in the FabMap class
-    cv::Ptr<Mat> clTreePtr;
-    /// A reference to the pointer, for legacy access (remove this eventually)
-    Mat & clTree;
-    /// A graph of all the places we've been, and the generators present
-    PlaceGraph placeGraph;
-
     //@{
     double PzGe;    ///< Probability of measurement given the generator is present
     double PzGNe;   ///< Probability of measurement given the generator is absent
     //@}
+
+    /// Are we using naiveBayes?
+    bool naiveBayes;
+    /// A pointer to the Chow-Liu tree stored in the FabMap class
+    cv::Ptr<cv::Mat> clTreePtr;
+    /// A reference to the pointer, for legacy access (remove this eventually)
+    cv::Mat & clTree;
+    /// A graph of all the places we've been, and the generators present
+    PlaceGraph placeGraph;
 };
 
 class CV_EXPORTS InferBinary : public InferBase
 {
 public:
-    InferBinary(cv::Ptr<Mat> _clTree,
+    InferBinary(cv::Ptr<cv::Mat> _clTree,
                 const double & _PzGe,
                 const double & _PzGNe,
                 const bool & _naiveBayes)
@@ -416,26 +414,26 @@ public:
     /// \param flags Flag for options
     /// \param numSamples Number of samples to use for new place sampling
     ///
-    FabMap(const Mat& clTree, double PzGe, double PzGNe, int flags,
+    FabMap(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
            int numSamples = 0);
     virtual ~FabMap();
 
     //@{
     /// Method to add training data for sampling method.
-    virtual void addTraining(const Mat& queryImgDescriptor);
-    virtual void addTraining(const std::vector<Mat>& queryImgDescriptors);
+    virtual void addTraining(const cv::Mat& queryImgDescriptor);
+    virtual void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
     //@}
 
     //@{
     /// Method to add to the test data (the map).
-    virtual void add(const Mat& queryImgDescriptor);
-    virtual void add(const std::vector<Mat>& queryImgDescriptors);
+    virtual void add(const cv::Mat& queryImgDescriptor);
+    virtual void add(const std::vector<cv::Mat>& queryImgDescriptors);
     //@}
 
     //@{
     /// Access the descriptors with a read-only reference
-    const std::vector<Mat>& getTrainingImgDescriptors() const;
-    const std::vector<Mat>& getTestImgDescriptors() const;
+    const std::vector<cv::Mat>& getTrainingImgDescriptors() const;
+    const std::vector<cv::Mat>& getTestImgDescriptors() const;
     //@}
 
     //@{ Image comparisons
@@ -446,9 +444,9 @@ public:
     /// \param[out] matches Contains the match probabilities for the comparisons
     /// \param mask Not currently implemented?
     ///
-    void compare(const Mat& queryImgDescriptor,
-                 const Mat& testImgDescriptors, std::vector<IMatch>& matches,
-                 const Mat& mask = Mat());
+    void compare(const cv::Mat& queryImgDescriptor,
+                 const cv::Mat& testImgDescriptors, std::vector<IMatch>& matches,
+                 const cv::Mat& mask = cv::Mat());
     ///
     /// \brief FabMap image comparison (not full localization).
     /// \param queryImgDescriptor The descriptor for the query image
@@ -456,9 +454,9 @@ public:
     /// \param[out] matches Contains the match probabilities for the comparisons
     /// \param mask Not currently implemented?
     ///
-    void compare(const Mat& queryImgDescriptor,
-                 const std::vector<Mat>& testImgDescriptors,
-                 std::vector<IMatch>& matches, const Mat& mask = Mat());
+    void compare(const cv::Mat& queryImgDescriptor,
+                 const std::vector<cv::Mat>& testImgDescriptors,
+                 std::vector<IMatch>& matches, const cv::Mat& mask = cv::Mat());
     ///
     /// \brief FabMap image comparison (not full localization).
     /// \param queryImgDescriptors The descriptors for the query images
@@ -466,9 +464,9 @@ public:
     /// \param[out] matches Contains the match probabilities for the comparisons
     /// \param mask Not currently implemented?
     ///
-    void compare(const std::vector<Mat>& queryImgDescriptors,
-                 const std::vector<Mat>& testImgDescriptors,
-                 std::vector<IMatch>& matches, const Mat& mask = Mat());
+    void compare(const std::vector<cv::Mat>& queryImgDescriptors,
+                 const std::vector<cv::Mat>& testImgDescriptors,
+                 std::vector<IMatch>& matches, const cv::Mat& mask = cv::Mat());
     //@}
 
     //@{ Localization against map
@@ -480,9 +478,9 @@ public:
     /// \param mask Not currently implemented?
     /// \deprecated This function has been deprecated, use FabMap::localize instead
     ///
-    DEPRECATED (void compare(const std::vector<Mat>& queryImgDescriptors, std::vector<
-                             IMatch>& matches, bool addQuery = false, const Mat& mask =
-            Mat()));
+    DEPRECATED (void compare(const std::vector<cv::Mat>& queryImgDescriptors, std::vector<
+                             IMatch>& matches, bool addQuery = false, const cv::Mat& mask =
+            cv::Mat()));
     ///
     /// \brief FabMap localization against the map.
     /// \param queryImgDescriptors The descriptors for the query images
@@ -491,9 +489,9 @@ public:
     /// \param mask Not currently implemented?
     /// TODO: Add addThreshold that replaces addQuery, and addIfLatest that doesn't add to the latest place.
     ///
-    virtual void localize(const std::vector<Mat>& queryImgDescriptors, std::vector<
-                          IMatch>& matches, bool addQuery = false, const Mat& mask =
-            Mat());
+    virtual void localize(const std::vector<cv::Mat>& queryImgDescriptors, std::vector<
+                          IMatch>& matches, bool addQuery = false, const cv::Mat& mask =
+            cv::Mat());
     ///
     /// \brief FabMap localization against the map (deprecated, see FabMap::localize).
     /// \param queryImgDescriptor The descriptor for the query image
@@ -502,9 +500,9 @@ public:
     /// \param mask Not currently implemented?
     /// \deprecated This function has been deprecated, use FabMap::localize instead
     ///
-    DEPRECATED (void compare(const Mat& queryImgDescriptor,
+    DEPRECATED (void compare(const cv::Mat& queryImgDescriptor,
                              std::vector<IMatch>& matches, bool addQuery = false,
-                             const Mat& mask = Mat()));
+                             const cv::Mat& mask = cv::Mat()));
     ///
     /// \brief FabMap localization against the map.
     /// \param queryImgDescriptor The descriptor for the query image
@@ -513,9 +511,9 @@ public:
     /// \param mask Not currently implemented?
     /// TODO: Add addThreshold that replaces addQuery, and addIfLatest that doesn't add to the latest place.
     ///
-    virtual void localize(const Mat& queryImgDescriptor,
+    virtual void localize(const cv::Mat& queryImgDescriptor,
                           std::vector<IMatch>& matches, bool addQuery = false,
-                          const Mat& mask = Mat());
+                          const cv::Mat& mask = cv::Mat());
     //@}
 
 protected:
@@ -529,15 +527,15 @@ protected:
     /// \param testImgDescriptors The image descriptors to compare against.
     /// \param[out] matches The result of the descriptor comparisons in IMatch::likelihood.
     ///
-    void compareImgDescriptor(const Mat& queryImgDescriptor,
-                              int queryIndex, const std::vector<Mat>& testImgDescriptors,
+    void compareImgDescriptor(const cv::Mat& queryImgDescriptor,
+                              int queryIndex, const std::vector<cv::Mat>& testImgDescriptors,
                               std::vector<IMatch>& matches);
     ///
     /// \brief Adds an image descriptor to the test descriptors (the map).
     /// Does no comparisons to the test data.
     /// \param queryImgDescriptor The query image descriptor that will be added.
     ///
-    void addImgDescriptor(const Mat& queryImgDescriptor);
+    void addImgDescriptor(const cv::Mat& queryImgDescriptor);
     //@}
 
     //@{ Likelihood functions, these change with each type of FabMap
@@ -547,15 +545,15 @@ protected:
     /// \param testImgDescriptors The descriptors to compare against.
     /// \param[out] matches Result of the comparison of query to test.
     ///
-    virtual void getLikelihoods(const Mat& queryImgDescriptor,
-                                const std::vector<Mat>& testImgDescriptors,
+    virtual void getLikelihoods(const cv::Mat& queryImgDescriptor,
+                                const std::vector<cv::Mat>& testImgDescriptors,
                                 std::vector<IMatch>& matches) = 0;
     ///
     /// \brief Calculates the likelihood the query comes from a new place.
     /// \param queryImgDescriptor The descriptor from the query image.
     /// \return The log-likelihood the query descriptor came from a new place.
     ///
-    virtual double getNewPlaceLikelihood(const Mat& queryImgDescriptor);
+    virtual double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
     //@}
 
     ///
@@ -567,13 +565,13 @@ protected:
 
     //@{ Data
     /// Image descriptors seen in training (for sampled new location probability)
-    std::vector<Mat> trainingImgDescriptors;
+    std::vector<cv::Mat> trainingImgDescriptors;
     /// Image descriptors seen so far
-    std::vector<Mat> testImgDescriptors;
+    std::vector<cv::Mat> testImgDescriptors;
     /// Prior match probabilities for motion model p(L^k|Z^k-1)
     std::vector<IMatch> priormatches;
     /// Generator states for all locations
-    std::vector<Mat> peGL;
+    std::vector<cv::Mat> peGL;
     //@}
 
     //@{ Parameters
@@ -588,7 +586,7 @@ protected:
 
     //@{
     /// Chow Liu Tree
-    cv::Ptr<Mat> clTree;
+    cv::Ptr<cv::Mat> clTree;
     /// Inference object (uses clTree)
     cv::Ptr<InferBinary> infer;
     //@}
@@ -606,7 +604,7 @@ protected:
 ///
 class CV_EXPORTS FabMap1: public FabMap {
 public:
-    FabMap1(const Mat& clTree, double PzGe, double PzGNe, int flags,
+    FabMap1(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
             int numSamples = 0);
     virtual ~FabMap1();
 protected:
@@ -617,8 +615,8 @@ protected:
     /// \param testImgDescriptors The reference descriptors to compare against.
     /// \param[out] matches The results of the comparisons in IMatch::likelihood.
     ///
-    void getLikelihoods(const Mat& queryImgDescriptor,
-                        const std::vector<Mat>& testImgDescriptors,
+    void getLikelihoods(const cv::Mat& queryImgDescriptor,
+                        const std::vector<cv::Mat>& testImgDescriptors,
                         std::vector<IMatch>& matches);
 };
 
@@ -631,14 +629,14 @@ protected:
 ///
 class CV_EXPORTS FabMapLUT: public FabMap {
 public:
-    FabMapLUT(const Mat& clTree, double PzGe, double PzGNe,
+    FabMapLUT(const cv::Mat& clTree, double PzGe, double PzGNe,
               int flags, int numSamples = 0, int precision = 6);
     virtual ~FabMapLUT();
 protected:
 
     //FabMap look-up-table implementation of the likelihood comparison
-    void getLikelihoods(const Mat& queryImgDescriptor, const std::vector<
-                        Mat>& testImgDescriptors, std::vector<IMatch>& matches);
+    void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
+                        cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
     //precomputed data
     int (*table)[8];
@@ -655,7 +653,7 @@ protected:
 ///
 class CV_EXPORTS FabMapFBO: public FabMap {
 public:
-    FabMapFBO(const Mat& clTree, double PzGe, double PzGNe, int flags,
+    FabMapFBO(const cv::Mat& clTree, double PzGe, double PzGNe, int flags,
               int numSamples = 0, double rejectionThreshold = 1e-8, double PsGd =
             1e-8, int bisectionStart = 512, int bisectionIts = 9);
     virtual ~FabMapFBO();
@@ -663,8 +661,8 @@ public:
 protected:
 
     //FabMap Fast Bail-out implementation of the likelihood comparison
-    void getLikelihoods(const Mat& queryImgDescriptor, const std::vector<
-                        Mat>& testImgDescriptors, std::vector<IMatch>& matches);
+    void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
+                        cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
 
     ///
     /// \brief Stucture used to determine word comparison order
@@ -690,7 +688,7 @@ protected:
     };
 
     //private fast bail-out necessary functions
-    void setWordStatistics(const Mat& queryImgDescriptor, multiset<WordStats>& wordData);
+    void setWordStatistics(const cv::Mat& queryImgDescriptor, std::multiset<WordStats>& wordData);
     double limitbisection(double v, double m);
     double bennettInequality(double v, double m, double delta);
     static bool compInfo(const WordStats& first, const WordStats& second);
@@ -711,35 +709,35 @@ protected:
 class CV_EXPORTS FabMap2: public FabMap {
 public:
 
-    FabMap2(const Mat& clTree, double PzGe, double PzGNe, int flags);
+    FabMap2(const cv::Mat& clTree, double PzGe, double PzGNe, int flags);
     virtual ~FabMap2();
 
     //FabMap2 builds the inverted index and requires an additional training/test
     //add function
-    void addTraining(const Mat& queryImgDescriptors) {
+    void addTraining(const cv::Mat& queryImgDescriptors) {
         FabMap::addTraining(queryImgDescriptors);
     }
-    void addTraining(const std::vector<Mat>& queryImgDescriptors);
+    void addTraining(const std::vector<cv::Mat>& queryImgDescriptors);
 
-    void add(const Mat& queryImgDescriptors) {
+    void add(const cv::Mat& queryImgDescriptors) {
         FabMap::add(queryImgDescriptors);
     }
-    void add(const std::vector<Mat>& queryImgDescriptors);
+    void add(const std::vector<cv::Mat>& queryImgDescriptors);
 
 protected:
 
     //FabMap2 implementation of the likelihood comparison
-    void getLikelihoods(const Mat& queryImgDescriptor, const std::vector<
-                        Mat>& testImgDescriptors, std::vector<IMatch>& matches);
-    double getNewPlaceLikelihood(const Mat& queryImgDescriptor);
+    void getLikelihoods(const cv::Mat& queryImgDescriptor, const std::vector<
+                        cv::Mat>& testImgDescriptors, std::vector<IMatch>& matches);
+    double getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor);
 
     //the likelihood function using the inverted index
-    void getIndexLikelihoods(const Mat& queryImgDescriptor, std::vector<
-                             double>& defaults, map<int, std::vector<int> >& invertedMap,
+    void getIndexLikelihoods(const cv::Mat& queryImgDescriptor, std::vector<
+                             double>& defaults, std::map<int, std::vector<int> >& invertedMap,
                              std::vector<IMatch>& matches);
-    void addToIndex(const Mat& queryImgDescriptor,
+    void addToIndex(const cv::Mat& queryImgDescriptor,
                     std::vector<double>& defaults,
-                    map<int, std::vector<int> >& invertedMap);
+                    std::map<int, std::vector<int> >& invertedMap);
 
     //data
     std::vector<double> d1, d2, d3, d4;
@@ -748,10 +746,10 @@ protected:
     // TODO: inverted map a std::vector?
 
     std::vector<double> trainingDefaults;
-    map<int, std::vector<int> > trainingInvertedMap;
+    std::map<int, std::vector<int> > trainingInvertedMap;
 
     std::vector<double> testDefaults;
-    map<int, std::vector<int> > testInvertedMap;
+    std::map<int, std::vector<int> > testInvertedMap;
 
 };
 
@@ -772,21 +770,21 @@ public:
     /// \brief You add data to the chow-liu tree before calling make.
     /// \param imgDescriptor A \#imgs x \#words bag of words descriptor.
     ///
-    void add(const Mat& imgDescriptor);
+    void add(const cv::Mat& imgDescriptor);
     ///
     /// \brief You add data to the chow-liu tree before calling make.
     /// \param imgDescriptors A std::vector of \#imgs x \#words bag of words descriptors.
     ///
-    void add(const std::vector<Mat>& imgDescriptors);
+    void add(const std::vector<cv::Mat>& imgDescriptors);
     //@}
 
-    const std::vector<Mat>& getImgDescriptors() const;
+    const std::vector<cv::Mat>& getImgDescriptors() const;
 
-    Mat make(double infoThreshold = 0.0);
+    cv::Mat make(double infoThreshold = 0.0);
 
 private:
-    std::vector<Mat> imgDescriptors;
-    Mat mergedImgDescriptors;
+    std::vector<cv::Mat> imgDescriptors;
+    cv::Mat mergedImgDescriptors;
 
     typedef struct info {
         float score;
@@ -800,18 +798,18 @@ private:
     double CP(int a, bool za, int b, bool zb); // a | b
 
     //calculating mutual inforMation of all edges
-    void createBaseEdges(list<info>& edges, double infoThreshold);
+    void createBaseEdges(std::list<info>& edges, double infoThreshold);
     double calcMutInfo(int word1, int word2);
     static bool sortInfoScores(const info& first, const info& second);
 
     //selecting minimum spanning egdges with maximum inforMation
-    bool reduceEdgesToMinSpan(list<info>& edges);
+    bool reduceEdgesToMinSpan(std::list<info>& edges);
 
     //building the tree sctructure
-    Mat buildTree(int root_word, list<info> &edges);
-    void recAddToTree(Mat &cltree, int q, int pq,
-                      list<info> &remaining_edges);
-    std::vector<int> extractChildren(list<info> &remaining_edges, int q);
+    cv::Mat buildTree(int root_word, std::list<info> &edges);
+    void recAddToTree(cv::Mat &cltree, int q, int pq,
+                      std::list<info> &remaining_edges);
+    std::vector<int> extractChildren(std::list<info> &remaining_edges, int q);
 
 };
 
@@ -825,8 +823,8 @@ public:
     virtual ~BOWMSCTrainer();
 
     // Returns trained vocabulary (i.e. cluster centers).
-    virtual Mat cluster() const;
-    virtual Mat cluster(const Mat& descriptors) const;
+    virtual cv::Mat cluster() const;
+    virtual cv::Mat cluster(const cv::Mat& descriptors) const;
 
 protected:
 

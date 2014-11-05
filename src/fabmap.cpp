@@ -71,8 +71,8 @@ static double logsumexp(double a, double b) {
 
 FabMap::FabMap(const Mat & _clTree, double _PzGe,
                double _PzGNe, int _flags, int _numSamples) :
-    clTree(new Mat(_clTree)),
     flags(_flags), numSamples(_numSamples),
+    clTree(new Mat(_clTree)),
     infer(new InferBinary(clTree, _PzGe, _PzGNe, (_flags & NAIVE_BAYES) != 0))
 {
     CV_Assert(flags & MEAN_FIELD || flags & SAMPLED);
