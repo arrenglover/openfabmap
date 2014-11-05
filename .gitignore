@@ -6,3 +6,6 @@ CMakeLists.txt.user
 
 # Gedit/emacs
 *~
+
+# Diff orig files (when not configured properly)
+*.orig
