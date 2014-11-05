@@ -9,9 +9,9 @@ please see  http://code.google.com/p/openfabmap/ for more information
 
 OPENCV2.4 Compatibility
 if using openCV2.4 you will need to replace
-//#define OPENCV2P4
+//\#define OPENCV2P4
 with
-#define OPENCV2P4
+\#define OPENCV2P4
 at the beggining of openFABMAPcli.cpp
 
 Installation Instructions (using Cmake)
