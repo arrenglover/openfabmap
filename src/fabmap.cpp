@@ -58,8 +58,6 @@
 // TEST
 #include <iostream>
 
-using namespace cv;
-
 /*
     Calculate the sum of two log likelihoods
 */
@@ -69,10 +67,10 @@ static double logsumexp(double a, double b) {
     return a > b ? log(1 + exp(b - a)) + a : log(1 + exp(a - b)) + b;
 }
 
-FabMap::FabMap(const Mat & _clTree, double _PzGe,
+FabMap::FabMap(const cv::Mat & _clTree, double _PzGe,
                double _PzGNe, int _flags, int _numSamples) :
     flags(_flags), numSamples(_numSamples),
-    clTree(new Mat(_clTree)),
+    clTree(new cv::Mat(_clTree)),
     infer(new InferBinary(clTree, _PzGe, _PzGNe, (_flags & NAIVE_BAYES) != 0))
 {
     CV_Assert(flags & MEAN_FIELD || flags & SAMPLED);
@@ -87,24 +85,24 @@ FabMap::FabMap(const Mat & _clTree, double _PzGe,
 FabMap::~FabMap() {
 }
 
-const std::vector<Mat>& FabMap::getTrainingImgDescriptors() const {
+const std::vector<cv::Mat>& FabMap::getTrainingImgDescriptors() const {
     return trainingImgDescriptors;
 }
 
-const std::vector<Mat>& FabMap::getTestImgDescriptors() const {
+const std::vector<cv::Mat>& FabMap::getTestImgDescriptors() const {
     return testImgDescriptors;
 }
 
-void FabMap::addTraining(const Mat& queryImgDescriptor) {
+void FabMap::addTraining(const cv::Mat& queryImgDescriptor) {
     CV_Assert(!queryImgDescriptor.empty());
-    std::vector<Mat> queryImgDescriptors;
+    std::vector<cv::Mat> queryImgDescriptors;
     for (int i = 0; i < queryImgDescriptor.rows; i++) {
         queryImgDescriptors.push_back(queryImgDescriptor.row(i));
     }
     addTraining(queryImgDescriptors);
 }
 
-void FabMap::addTraining(const std::vector<Mat>& queryImgDescriptors) {
+void FabMap::addTraining(const std::vector<cv::Mat>& queryImgDescriptors) {
     for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
         CV_Assert(!queryImgDescriptors[i].empty());
         CV_Assert(queryImgDescriptors[i].rows == 1);
@@ -114,16 +112,16 @@ void FabMap::addTraining(const std::vector<Mat>& queryImgDescriptors) {
     }
 }
 
-void FabMap::add(const Mat& queryImgDescriptor) {
+void FabMap::add(const cv::Mat& queryImgDescriptor) {
     CV_Assert(!queryImgDescriptor.empty());
-    std::vector<Mat> queryImgDescriptors;
+    std::vector<cv::Mat> queryImgDescriptors;
     for (int i = 0; i < queryImgDescriptor.rows; i++) {
         queryImgDescriptors.push_back(queryImgDescriptor.row(i));
     }
     add(queryImgDescriptors);
 }
 
-void FabMap::add(const std::vector<Mat>& queryImgDescriptors) {
+void FabMap::add(const std::vector<cv::Mat>& queryImgDescriptors) {
     for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
         CV_Assert(!queryImgDescriptors[i].empty());
         CV_Assert(queryImgDescriptors[i].rows == 1);
@@ -133,17 +131,17 @@ void FabMap::add(const std::vector<Mat>& queryImgDescriptors) {
     }
 }
 
-void FabMap::compare(const Mat& queryImgDescriptor,
-                     const Mat& testImgDescriptor, std::vector<IMatch>& matches,
-                     const Mat& mask) {
+void FabMap::compare(const cv::Mat& queryImgDescriptor,
+                     const cv::Mat& testImgDescriptor, std::vector<IMatch>& matches,
+                     const cv::Mat& mask) {
     CV_Assert(!queryImgDescriptor.empty());
-    std::vector<Mat> queryImgDescriptors;
+    std::vector<cv::Mat> queryImgDescriptors;
     for (int i = 0; i < queryImgDescriptor.rows; i++) {
         queryImgDescriptors.push_back(queryImgDescriptor.row(i));
     }
 
     CV_Assert(!testImgDescriptor.empty());
-    std::vector<Mat> _testImgDescriptors;
+    std::vector<cv::Mat> _testImgDescriptors;
     for (int i = 0; i < testImgDescriptor.rows; i++) {
         _testImgDescriptors.push_back(testImgDescriptor.row(i));
     }
@@ -151,20 +149,20 @@ void FabMap::compare(const Mat& queryImgDescriptor,
 
 }
 
-void FabMap::compare(const Mat& queryImgDescriptor,
-                     const std::vector<Mat>& _testImgDescriptors,
-                     std::vector<IMatch>& matches, const Mat& mask) {
+void FabMap::compare(const cv::Mat& queryImgDescriptor,
+                     const std::vector<cv::Mat>& _testImgDescriptors,
+                     std::vector<IMatch>& matches, const cv::Mat& mask) {
     CV_Assert(!queryImgDescriptor.empty());
-    std::vector<Mat> queryImgDescriptors;
+    std::vector<cv::Mat> queryImgDescriptors;
     for (int i = 0; i < queryImgDescriptor.rows; i++) {
         queryImgDescriptors.push_back(queryImgDescriptor.row(i));
     }
     compare(queryImgDescriptors,_testImgDescriptors,matches,mask);
 }
 
-void FabMap::compare(const std::vector<Mat>& queryImgDescriptors,
-                     const std::vector<Mat>& _testImgDescriptors,
-                     std::vector<IMatch>& matches, const Mat& /*mask*/) {
+void FabMap::compare(const std::vector<cv::Mat>& queryImgDescriptors,
+                     const std::vector<cv::Mat>& _testImgDescriptors,
+                     std::vector<IMatch>& matches, const cv::Mat& /*mask*/) {
 
     CV_Assert(!(flags & MOTION_MODEL));
     for (size_t i = 0; i < _testImgDescriptors.size(); i++) {
@@ -188,16 +186,16 @@ void FabMap::compare(const std::vector<Mat>& queryImgDescriptors,
 }
 
 // DEPRECATED, USE LOCALIZE BELOW
-void FabMap::compare(const Mat& queryImgDescriptor,
+void FabMap::compare(const cv::Mat& queryImgDescriptor,
                      std::vector<IMatch>& matches, bool addQuery,
-                     const Mat& mask) {
+                     const cv::Mat& mask) {
     return localize(queryImgDescriptor,matches,addQuery,mask);
 }
-void FabMap::localize(const Mat& queryImgDescriptor,
+void FabMap::localize(const cv::Mat& queryImgDescriptor,
                       std::vector<IMatch>& matches, bool addQuery,
-                      const Mat& mask) {
+                      const cv::Mat& mask) {
     CV_Assert(!queryImgDescriptor.empty());
-    std::vector<Mat> queryImgDescriptors;
+    std::vector<cv::Mat> queryImgDescriptors;
     for (int i = 0; i < queryImgDescriptor.rows; i++) {
         queryImgDescriptors.push_back(queryImgDescriptor.row(i));
     }
@@ -206,12 +204,12 @@ void FabMap::localize(const Mat& queryImgDescriptor,
 }
 
 // DEPRECATED, USE LOCALIZE BELOW
-void FabMap::compare(const std::vector<Mat>& queryImgDescriptors,
-                     std::vector<IMatch>& matches, bool addQuery, const Mat& mask) {
+void FabMap::compare(const std::vector<cv::Mat>& queryImgDescriptors,
+                     std::vector<IMatch>& matches, bool addQuery, const cv::Mat& mask) {
     return localize(queryImgDescriptors,matches,addQuery,mask);
 }
-void FabMap::localize(const std::vector<Mat>& queryImgDescriptors,
-                      std::vector<IMatch>& matches, bool addQuery, const Mat& /*mask*/) {
+void FabMap::localize(const std::vector<cv::Mat>& queryImgDescriptors,
+                      std::vector<IMatch>& matches, bool addQuery, const cv::Mat& /*mask*/) {
 
     // TODO: add first query if empty (is this necessary)
 
@@ -230,8 +228,8 @@ void FabMap::localize(const std::vector<Mat>& queryImgDescriptors,
     }
 }
 
-void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor,
-                                  int queryIndex, const std::vector<Mat>& _testImgDescriptors,
+void FabMap::compareImgDescriptor(const cv::Mat& queryImgDescriptor,
+                                  int queryIndex, const std::vector<cv::Mat>& _testImgDescriptors,
                                   std::vector<IMatch>& matches) {
 
     std::vector<IMatch> querymatches;
@@ -245,7 +243,7 @@ void FabMap::compareImgDescriptor(const Mat& queryImgDescriptor,
     matches.insert(matches.end(), querymatches.begin(), querymatches.end());
 }
 
-double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
+double FabMap::getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor) {
     if (flags & MEAN_FIELD) {
         double logP = 0;
         bool zq, zpq;
@@ -263,7 +261,7 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
         CV_Assert(!trainingImgDescriptors.empty());
         CV_Assert(numSamples > 0);
 
-        std::vector<Mat> sampledImgDescriptors;
+        std::vector<cv::Mat> sampledImgDescriptors;
 
         // TODO: this method can result in the same sample being added
         // multiple times. Is this desired?
@@ -287,7 +285,7 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
     return 0;
 }
 
-void FabMap::normaliseDistribution(vector<IMatch>& matches) {
+void FabMap::normaliseDistribution(std::vector<IMatch>& matches) {
     CV_Assert(!matches.empty());
 
     if (flags & MOTION_MODEL) {
@@ -425,7 +423,7 @@ double InferBinary::PzqGzpqL(int q, bool zq, bool zpq, bool Lzq,
 }
 
 
-FabMap1::FabMap1(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags,
+FabMap1::FabMap1(const cv::Mat& _clTree, double _PzGe, double _PzGNe, int _flags,
                  int _numSamples) : FabMap(_clTree, _PzGe, _PzGNe, _flags,
                                            _numSamples) {
 }
@@ -433,8 +431,8 @@ FabMap1::FabMap1(const Mat& _clTree, double _PzGe, double _PzGNe, int _flags,
 FabMap1::~FabMap1() {
 }
 
-void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
-                             const std::vector<Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
+void FabMap1::getLikelihoods(const cv::Mat& queryImgDescriptor,
+                             const std::vector<cv::Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
 
     for (size_t i = 0; i < testImageDescriptors.size(); i++) {
         bool zq, zpq, Lzq;
@@ -452,7 +450,7 @@ void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
     }
 }
 
-FabMapLUT::FabMapLUT(const Mat& _clTree, double _PzGe, double _PzGNe,
+FabMapLUT::FabMapLUT(const cv::Mat& _clTree, double _PzGe, double _PzGNe,
                      int _flags, int _numSamples, int _precision) :
     FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), precision(_precision) {
 
@@ -478,8 +476,8 @@ FabMapLUT::~FabMapLUT() {
     delete[] table;
 }
 
-void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
-                               const std::vector<Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
+void FabMapLUT::getLikelihoods(const cv::Mat& queryImgDescriptor,
+                               const std::vector<cv::Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
 
     double precFactor = (double)pow(10.0, -precision);
 
@@ -494,7 +492,7 @@ void FabMapLUT::getLikelihoods(const Mat& queryImgDescriptor,
     }
 }
 
-FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe, double _PzGNe,
+FabMapFBO::FabMapFBO(const cv::Mat& _clTree, double _PzGe, double _PzGNe,
                      int _flags, int _numSamples, double _rejectionThreshold,
                      double _PsGd, int _bisectionStart, int _bisectionIts) :
     FabMap(_clTree, _PzGe, _PzGNe, _flags, _numSamples), PsGd(_PsGd),
@@ -506,8 +504,8 @@ FabMapFBO::FabMapFBO(const Mat& _clTree, double _PzGe, double _PzGNe,
 FabMapFBO::~FabMapFBO() {
 }
 
-void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
-                               const std::vector<Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
+void FabMapFBO::getLikelihoods(const cv::Mat& queryImgDescriptor,
+                               const std::vector<cv::Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
 
     std::multiset<WordStats> wordData;
     setWordStatistics(queryImgDescriptor, wordData);
@@ -565,7 +563,7 @@ void FabMapFBO::getLikelihoods(const Mat& queryImgDescriptor,
 
 }
 
-void FabMapFBO::setWordStatistics(const Mat& queryImgDescriptor,
+void FabMapFBO::setWordStatistics(const cv::Mat& queryImgDescriptor,
                                   std::multiset<WordStats>& wordData) {
     //words are sorted according to information = -ln(P(zq|zpq))
     //in non-log format this is lowest probability first
@@ -629,7 +627,7 @@ bool FabMapFBO::compInfo(const WordStats& first, const WordStats& second) {
     return first.info < second.info;
 }
 
-FabMap2::FabMap2(const Mat& _clTree, double _PzGe, double _PzGNe,
+FabMap2::FabMap2(const cv::Mat& _clTree, double _PzGe, double _PzGNe,
                  int _flags) :
     FabMap(_clTree, _PzGe, _PzGNe, _flags) {
     CV_Assert(flags & SAMPLED);
@@ -654,7 +652,7 @@ FabMap2::~FabMap2() {
 }
 
 
-void FabMap2::addTraining(const std::vector<Mat>& queryImgDescriptors) {
+void FabMap2::addTraining(const std::vector<cv::Mat>& queryImgDescriptors) {
     for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
         CV_Assert(!queryImgDescriptors[i].empty());
         CV_Assert(queryImgDescriptors[i].rows == 1);
@@ -666,7 +664,7 @@ void FabMap2::addTraining(const std::vector<Mat>& queryImgDescriptors) {
 }
 
 
-void FabMap2::add(const std::vector<Mat>& queryImgDescriptors) {
+void FabMap2::add(const std::vector<cv::Mat>& queryImgDescriptors) {
     for (size_t i = 0; i < queryImgDescriptors.size(); i++) {
         CV_Assert(!queryImgDescriptors[i].empty());
         CV_Assert(queryImgDescriptors[i].rows == 1);
@@ -677,8 +675,8 @@ void FabMap2::add(const std::vector<Mat>& queryImgDescriptors) {
     }
 }
 
-void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
-                             const std::vector<Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
+void FabMap2::getLikelihoods(const cv::Mat& queryImgDescriptor,
+                             const std::vector<cv::Mat>& testImageDescriptors, std::vector<IMatch>& matches) {
 
     if (&testImageDescriptors == &testImgDescriptors) {
         getIndexLikelihoods(queryImgDescriptor, testDefaults, testInvertedMap,
@@ -694,7 +692,7 @@ void FabMap2::getLikelihoods(const Mat& queryImgDescriptor,
     }
 }
 
-double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
+double FabMap2::getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor) {
 
     CV_Assert(!trainingImgDescriptors.empty());
 
@@ -712,7 +710,7 @@ double FabMap2::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 
 }
 
-void FabMap2::addToIndex(const Mat& queryImgDescriptor,
+void FabMap2::addToIndex(const cv::Mat& queryImgDescriptor,
                          std::vector<double>& defaults,
                          std::map<int, std::vector<int> >& invertedMap) {
     defaults.push_back(0);
@@ -724,7 +722,7 @@ void FabMap2::addToIndex(const Mat& queryImgDescriptor,
     }
 }
 
-void FabMap2::getIndexLikelihoods(const Mat& queryImgDescriptor,
+void FabMap2::getIndexLikelihoods(const cv::Mat& queryImgDescriptor,
                                   std::vector<double>& defaults,
                                   std::map<int, std::vector<int> >& invertedMap,
                                   std::vector<IMatch>& matches) {
