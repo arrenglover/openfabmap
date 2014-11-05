@@ -51,18 +51,18 @@ endif(OPENMP_FOUND)
 # If it's not found, set OpenCV_DIR to the directory with OpenCVConfig.cmake
 if(WIN32)
     set(OpenCV_PATHS
-		$ENV{OPENCV_HOME}
-		$ENV{OPENCV_DIR}/../../
-		C:/opencv/
-		C:/OpenCV2.2/
-		C:/OpenCV2.3/
-		C:/OpenCV2.4/
-		)
+        $ENV{OPENCV_HOME}
+        $ENV{OPENCV_DIR}/../../
+        C:/opencv/
+        C:/OpenCV2.2/
+        C:/OpenCV2.3/
+        C:/OpenCV2.4/
+        )
 else() # Linux
     set(OpenCV_PATHS "$ENV{OPENCV_HOME}/build")
 endif()
 find_package(OpenCV REQUIRED CONFIG
-	PATHS ${OpenCV_PATHS})
+    PATHS ${OpenCV_PATHS})
 
 
 ## openFABMAP library ##########################################################
