@@ -122,120 +122,6 @@ struct CV_EXPORTS IMatch {
 
 };
 
-///
-/// \brief Stores a location in FabMap's topological map.
-///
-struct CV_EXPORTS Place
-{
-public:
-    typedef std::pair<Place*,Place*> placePtrPair_t;
-    /// The generator state p(e)
-    cv::Mat generators;
-    /// The indices for the observation descriptors at this location
-    std::list<int> descriptorIdx;
-    ///
-    /// \brief Get a reference to the previous and next places
-    /// \return The previous and next places
-    ///
-    const std::list<placePtrPair_t> & getPlacesPrevNext()
-    {
-        return placesPrevNext;
-    }
-    ///
-    /// \brief Get a const reference to the other linked places
-    /// \return The other linked places.
-    ///
-    const std::list<Place*> & getPlacesConnected()
-    {
-        return placesConnected;
-    }
-
-private:
-    /// \brief Pointers to other locations connected to this one in sequence.
-    /// The .first is the previous location in sequence, the .second is the next in sequence.
-    /// This size of this list is <= the size of the observation list (normally ==).
-    std::list<placePtrPair_t> placesPrevNext;
-    /// \brief Pointers to other locations connected to this one, but not merged.
-    std::list<Place*> placesConnected;
-    /// Pointers can only be managed by the PlaceGraph class
-    friend class PlaceGraph;
-};
-
-///
-/// \brief Stores the graph of all the places we've been in FabMap's topological map.
-///
-class CV_EXPORTS PlaceGraph
-{
-public:
-
-    /// Default Constructor
-    PlaceGraph()
-    {}
-
-    ///
-    /// \brief Add a new place to the end of the visit list.
-    /// \return The new place that has been created and visited.
-    ///
-    Place * addNew()
-    {
-        // Add the new place
-        places.push_back(Place());
-        // Point forward
-        CV_DbgAssert(lastPlace->placesPrevNext.empty() == false);
-        CV_DbgAssert(lastPlace->placesPrevNext.front().second == NULL);
-        lastPlace->placesPrevNext.front().second = &places.back();
-        // Point backward
-        places.back().placesPrevNext.clear();
-        places.back().placesPrevNext.push_back(Place::placePtrPair_t(lastPlace, NULL));
-        // Update last place
-        lastPlace = &places.back();
-
-        // Incomplete
-        return NULL;
-    }
-
-    ///
-    /// \brief Visit a previously visited place (connect it to previous and next places)
-    /// \param place The place to be visited.
-    ///
-    void visitPlace(Place * place)
-    {
-        // Point forward
-        CV_DbgAssert(lastPlace->placesPrevNext.empty() == false);
-        CV_DbgAssert(lastPlace->placesPrevNext.front().second == NULL);
-        lastPlace->placesPrevNext.front().second = place;
-        // Point backward
-        place->placesPrevNext.push_back(Place::placePtrPair_t(lastPlace, NULL));
-        // Update last place
-        lastPlace = place;
-    }
-
-    /// \brief Remove a place from the map.
-    /// This location will no longer be compared against, and all references are removed.
-    /// Not currently implemented
-    void removePlace(Place * place);
-
-    /// \brief Add connection
-    void connectPlaces(Place * placeA, Place * placeB)
-    {
-        placeA->placesConnected.push_back(placeB);
-        placeB->placesConnected.push_back(placeA);
-    }
-
-    /// Accessor for a read-only reference to the places
-    const std::list<Place> & getPlaces() const
-    {
-        return places;
-    }
-
-protected:
-
-    /// All of the places we've been, ordered by first visit
-    std::list<Place> places;
-    /// The most recently visited place.
-    Place* lastPlace;
-};
-
 class CV_EXPORTS InferBase
 {
 public:
@@ -310,8 +196,6 @@ protected:
     cv::Ptr<cv::Mat> clTreePtr;
     /// A reference to the pointer, for legacy access (remove this eventually)
     cv::Mat & clTree;
-    /// A graph of all the places we've been, and the generators present
-    PlaceGraph placeGraph;
 };
 
 class CV_EXPORTS InferBinary : public InferBase
