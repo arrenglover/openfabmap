@@ -122,6 +122,9 @@ struct CV_EXPORTS IMatch {
 
 };
 
+///
+/// \brief This class contains some base functionality for FabMap inference
+///
 class CV_EXPORTS InferBase
 {
 public:
@@ -198,6 +201,9 @@ protected:
     cv::Mat & clTree;
 };
 
+///
+/// \brief This class implements the binary inference for FabMap.
+///
 class CV_EXPORTS InferBinary : public InferBase
 {
 public:
@@ -640,9 +646,9 @@ protected:
 ///
 /// \brief A Chow-Liu tree implementation designed for FAB-MAP.
 ///
-/// A Chow-Liu tree is required by FAB-MAP. The Chow-Liu tree provides an estiMate of the
-/// full distribution of visual words using a minimum spanning tree. The tree is
-/// generated through training data.
+/// A Chow-Liu tree is required by FAB-MAP. The Chow-Liu tree provides an
+/// estimate of the full distribution of visual words using a minimum spanning
+/// tree. The tree is generated from training data.
 ///
 class CV_EXPORTS ChowLiuTree {
 public:
@@ -657,13 +663,19 @@ public:
     void add(const cv::Mat& imgDescriptor);
     ///
     /// \brief You add data to the chow-liu tree before calling make.
-    /// \param imgDescriptors A std::vector of \#imgs x \#words bag of words descriptors.
+    /// \param imgDescriptors A vector of \#imgs x \#words bag of words descriptors.
     ///
     void add(const std::vector<cv::Mat>& imgDescriptors);
     //@}
 
     const std::vector<cv::Mat>& getImgDescriptors() const;
 
+    ///
+    /// \brief Builds the Chow Liu tree from the descriptors that have been added.
+    /// \param infoThreshold Ignores word pairs whose mutual information is below this threshold.
+    /// \return A Mat containing the 4 x |v| Chow Liu tree,
+    /// where (0,q) is parent (p) index, (1,q) is P(q), (2,q) is P(q|p), (3,q) is P(q|~p)
+    ///
     cv::Mat make(double infoThreshold = 0.0);
 
 private:
