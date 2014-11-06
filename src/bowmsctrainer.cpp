@@ -53,9 +53,7 @@
 
 #include "../include/openfabmap.hpp"
 
-using std::vector;
-using std::list;
-using cv::Mat;
+#include <iostream>
 
 namespace of2 {
 
@@ -66,72 +64,129 @@ BOWMSCTrainer::BOWMSCTrainer(double _clusterSize) :
 BOWMSCTrainer::~BOWMSCTrainer() {
 }
 
-Mat BOWMSCTrainer::cluster() const {
+cv::Mat BOWMSCTrainer::cluster() const {
     CV_Assert(!descriptors.empty());
     int descCount = 0;
     for(size_t i = 0; i < descriptors.size(); i++)
-    descCount += descriptors[i].rows;
+        descCount += descriptors[i].rows;
 
-    Mat mergedDescriptors(descCount, descriptors[0].cols,
-        descriptors[0].type());
+    cv::Mat mergedDescriptors(descCount, descriptors[0].cols,
+            descriptors[0].type());
     for(size_t i = 0, start = 0; i < descriptors.size(); i++)
     {
-        Mat submut = mergedDescriptors.rowRange((int)start,
-            (int)(start + descriptors[i].rows));
+        cv::Mat submut = mergedDescriptors.rowRange((int)start,
+                                                    (int)(start + descriptors[i].rows));
         descriptors[i].copyTo(submut);
         start += descriptors[i].rows;
     }
     return cluster(mergedDescriptors);
 }
 
-Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
+cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
 
     CV_Assert(!descriptors.empty());
 
     // TODO: sort the descriptors before clustering.
 
+    // Start timing
+    int64 start_time = cv::getTickCount();
 
-    Mat icovar = Mat::eye(descriptors.cols,descriptors.cols,descriptors.type());
+    // Used for Mahalanobis distance calculation, identity covariance
+    cv::Mat icovar = cv::Mat::eye(descriptors.cols,descriptors.cols,descriptors.type());
 
-    vector<Mat> initialCentres;
+    // Create initial centres guaranteeing a centre distance < minDist //
+
+    // Loop through all the descriptors
+    std::vector<cv::Mat> initialCentres;
     initialCentres.push_back(descriptors.row(0));
     for (int i = 1; i < descriptors.rows; i++) {
         double minDist = DBL_MAX;
-        for (size_t j = 0; j < initialCentres.size(); j++) {
-            minDist = std::min(minDist,
-                cv::Mahalanobis(descriptors.row(i),initialCentres[j],
-                icovar));
+#pragma omp parallel for schedule(dynamic, 1000)
+        for (int j = 0; j < initialCentres.size(); j++) {
+            // cv::Mahalanobis(descriptors.row(i),initialCentres[j], icovar);
+            double thisDist = cv::norm(descriptors.row(i),initialCentres[j]);
+#pragma omp critical
+            {
+                minDist = std::min(minDist, thisDist);
+            }
         }
+
+        // Add new cluster if outside of range
         if (minDist > clusterSize)
             initialCentres.push_back(descriptors.row(i));
-    }
 
-    vector<list<Mat> > clusters;
+        // Status
+        if ((i-1)%(descriptors.rows/10) == 0)
+            std::cout << "." << std::flush;
+    }
+    // Status
+    std::cout << "\nFinished initial clustering for "
+              << descriptors.rows << " descriptors. "
+              << initialCentres.size() << " initial clusters. "
+              << std::endl;
+
+    // Assign each descriptor to its closest centre //
+
+    // Loop through all the descriptors again
+    // TODO: Consider a kd-tree for this search
+    std::vector<std::list<cv::Mat> > clusters;
     clusters.resize(initialCentres.size());
+#pragma omp parallel for schedule(dynamic, 1000)
     for (int i = 0; i < descriptors.rows; i++) {
-        int index; double dist, minDist = DBL_MAX;
+        size_t index; double dist, minDist = DBL_MAX;
         for (size_t j = 0; j < initialCentres.size(); j++) {
-            dist = cv::Mahalanobis(descriptors.row(i),initialCentres[j],icovar);
+            dist = cv::norm(descriptors.row(i),initialCentres[j]);
             if (dist < minDist) {
                 minDist = dist;
                 index = j;
             }
         }
-        clusters[index].push_back(descriptors.row(i));
+#pragma omp critical
+        {
+            clusters[index].push_back(descriptors.row(i));
+        }
+        // Status (could be off because of parallelism, but a guess
+        if ((i-1)%(descriptors.rows/10) == 0)
+            std::cout << "." << std::flush;
     }
+    // Status
+    std::cout << "\nFinished re-assignment. "
+              << std::endl;
 
-    // TODO: throw away small clusters.
+    // Calculate the centre mean for each cluster //
 
-    Mat vocabulary;
-    Mat centre = Mat::zeros(1,descriptors.cols,descriptors.type());
-    for (size_t i = 0; i < clusters.size(); i++) {
-        centre.setTo(0);
-        for (list<Mat>::iterator Ci = clusters[i].begin(); Ci != clusters[i].end(); Ci++) {
+    // Loop through all the clusters
+    cv::Mat vocabulary;
+#pragma omp parallel for schedule(dynamic, 50) ordered
+    for (int i = 0; i < clusters.size(); i++) {
+        // TODO: Throw away small clusters
+        // TODO: Make this configurable
+        // TODO: Re-assign?
+        // if (clusters[i].size() < 3) continue;
+
+        cv::Mat centre = cv::Mat::zeros(1,descriptors.cols,descriptors.type());
+        for (std::list<cv::Mat>::iterator Ci = clusters[i].begin(); Ci != clusters[i].end(); Ci++) {
             centre += *Ci;
         }
         centre /= (double)clusters[i].size();
-        vocabulary.push_back(centre);
+#pragma omp ordered // Ordered so it's identical to non omp.
+        {
+            vocabulary.push_back(centre);
+        }
+
+        // Status (could be off because of parallelism, but a guess
+        if ((i-1)%(clusters.size()/10) == 0)
+            std::cout << "." << std::flush;
     }
+
+    // Finish timing
+    int64 end_time = cv::getTickCount();
+
+    // Status
+    std::cout << "\nFinished finding the mean. "
+              << vocabulary.rows << " words. "
+              << (end_time-start_time)/cv::getTickFrequency() << " s. "
+              << std::endl;
 
     return vocabulary;
 }
