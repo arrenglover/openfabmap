@@ -248,14 +248,24 @@ void ChowLiuTree::createBaseEdges(list<info>& edges, double infoThreshold) {
     int nWords = imgDescriptors[0].cols;
     info mutInfo;
 
+#pragma omp parallel for schedule(dynamic, 500)
     for(int word1 = 0; word1 < nWords; word1++) {
+        list<info> threadEdges;
         for(int word2 = word1 + 1; word2 < nWords; word2++) {
             mutInfo.word1 = word1;
             mutInfo.word2 = word2;
             mutInfo.score = (float)calcMutInfo(word1, word2);
             if(mutInfo.score >= infoThreshold)
-            edges.push_back(mutInfo);
+            threadEdges.push_back(mutInfo);
         }
+#pragma omp critical
+        {
+            edges.splice(edges.end(), threadEdges);
+        }
+
+        // Status
+        if ((word1+1)%(nWords/10) == 0)
+            std::cout << "." << std::flush;
     }
     edges.sort(sortInfoScores);
 }
