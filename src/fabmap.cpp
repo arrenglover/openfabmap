@@ -252,38 +252,38 @@ void FabMap::getLikelihoods(const Mat& queryImgDescriptor,
 }
 
 double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
-	if (flags & MEAN_FIELD) {
-		double logP = 0;
-		bool zq, zpq;
-		if(flags & NAIVE_BAYES) {
-			for (int q = 0; q < clTree.cols; q++) {
-				zq = queryImgDescriptor.at<float>(0,q) > 0;
+    if (flags & MEAN_FIELD) {
+        double logP = 0.;
+        bool zq, zpq;
+        if(flags & NAIVE_BAYES) {
+#pragma omp parallel for reduction(+:logP)
+            for (int q = 0; q < clTree.cols; q++) {
+                zq = queryImgDescriptor.at<float>(0,q) > 0;
 
-				logP += log(Pzq(q, false) * PzqGeq(zq, false) +
-						Pzq(q, true) * PzqGeq(zq, true));
-			}
-		} else {
-#pragma omp parallel for
-			for (int q = 0; q < clTree.cols; q++) {
-				zq = queryImgDescriptor.at<float>(0,q) > 0;
-				zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
+                logP += log(Pzq(q, false) * PzqGeq(zq, false) +
+                            Pzq(q, true) * PzqGeq(zq, true));
+            }
+        } else
+        {
+#pragma omp parallel for reduction(+:logP)
+            for (int q = 0; q < clTree.cols; q++) {
+                zq = queryImgDescriptor.at<float>(0,q) > 0;
+                zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
 
-				double alpha, beta, p;
-				alpha = Pzq(q, zq) * PzqGeq(!zq, false) * PzqGzpq(q, !zq, zpq);
-				beta = Pzq(q, !zq) * PzqGeq(zq, false) * PzqGzpq(q, zq, zpq);
-				p = Pzq(q, false) * beta / (alpha + beta);
+                double alpha, beta, p;
+                alpha = Pzq(q, zq) * PzqGeq(!zq, false) * PzqGzpq(q, !zq, zpq);
+                beta = Pzq(q, !zq) * PzqGeq(zq, false) * PzqGzpq(q, zq, zpq);
+                p = Pzq(q, false) * beta / (alpha + beta);
 
-				alpha = Pzq(q, zq) * PzqGeq(!zq, true) * PzqGzpq(q, !zq, zpq);
-				beta = Pzq(q, !zq) * PzqGeq(zq, true) * PzqGzpq(q, zq, zpq);
-				p += Pzq(q, true) * beta / (alpha + beta);
-#pragma omp critical
-                {
-                    logP += log(p);
-                }
-			}
-		}
-		return logP;
-	}
+                alpha = Pzq(q, zq) * PzqGeq(!zq, true) * PzqGzpq(q, !zq, zpq);
+                beta = Pzq(q, !zq) * PzqGeq(zq, true) * PzqGzpq(q, zq, zpq);
+                p += Pzq(q, true) * beta / (alpha + beta);
+
+                logP += log(p);
+            }
+        }
+        return logP;
+    }
 
 	if (flags & SAMPLED) {
 		CV_Assert(!trainingImgDescriptors.empty());
@@ -460,7 +460,7 @@ void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
     size_t startOfNewMatches = matches.size();
     matches.resize(startOfNewMatches+testImgDescriptors.size());
 
-#pragma omp parallel for schedule(static) if (testImgDescriptors.size() > 100)
+#pragma omp parallel for if (testImgDescriptors.size() > 100)
     for (int i = 0; i < testImgDescriptors.size(); i++) {
 		bool zq, zpq, Lzq;
 		double logP = 0;
