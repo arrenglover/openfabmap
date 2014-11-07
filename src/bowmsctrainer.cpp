@@ -99,18 +99,19 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
     // Loop through all the descriptors
     std::vector<cv::Mat> initialCentres;
     initialCentres.push_back(descriptors.row(0));
-    for (int i = 1; i < descriptors.rows; i++) {
-        double minDist = DBL_MAX;
-#pragma omp parallel for schedule(dynamic, 1000)
-        for (int j = 0; j < initialCentres.size(); j++) {
-            // cv::Mahalanobis(descriptors.row(i),initialCentres[j], icovar);
-            double thisDist = cv::norm(descriptors.row(i),initialCentres[j]);
-#pragma omp critical
-            {
-                minDist = std::min(minDist, thisDist);
-            }
-        }
 
+    for (int i = 1; i < descriptors.rows; i++)
+    {
+        double minDist = DBL_MAX;
+#pragma omp parallel for if (initialCentres.size() > 100)
+        for (int j = 0; j < initialCentres.size(); j++)
+        {
+            // Our covariance is identity, just use the norm, it's faster.
+            // cv::Mahalanobis(descriptors.row(i),initialCentres[j], icovar);
+            double myDist = cv::norm(descriptors.row(i),initialCentres[j]);
+#pragma omp critical
+            minDist = std::min(minDist, myDist);
+        }
         // Add new cluster if outside of range
         if (minDist > clusterSize)
             initialCentres.push_back(descriptors.row(i));
@@ -131,7 +132,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
     // TODO: Consider a kd-tree for this search
     std::vector<std::list<cv::Mat> > clusters;
     clusters.resize(initialCentres.size());
-#pragma omp parallel for schedule(dynamic, 1000)
+#pragma omp parallel for schedule(dynamic, 200)
     for (int i = 0; i < descriptors.rows; i++) {
         size_t index; double dist, minDist = DBL_MAX;
         for (size_t j = 0; j < initialCentres.size(); j++) {
@@ -141,10 +142,9 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
                 index = j;
             }
         }
-#pragma omp critical
-        {
-            clusters[index].push_back(descriptors.row(i));
-        }
+#pragma omp critical // Order doesn't matter here
+        clusters[index].push_back(descriptors.row(i));
+
         // Status (could be off because of parallelism, but a guess
         if ((i-1)%(descriptors.rows/10) == 0)
             std::cout << "." << std::flush;
@@ -157,7 +157,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
 
     // Loop through all the clusters
     cv::Mat vocabulary;
-#pragma omp parallel for schedule(dynamic, 50) ordered
+#pragma omp parallel for schedule(static, 1) ordered
     for (int i = 0; i < clusters.size(); i++) {
         // TODO: Throw away small clusters
         // TODO: Make this configurable
@@ -170,9 +170,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
         }
         centre /= (double)clusters[i].size();
 #pragma omp ordered // Ordered so it's identical to non omp.
-        {
             vocabulary.push_back(centre);
-        }
 
         // Status (could be off because of parallelism, but a guess
         if ((i-1)%(clusters.size()/10) == 0)
