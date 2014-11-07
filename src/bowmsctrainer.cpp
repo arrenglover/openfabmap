@@ -99,9 +99,10 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
     // Loop through all the descriptors
     std::vector<cv::Mat> initialCentres;
     initialCentres.push_back(descriptors.row(0));
+#pragma omp parallel
     for (int i = 1; i < descriptors.rows; i++) {
         double minDist = DBL_MAX;
-#pragma omp parallel for schedule(dynamic, 1000)
+#pragma omp for schedule(static)
         for (int j = 0; j < initialCentres.size(); j++) {
             // cv::Mahalanobis(descriptors.row(i),initialCentres[j], icovar);
             double thisDist = cv::norm(descriptors.row(i),initialCentres[j]);
@@ -141,7 +142,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
                 index = j;
             }
         }
-#pragma omp critical
+#pragma omp critical // Order doesn't matter here
         {
             clusters[index].push_back(descriptors.row(i));
         }
@@ -157,7 +158,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
 
     // Loop through all the clusters
     cv::Mat vocabulary;
-#pragma omp parallel for schedule(dynamic, 50) ordered
+#pragma omp parallel for schedule(static, 1) ordered
     for (int i = 0; i < clusters.size(); i++) {
         // TODO: Throw away small clusters
         // TODO: Make this configurable

@@ -263,6 +263,7 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 						Pzq(q, true) * PzqGeq(zq, true));
 			}
 		} else {
+#pragma omp parallel for
 			for (int q = 0; q < clTree.cols; q++) {
 				zq = queryImgDescriptor.at<float>(0,q) > 0;
 				zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
@@ -275,8 +276,10 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
 				alpha = Pzq(q, zq) * PzqGeq(!zq, true) * PzqGzpq(q, !zq, zpq);
 				beta = Pzq(q, !zq) * PzqGeq(zq, true) * PzqGzpq(q, zq, zpq);
 				p += Pzq(q, true) * beta / (alpha + beta);
-
-				logP += log(p);
+#pragma omp critical
+                {
+                    logP += log(p);
+                }
 			}
 		}
 		return logP;
@@ -451,21 +454,24 @@ FabMap1::~FabMap1() {
 }
 
 void FabMap1::getLikelihoods(const Mat& queryImgDescriptor,
-		const vector<Mat>& testImgDescriptors, vector<IMatch>& matches) {
+        const vector<Mat>& testImgDescriptors, vector<IMatch>& matches)
+{
+    // Preallocate matches
+    size_t startOfNewMatches = matches.size();
+    matches.resize(startOfNewMatches+testImgDescriptors.size());
 
-	for (size_t i = 0; i < testImgDescriptors.size(); i++) {
+#pragma omp parallel for schedule(static) if (testImgDescriptors.size() > 100)
+    for (int i = 0; i < testImgDescriptors.size(); i++) {
 		bool zq, zpq, Lzq;
 		double logP = 0;
-		for (int q = 0; q < clTree.cols; q++) {
-			
+        for (int q = 0; q < clTree.cols; q++)
+        {
 			zq = queryImgDescriptor.at<float>(0,q) > 0;
 			zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
 			Lzq = testImgDescriptors[i].at<float>(0,q) > 0;
-
 			logP += log((this->*PzGL)(q, zq, zpq, Lzq));
-
 		}
-		matches.push_back(IMatch(0,i,logP,0));
+        matches[startOfNewMatches+(size_t)i] = IMatch(0,i,logP,0);
 	}
 }
 
