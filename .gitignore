@@ -9,3 +9,7 @@ CMakeLists.txt.user
 
 # Diff orig files (when not configured properly)
 *.orig
+
+# build directory
+
+build/
