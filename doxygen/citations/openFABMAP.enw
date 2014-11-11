@@ -1,0 +1,73 @@
+﻿%0 Journal Article
+%A Cummins, Mark
+%A Newman, Paul
+%D 2008
+%T FAB-MAP: Probabilistic Localization and Mapping in the Space of Appearance
+%J International Journal of Robotics Research
+%V 27
+%N 6
+%P 647-665
+%! FAB-MAP: Probabilistic Localization and Mapping in the Space of Appearance
+%@ 0278-3649
+%R http://dx.doi.org/10.1177/0278364908090961
+%Z 1377517
+
+
+
+%0 Journal Article
+%A Cummins, M.
+%A Newman, P.
+%D 2010
+%T Appearance-only SLAM at large scale with FAB-MAP 2.0
+%J The International Journal of Robotics Research
+%! Appearance-only SLAM at large scale with FAB-MAP 2.0
+%@ 0278-3649
+
+
+
+%0 Journal Article
+%A Cummins, M.
+%A Newman, P.
+%D 2010
+%T Accelerating FAB-MAP with concentration inequalities
+%J IEEE Transactions on Robotics
+%V 26
+%N 6
+%P 1042-1050
+%! Accelerating FAB-MAP with concentration inequalities
+%@ 1552-3098
+
+
+
+%0 Conference Proceedings
+%A Glover, A.
+%A Maddern, W.
+%A Milford, M.
+%A Wyeth, G.
+%D 2010
+%T FAB-MAP+ RatSLAM: Appearance-based SLAM for Multiple Times of Day
+%B The International Conference on Robotics and Automation
+%C Anchorage, Alaska, USA
+%I IEEE
+%P 3507-3512
+%! FAB-MAP+ RatSLAM: Appearance-based SLAM for Multiple Times of Day
+%@ 1050-4729
+
+
+
+%0 Conference Proceedings
+%A Glover, A.
+%A Maddern, W.
+%A Warren, M.
+%A Reid, S.
+%A Milford, M.
+%A Wyeth, G.
+%D 2011
+%T OpenFABMAP: An Open Source Toolbox for Appearance-based Loop Closure Detection
+%B The International Conference on Robotics and Automation
+%C St Paul, Minnesota
+%I IEEE
+%! OpenFABMAP: An Open Source Toolbox for Appearance-based Loop Closure Detection
+
+
+
