@@ -253,7 +253,7 @@ double FabMap::getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor) {
 
             zq = queryImgDescriptor.at<float>(0,q) > 0;
             zpq = queryImgDescriptor.at<float>(0,infer->pq(q)) > 0;
-            logP += log((infer->*infer->PzGL)(q, zq, zpq, false/*unused*/, true));
+            logP += log(infer->PzGL(q, zq, zpq, false/*unused*/, true));
         }
         return logP;
     }
@@ -449,7 +449,7 @@ void FabMap1::getLikelihoods(const cv::Mat& queryImgDescriptor,
             zq = queryImgDescriptor.at<float>(0,q) > 0;
             zpq = queryImgDescriptor.at<float>(0,infer->pq(q)) > 0;
             Lzq = testImgDescriptors[i].at<float>(0,q) > 0;
-            logP += log((infer->*infer->PzGL)(q, zq, zpq, Lzq, false));
+            logP += log(infer->PzGL(q, zq, zpq, Lzq, false));
         }
         matches[startOfNewMatches+(size_t)i] = IMatch(0,i,logP,0);
     }
@@ -471,7 +471,7 @@ FabMapLUT::FabMapLUT(const cv::Mat& _clTree, double _PzGe, double _PzGNe,
             bool zq = (bool) ((i >> 1) & 0x01);
             bool zpq = (bool) (i & 1);
 
-            table[q][i] = -(int)(log((infer->*infer->PzGL)(q, zq, zpq, Lzq, false))
+            table[q][i] = -(int)(log(infer->PzGL(q, zq, zpq, Lzq, false))
                                  * precFactor);
         }
     }
@@ -537,7 +537,7 @@ void FabMapFBO::getLikelihoods(const cv::Mat& queryImgDescriptor,
             bool Lzq =
                     testImageDescriptors[matchIndices[i]].at<float>(0,wordIter->q) > 0;
             querymatches[matchIndices[i]].likelihood +=
-                    log((infer->*infer->PzGL)(wordIter->q,zq,zpq,Lzq,false));
+                    log(infer->PzGL(wordIter->q,zq,zpq,Lzq,false));
             currBest =
                     std::max(querymatches[matchIndices[i]].likelihood, currBest);
         }
@@ -588,8 +588,8 @@ void FabMapFBO::setWordStatistics(const cv::Mat& queryImgDescriptor,
         zq = queryImgDescriptor.at<float>(0,wordIter->q) > 0;
         zpq = queryImgDescriptor.at<float>(0,infer->pq(wordIter->q)) > 0;
 
-        d = log((infer->*infer->PzGL)(wordIter->q, zq, zpq, true, false)) -
-                log((infer->*infer->PzGL)(wordIter->q, zq, zpq, false, false));
+        d = log(infer->PzGL(wordIter->q, zq, zpq, true, false)) -
+                log(infer->PzGL(wordIter->q, zq, zpq, false, false));
 
         V += pow(d, 2.0) * 2 *
                 (infer->Pzq(wordIter->q, true) - pow(infer->Pzq(wordIter->q, true), 2.0));
@@ -640,14 +640,14 @@ FabMap2::FabMap2(const cv::Mat& _clTree, double _PzGe, double _PzGNe,
     children.resize(infer->vocabSize());
 
     for (int q = 0; q < infer->vocabSize(); q++) {
-        d1.push_back(log((infer->*infer->PzGL)(q, false, false, true, false) /
-                         (infer->*infer->PzGL)(q, false, false, false, false)));
-        d2.push_back(log((infer->*infer->PzGL)(q, false, true, true, false) /
-                         (infer->*infer->PzGL)(q, false, true, false, false)) - d1[q]);
-        d3.push_back(log((infer->*infer->PzGL)(q, true, false, true, false) /
-                         (infer->*infer->PzGL)(q, true, false, false, false))- d1[q]);
-        d4.push_back(log((infer->*infer->PzGL)(q, true, true, true, false) /
-                         (infer->*infer->PzGL)(q, true, true, false, false))- d1[q]);
+        d1.push_back(log(infer->PzGL(q, false, false, true, false) /
+                         infer->PzGL(q, false, false, false, false)));
+        d2.push_back(log(infer->PzGL(q, false, true, true, false) /
+                         infer->PzGL(q, false, true, false, false)) - d1[q]);
+        d3.push_back(log(infer->PzGL(q, true, false, true, false) /
+                         infer->PzGL(q, true, false, false, false))- d1[q]);
+        d4.push_back(log(infer->PzGL(q, true, true, true, false) /
+                         infer->PzGL(q, true, true, false, false))- d1[q]);
         children[infer->pq(q)].push_back(q);
     }
 
