@@ -254,11 +254,10 @@ void FabMap::getLikelihoods(const Mat& queryImgDescriptor,
 double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
     if (flags & MEAN_FIELD) {
         double logP = 0.;
-        bool zq, zpq;
         if(flags & NAIVE_BAYES) {
 #pragma omp parallel for reduction(+:logP)
             for (int q = 0; q < clTree.cols; q++) {
-                zq = queryImgDescriptor.at<float>(0,q) > 0;
+                bool zq = queryImgDescriptor.at<float>(0,q) > 0;
 
                 logP += log(Pzq(q, false) * PzqGeq(zq, false) +
                             Pzq(q, true) * PzqGeq(zq, true));
@@ -267,8 +266,8 @@ double FabMap::getNewPlaceLikelihood(const Mat& queryImgDescriptor) {
         {
 #pragma omp parallel for reduction(+:logP)
             for (int q = 0; q < clTree.cols; q++) {
-                zq = queryImgDescriptor.at<float>(0,q) > 0;
-                zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
+                bool zq = queryImgDescriptor.at<float>(0,q) > 0;
+                bool zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
 
                 double alpha, beta, p;
                 alpha = Pzq(q, zq) * PzqGeq(!zq, false) * PzqGzpq(q, !zq, zpq);
