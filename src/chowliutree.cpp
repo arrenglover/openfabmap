@@ -243,11 +243,11 @@ double ChowLiuTree::calcMutInfo(int word1, int word2) {
 void ChowLiuTree::createBaseEdges(std::list<info>& edges, double infoThreshold) {
 
     int nWords = imgDescriptors[0].cols;
-    info mutInfo;
 
 #pragma omp parallel for schedule(dynamic, 500)
     for(int word1 = 0; word1 < nWords; word1++) {
         std::list<info> threadEdges;
+        info mutInfo;
         for(int word2 = word1 + 1; word2 < nWords; word2++) {
             mutInfo.word1 = word1;
             mutInfo.word2 = word2;
