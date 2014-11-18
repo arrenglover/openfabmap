@@ -248,13 +248,9 @@ double FabMap::getNewPlaceLikelihood(const cv::Mat& queryImgDescriptor) {
         double logP = 0.;
 #pragma omp parallel for reduction(+:logP)
         for (int q = 0; q < infer->vocabSize(); q++)
-                bool zq = queryImgDescriptor.at<float>(0,q) > 0;
         {
-                bool zq = queryImgDescriptor.at<float>(0,q) > 0;
-                bool zpq = queryImgDescriptor.at<float>(0,pq(q)) > 0;
-
-            zq = queryImgDescriptor.at<float>(0,q) > 0;
-            zpq = queryImgDescriptor.at<float>(0,infer->pq(q)) > 0;
+            bool zq = queryImgDescriptor.at<float>(0,q) > 0;
+            bool zpq = queryImgDescriptor.at<float>(0,infer->pq(q)) > 0;
             logP += log(infer->PzGL(q, zq, zpq, false/*unused*/, true));
         }
         return logP;
