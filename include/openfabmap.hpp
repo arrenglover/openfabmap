@@ -213,11 +213,6 @@ public:
                 const bool & _naiveBayes)
         : InferBase(_clTree, _PzGe, _PzGNe, _naiveBayes)
     {
-        if (naiveBayes) {
-            PzGL = &InferBinary::PzqGL;
-        } else {
-            PzGL = &InferBinary::PzqGzpqL;
-        }
     }
 
     //@{ FAB-MAP Core
@@ -276,8 +271,12 @@ public:
     /// \param Lzq If the word previously observed at this location.
     /// \return The measurement probability given past (and parent measurements for CLT).
     ///
-    double (InferBinary::*PzGL)(int q, bool zq, bool zpq, bool Lzq,
-                              const bool & newPlace);
+    double PzGL(int q, bool zq, bool zpq, bool Lzq,
+                              const bool & newPlace)
+    {
+        return naiveBayes ? PzqGL(q, zq, zpq, Lzq, newPlace)
+                          : PzqGzpqL(q, zq, zpq, Lzq, newPlace);
+    }
     //@}
 };
 
