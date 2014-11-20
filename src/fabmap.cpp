@@ -438,7 +438,7 @@ void FabMap1::getLikelihoods(const cv::Mat& queryImgDescriptor,
     matches.resize(startOfNewMatches+testImgDescriptors.size());
 
 #pragma omp parallel for if (testImgDescriptors.size() > 100)
-    for (int i = 0; i < testImgDescriptors.size(); i++)
+    for (int i = 0; i < (int)testImgDescriptors.size(); i++)
     {
         bool zq, zpq, Lzq;
         double logP = 0;

@@ -104,7 +104,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
     {
         double minDist = DBL_MAX;
 #pragma omp parallel for if (initialCentres.size() > 100)
-        for (int j = 0; j < initialCentres.size(); j++)
+        for (int j = 0; j < (int)initialCentres.size(); j++)
         {
             // Our covariance is identity, just use the norm, it's faster.
             // cv::Mahalanobis(descriptors.row(i),initialCentres[j], icovar);
@@ -158,7 +158,7 @@ cv::Mat BOWMSCTrainer::cluster(const cv::Mat& descriptors) const {
     // Loop through all the clusters
     cv::Mat vocabulary;
 #pragma omp parallel for schedule(static, 1) ordered
-    for (int i = 0; i < clusters.size(); i++) {
+    for (int i = 0; i < (int)clusters.size(); i++) {
         // TODO: Throw away small clusters
         // TODO: Make this configurable
         // TODO: Re-assign?

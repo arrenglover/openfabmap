@@ -4,9 +4,11 @@ compiler:
   - gcc
 
 before_install:
+  - deb http://ppa.launchpad.net/6-mark-h/opencv-nonfree/ubuntu precise main 
+  - deb-src http://ppa.launchpad.net/6-mark-h/opencv-nonfree/ubuntu precise main 
   - sudo apt-get update -qq
 install:
-  - sudo apt-get install -y build-essential libopencv-dev
+  - sudo apt-get install -y build-essential libopencv-dev opencv-nonfree
 
 before_script:
   - mkdir build
