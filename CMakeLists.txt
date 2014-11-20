@@ -65,7 +65,7 @@ else() # Linux
         /usr/share/OpenCV
         )
 endif()
-find_package(OpenCV REQUIRED CONFIG
+find_package(OpenCV REQUIRED NO_MODULE
     PATHS ${OpenCV_PATHS})
 
 
