@@ -9,6 +9,7 @@ before_install:
   - sudo apt-get -qq update
 install:
   - sudo apt-get -qq install build-essential libopencv-dev libopencv-nonfree-dev # libopencv-contrib-dev
+  - sudo apt-get install mlocate
   - sudo updatedb
   - locate OpenCVConfig.cmake
 
