@@ -6,9 +6,11 @@ compiler:
 before_install:
   #- sudo add-apt-repository -y ppa:philip5/extra
   - sudo add-apt-repository -y ppa:alexei.colin/opencv
-  - sudo apt-get update #-qq update
+  - sudo apt-get -qq update
 install:
   - sudo apt-get -qq install build-essential libopencv-dev libopencv-nonfree-dev # libopencv-contrib-dev
+  - sudo apt-get updatedb
+  - locate OpenCVConfig.cmake
 
 before_script:
   - mkdir build
