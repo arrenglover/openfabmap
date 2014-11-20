@@ -62,6 +62,7 @@ else() # Linux
     set(OpenCV_PATHS
         $ENV{OPENCV_HOME}/build
         /usr/local/share/OpenCV/
+        /usr/share/OpenCV
         )
 endif()
 find_package(OpenCV REQUIRED CONFIG
