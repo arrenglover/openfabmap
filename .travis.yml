@@ -15,3 +15,4 @@ before_script:
   - cmake .. -DCMAKE_BUILD_TYPE=DEBUG # -DTESTS_ON=true
 
 script: make all # test
+
