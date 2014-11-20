@@ -59,7 +59,10 @@ if(WIN32)
         C:/OpenCV2.4/
         )
 else() # Linux
-    set(OpenCV_PATHS "$ENV{OPENCV_HOME}/build")
+    set(OpenCV_PATHS
+        $ENV{OPENCV_HOME}/build
+        /usr/local/share/OpenCV/
+        )
 endif()
 find_package(OpenCV REQUIRED CONFIG
     PATHS ${OpenCV_PATHS})

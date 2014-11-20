@@ -6,14 +6,15 @@ compiler:
 before_install:
   - sudo apt-get update -qq
 install:
-  - sudo apt-get install -y build-essential libopencv-dev 
+  - sudo apt-get install -qq -y build-essential
   - curl -sL https://github.com/Itseez/opencv/archive/2.4.6.1.zip > opencv.zip
-  - unzip opencv.zip
+  - unzip -qq opencv.zip
   - rm opencv.zip
+  - git clone https://github.com/Itseez/opencv_contrib.git
   - mkdir opencv-build
   - cd opencv-build/
-  - cmake -DCMAKE_BUILD_TYPE=RELEASE -DBUILD_DOCS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_java=OFF -DBUILD_JASPER=ON -DWITH_JASPER=ON -DBUILD_ZLIB=ON -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DWITH_OPENEXR=OFF -DBUILD_PNG=ON -DWITH_PNG=ON -DWITH_TIFF=ON -DBUILD_TIFF=ON -DWITH_WEBP=OFF -DWITH_JPEG=ON -DBUILD_JPEG=ON ../opencv-2.4.6.1/
-  - sudo make install
+  - cmake -DCMAKE_BUILD_TYPE=RELEASE -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules -DBUILD_DOCS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_opencv_java=OFF -DBUILD_JASPER=ON -DWITH_JASPER=ON -DBUILD_ZLIB=ON -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF -DWITH_OPENEXR=OFF -DBUILD_PNG=ON -DWITH_PNG=ON -DWITH_TIFF=ON -DBUILD_TIFF=ON -DWITH_WEBP=OFF -DWITH_JPEG=ON -DBUILD_JPEG=ON ../opencv-2.4.6.1/
+  - sudo make -j 2 install
   - cd ..
 
 before_script:
@@ -21,5 +22,5 @@ before_script:
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=DEBUG # -DTESTS_ON=true
 
-script: make all # test
+script: make -j 2 # all test
 
