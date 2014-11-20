@@ -52,6 +52,7 @@
 //////////////////////////////////////////////////////////////////////////////*/
 
 #include "msckd.h"
+#include <list>
 #include <algorithm>
 
 // Custom implementation of Modified Sequential Clustering
