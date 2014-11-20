@@ -4,9 +4,9 @@ compiler:
   - gcc
 
 before_install:
-  - sudo apt-get -qq update
+  - sudo apt-get update -qq
 install:
-  - sudo apt-get -qq install cmake build-essential libopencv-dev
+  - sudo apt-get install -qq cmake build-essential libopencv-dev
 
 before_script:
   - mkdir build
