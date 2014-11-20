@@ -1,0 +1,17 @@
+language: cpp
+
+compiler:
+  - gcc
+
+before_install:
+  - git submodule update --init --recursive
+  - sudo apt-get update
+install:
+  - sudo apt-get install build-essential libopencv-dev
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=DEBUG # -DTESTS_ON=true
+
+script: make all # test
