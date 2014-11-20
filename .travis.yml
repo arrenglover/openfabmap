@@ -8,9 +8,9 @@ before_install:
   - sudo apt-get -qq update
 install:
   - sudo apt-get -qq install cmake build-essential libopencv-dev
-  - sudo add-apt-repository -y ppa:alexei.colin/opencv
-  - sudo apt-get -qq update
-  - sudo apt-get -qq install libopencv-nonfree-dev libopencv-photo-dev libopencv-contrib-dev #libopencv-stitching-dev
+  #- sudo add-apt-repository -y ppa:alexei.colin/opencv
+  #- sudo apt-get -qq update
+  #- sudo apt-get -qq install libopencv-nonfree-dev libopencv-photo-dev libopencv-contrib-dev #libopencv-stitching-dev
 
 before_script:
   - mkdir build

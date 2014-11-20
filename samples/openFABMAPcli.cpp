@@ -51,8 +51,6 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#define OPENCV2P4
-
 #include "../include/openfabmap.hpp"
 
 #include <opencv2/opencv.hpp>
