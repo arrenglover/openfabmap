@@ -264,7 +264,7 @@ void ChowLiuTree::createBaseEdges(list<info>& edges, double infoThreshold) {
         }
 
         // Status
-        if ((word1+1)%(nWords/10) == 0)
+        if (nWords >= 10 && (word1+1)%(nWords/10) == 0)
             std::cout << "." << std::flush;
     }
     edges.sort(sortInfoScores);
