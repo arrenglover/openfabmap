@@ -59,10 +59,17 @@ if(WIN32)
         C:/OpenCV2.4/
         )
 else() # Linux
-    set(OpenCV_PATHS "$ENV{OPENCV_HOME}/build")
+    set(OpenCV_PATHS
+        $ENV{OPENCV_HOME}/build
+        /usr/local/share/OpenCV/
+        /usr/share/OpenCV
+        )
 endif()
-find_package(OpenCV REQUIRED CONFIG
+find_package(OpenCV REQUIRED NO_MODULE
     PATHS ${OpenCV_PATHS})
+if(OpenCV_VERSION VERSION_GREATER "2.3.9")
+    add_definitions(-DOPENCV2P4)
+endif()
 
 
 ## openFABMAP library ##########################################################
@@ -90,7 +97,7 @@ target_link_libraries(openFABMAP ${OpenCV_LIBS})
 # Tell the project where settings / doxygen / readme files are (for Qt Creator)
 file(GLOB SETTINGS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/samples/settings.yml")
 file(GLOB DOXY_FILES "${CMAKE_CURRENT_SOURCE_DIR}"
-    "doxygen/*.dox" "doxygen/*.dox.*" "doxygen/*.xml")
+    ".travis.yml" "doxygen/*.dox" "doxygen/*.dox.*" "doxygen/*.xml")
 set(README_FILES "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
 
 # Copy the settings file across when building (not used for now)

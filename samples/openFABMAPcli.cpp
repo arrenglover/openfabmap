@@ -51,8 +51,6 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#define OPENCV2P4
-
 #include "../include/openfabmap.hpp"
 #include <fstream>
 #ifdef OPENCV2P4
