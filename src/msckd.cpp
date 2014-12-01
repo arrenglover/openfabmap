@@ -53,6 +53,7 @@
 
 #include "msckd.h"
 #include <algorithm>
+#include <list>
 
 // Custom implementation of Modified Sequential Clustering
 BOWMSCTrainer::BOWMSCTrainer(double _clusterSize, int _minDescriptorsPerCluster,
