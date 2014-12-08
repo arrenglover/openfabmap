@@ -51,12 +51,33 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef OPENFABMAP_H_
-#define OPENFABMAP_H_
+#ifndef BOWMSCTRAINER_H_
+#define BOWMSCTRAINER_H_
 
-// All of the core modules that comprise OpenFABMAP
-#include "fabmap.hpp"
-#include "bowmsctrainer.hpp"
-#include "chowliutree.hpp"
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
 
-#endif /* OPENFABMAP_H_ */
+namespace of2 {
+
+///
+/// \brief A custom vocabulary training method based on:
+/// http://www.springerlink.com/content/d1h6j8x552532003/.
+///
+class CV_EXPORTS BOWMSCTrainer: public cv::BOWTrainer {
+public:
+    BOWMSCTrainer(double clusterSize = 0.4);
+    virtual ~BOWMSCTrainer();
+
+    // Returns trained vocabulary (i.e. cluster centers).
+    virtual cv::Mat cluster() const;
+    virtual cv::Mat cluster(const cv::Mat& descriptors) const;
+
+protected:
+
+    double clusterSize;
+
+};
+
+} // namespace of2
+
+#endif /* BOWMSCTRAINER_H_ */

@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/openfabmap.hpp"
+#include "../include/chowliutree.hpp"
 
 #include <iostream>
 

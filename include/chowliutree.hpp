@@ -51,12 +51,82 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef OPENFABMAP_H_
-#define OPENFABMAP_H_
+#ifndef CHOWLIUTREE_H_
+#define CHOWLIUTREE_H_
 
-// All of the core modules that comprise OpenFABMAP
-#include "fabmap.hpp"
-#include "bowmsctrainer.hpp"
-#include "chowliutree.hpp"
+#include "opencv2/core/core.hpp"
 
-#endif /* OPENFABMAP_H_ */
+#include <vector>
+#include <list>
+
+namespace of2 {
+
+///
+/// \brief A Chow-Liu tree implementation designed for FAB-MAP.
+///
+/// A Chow-Liu tree is required by FAB-MAP. The Chow-Liu tree provides an
+/// estimate of the full distribution of visual words using a minimum spanning
+/// tree. The tree is generated from training data.
+///
+class CV_EXPORTS ChowLiuTree {
+public:
+    ChowLiuTree();
+    virtual ~ChowLiuTree();
+
+    //@{
+    ///
+    /// \brief You add data to the chow-liu tree before calling make.
+    /// \param imgDescriptor A \#imgs x \#words bag of words descriptor.
+    ///
+    void add(const cv::Mat& imgDescriptor);
+    ///
+    /// \brief You add data to the chow-liu tree before calling make.
+    /// \param imgDescriptors A vector of \#imgs x \#words bag of words descriptors.
+    ///
+    void add(const std::vector<cv::Mat>& imgDescriptors);
+    //@}
+
+    const std::vector<cv::Mat>& getImgDescriptors() const;
+
+    ///
+    /// \brief Builds the Chow Liu tree from the descriptors that have been added.
+    /// \param infoThreshold Ignores word pairs whose mutual information is below this threshold.
+    /// \return A Mat containing the 4 x |v| Chow Liu tree,
+    /// where (0,q) is parent (p) index, (1,q) is P(q), (2,q) is P(q|p), (3,q) is P(q|~p)
+    ///
+    cv::Mat make(double infoThreshold = 0.0);
+
+private:
+    std::vector<cv::Mat> imgDescriptors;
+    cv::Mat mergedImgDescriptors;
+
+    typedef struct info {
+        float score;
+        short word1;
+        short word2;
+    } info;
+
+    //probabilities extracted from mergedImgDescriptors
+    double P(int a, bool za);
+    double JP(int a, bool za, int b, bool zb); //a & b
+    double CP(int a, bool za, int b, bool zb); // a | b
+
+    //calculating mutual inforMation of all edges
+    void createBaseEdges(std::list<info>& edges, double infoThreshold);
+    double calcMutInfo(int word1, int word2);
+    static bool sortInfoScores(const info& first, const info& second);
+
+    //selecting minimum spanning egdges with maximum inforMation
+    bool reduceEdgesToMinSpan(std::list<info>& edges);
+
+    //building the tree sctructure
+    cv::Mat buildTree(int root_word, std::list<info> &edges);
+    void recAddToTree(cv::Mat &cltree, int q, int pq,
+                      std::list<info> &remaining_edges);
+    std::vector<int> extractChildren(std::list<info> &remaining_edges, int q);
+
+};
+
+} // namespace of2
+
+#endif /* CHOWLIUTREE_H_ */

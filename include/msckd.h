@@ -54,8 +54,10 @@
 #ifndef MSCKD_H_
 #define MSCKD_H_
 
+#include "opencv2/core/core.hpp"
+#include "opencv2/features2d/features2d.hpp"
+
 #include <vector>
-#include <opencv2/opencv.hpp>
 
 // Custom implementation of Modified Sequential Clustering
 class BOWMSCTrainer : public cv::BOWTrainer {

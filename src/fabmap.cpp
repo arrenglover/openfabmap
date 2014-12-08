@@ -51,12 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-//#include "precomp.hpp"
-//#include "opencv2/contrib/openfabmap.hpp"
-#include "../include/openfabmap.hpp"
-
-// TEST
-#include <iostream>
+#include "../include/fabmap.hpp"
 
 /*
     Calculate the sum of two log likelihoods
@@ -357,70 +352,6 @@ void FabMap::normaliseDistribution(std::vector<IMatch>& matches) {
         }
     }
 }
-
-int InferBase::pq(int q) {
-    return (int)clTree.at<double>(0,q);
-}
-
-double InferBase::Pzq(int q, bool zq) {
-    return (zq) ? clTree.at<double>(1,q) : 1 - clTree.at<double>(1,q);
-}
-
-double InferBase::PzqGzpq(int q, bool zq, bool zpq) {
-    if (zpq) {
-        return (zq) ? clTree.at<double>(2,q) : 1 - clTree.at<double>(2,q);
-    } else {
-        return (zq) ? clTree.at<double>(3,q) : 1 - clTree.at<double>(3,q);
-    }
-}
-
-double InferBinary::PzqGeq(bool zq, bool eq) {
-    if (eq) {
-        return (zq) ? PzGe : 1 - PzGe;
-    } else {
-        return (zq) ? PzGNe : 1 - PzGNe;
-    }
-}
-
-double InferBinary::PeqGLzq(int q, bool Lzq, bool eq) {
-    double alpha, beta;
-    alpha = PzqGeq(Lzq, true) * Pzq(q, true);
-    beta = PzqGeq(Lzq, false) * Pzq(q, false);
-
-    if (eq) {
-        return alpha / (alpha + beta);
-    } else {
-        return 1 - (alpha / (alpha + beta));
-    }
-}
-
-double InferBinary::PzqGL(int q, bool zq, bool /*zpq*/, bool Lzq,
-                              const bool & newPlace /*= false*/)
-{
-    double p = (newPlace ? Pzq(q, false) : PeqGLzq(q, Lzq, false)) * PzqGeq(zq, false) +
-            (newPlace ? Pzq(q, true) : PeqGLzq(q, Lzq, true)) * PzqGeq(zq, true);
-
-    return p;
-}
-
-double InferBinary::PzqGzpqL(int q, bool zq, bool zpq, bool Lzq,
-                                 const bool & newPlace /*= false*/) {
-    double p;
-    double alpha, beta;
-
-    alpha = Pzq(q,  zq) * PzqGeq(!zq, false) * PzqGzpq(q, !zq, zpq);
-    beta  = Pzq(q, !zq) * PzqGeq( zq, false) * PzqGzpq(q,  zq, zpq);
-    p = (newPlace ? Pzq(q, false) : PeqGLzq(q, Lzq, false))
-            * beta / (alpha + beta);
-
-    alpha = Pzq(q,  zq) * PzqGeq(!zq, true) * PzqGzpq(q, !zq, zpq);
-    beta  = Pzq(q, !zq) * PzqGeq( zq, true) * PzqGzpq(q,  zq, zpq);
-    p += (newPlace ? Pzq(q, true) : PeqGLzq(q, Lzq, true))
-            * beta / (alpha + beta);
-
-    return p;
-}
-
 
 FabMap1::FabMap1(const cv::Mat& _clTree, double _PzGe, double _PzGNe, int _flags,
                  int _numSamples) : FabMap(_clTree, _PzGe, _PzGNe, _flags,

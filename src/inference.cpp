@@ -32,7 +32,7 @@
 //
 //  * Redistribution's in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
-//    and/or other materials provided with the distribution.
+//    and/or other Materials provided with the distribution.
 //
 //  * The name of the copyright holders may not be used to endorse or promote
 //    products derived from this software without specific prior written
@@ -51,12 +51,71 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef OPENFABMAP_H_
-#define OPENFABMAP_H_
+#include "../include/inference.hpp"
 
-// All of the core modules that comprise OpenFABMAP
-#include "fabmap.hpp"
-#include "bowmsctrainer.hpp"
-#include "chowliutree.hpp"
+namespace of2 {
 
-#endif /* OPENFABMAP_H_ */
+int InferBase::pq(int q) {
+    return (int)clTree.at<double>(0,q);
+}
+
+double InferBase::Pzq(int q, bool zq) {
+    return (zq) ? clTree.at<double>(1,q) : 1 - clTree.at<double>(1,q);
+}
+
+double InferBase::PzqGzpq(int q, bool zq, bool zpq) {
+    if (zpq) {
+        return (zq) ? clTree.at<double>(2,q) : 1 - clTree.at<double>(2,q);
+    } else {
+        return (zq) ? clTree.at<double>(3,q) : 1 - clTree.at<double>(3,q);
+    }
+}
+
+double InferBinary::PzqGeq(bool zq, bool eq) {
+    if (eq) {
+        return (zq) ? PzGe : 1 - PzGe;
+    } else {
+        return (zq) ? PzGNe : 1 - PzGNe;
+    }
+}
+
+double InferBinary::PeqGLzq(int q, bool Lzq, bool eq) {
+    double alpha, beta;
+    alpha = PzqGeq(Lzq, true) * Pzq(q, true);
+    beta = PzqGeq(Lzq, false) * Pzq(q, false);
+
+    if (eq) {
+        return alpha / (alpha + beta);
+    } else {
+        return 1 - (alpha / (alpha + beta));
+    }
+}
+
+double InferBinary::PzqGL(int q, bool zq, bool /*zpq*/, bool Lzq,
+                              const bool & newPlace /*= false*/)
+{
+    double p = (newPlace ? Pzq(q, false) : PeqGLzq(q, Lzq, false)) * PzqGeq(zq, false) +
+            (newPlace ? Pzq(q, true) : PeqGLzq(q, Lzq, true)) * PzqGeq(zq, true);
+
+    return p;
+}
+
+double InferBinary::PzqGzpqL(int q, bool zq, bool zpq, bool Lzq,
+                                 const bool & newPlace /*= false*/) {
+    double p;
+    double alpha, beta;
+
+    alpha = Pzq(q,  zq) * PzqGeq(!zq, false) * PzqGzpq(q, !zq, zpq);
+    beta  = Pzq(q, !zq) * PzqGeq( zq, false) * PzqGzpq(q,  zq, zpq);
+    p = (newPlace ? Pzq(q, false) : PeqGLzq(q, Lzq, false))
+            * beta / (alpha + beta);
+
+    alpha = Pzq(q,  zq) * PzqGeq(!zq, true) * PzqGzpq(q, !zq, zpq);
+    beta  = Pzq(q, !zq) * PzqGeq( zq, true) * PzqGzpq(q,  zq, zpq);
+    p += (newPlace ? Pzq(q, true) : PeqGLzq(q, Lzq, true))
+            * beta / (alpha + beta);
+
+    return p;
+}
+
+} // namespace of2

@@ -51,9 +51,11 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/openfabmap.hpp"
+#include "../include/bowmsctrainer.hpp"
 
 #include <iostream>
+#include <vector>
+#include <list>
 
 namespace of2 {
 
