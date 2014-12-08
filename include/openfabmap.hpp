@@ -58,5 +58,7 @@
 #include "fabmap.hpp"
 #include "bowmsctrainer.hpp"
 #include "chowliutree.hpp"
+// TODO: Integrate MSC KD-Tree trainer
+//#include "msckd.h"
 
 #endif /* OPENFABMAP_H_ */
