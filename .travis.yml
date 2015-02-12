@@ -13,6 +13,5 @@ before_script:
   - cd build
   - cmake .. -DCMAKE_BUILD_TYPE=DEBUG
 
-script:
-  - make -j 2
+script: make -j 2
 

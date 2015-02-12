@@ -32,7 +32,7 @@
 //
 //  * Redistribution's in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
-//    and/or other materials provided with the distribution.
+//    and/or other cv::Materials provided with the distribution.
 //
 //  * The name of the copyright holders may not be used to endorse or promote
 //    products derived from this software without specific prior written
@@ -51,12 +51,9 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/openfabmap.hpp"
+#include "../include/chowliutree.hpp"
 
-using std::vector;
-using std::list;
-using std::map;
-using cv::Mat;
+#include <iostream>
 
 namespace of2 {
 
@@ -87,7 +84,7 @@ const std::vector<cv::Mat>& ChowLiuTree::getImgDescriptors() const {
     return imgDescriptors;
 }
 
-Mat ChowLiuTree::make(double infoThreshold) {
+cv::Mat ChowLiuTree::make(double infoThreshold) {
     CV_Assert(!imgDescriptors.empty());
 
     unsigned int descCount = 0;
@@ -98,13 +95,13 @@ Mat ChowLiuTree::make(double infoThreshold) {
         imgDescriptors[0].type());
     for (size_t i = 0, start = 0; i < imgDescriptors.size(); i++)
     {
-        Mat submut = mergedImgDescriptors.rowRange((int)start,
+        cv::Mat submut = mergedImgDescriptors.rowRange((int)start,
             (int)(start + imgDescriptors[i].rows));
         imgDescriptors[i].copyTo(submut);
         start += imgDescriptors[i].rows;
     }
 
-    list<info> edges;
+    std::list<info> edges;
     createBaseEdges(edges, infoThreshold);
 
     // TODO: if it cv_asserts here they really won't know why.
@@ -155,10 +152,10 @@ double ChowLiuTree::CP(int a, bool za, int b, bool zb){
     }
 }
 
-cv::Mat ChowLiuTree::buildTree(int root_word, list<info> &edges) {
+cv::Mat ChowLiuTree::buildTree(int root_word, std::list<info> &edges) {
 
     int q = root_word;
-    cv::Mat cltree(4, edges.size()+1, CV_64F);
+    cv::Mat cltree(4, (int)edges.size()+1, CV_64F);
 
     cltree.at<double>(0, q) = q;
     cltree.at<double>(1, q) = P(q, true);
@@ -168,10 +165,10 @@ cv::Mat ChowLiuTree::buildTree(int root_word, list<info> &edges) {
     //independence from a parent node.
 
     //find all children and do the same
-    vector<int> nextqs = extractChildren(edges, q);
+    std::vector<int> nextqs = extractChildren(edges, q);
 
     int pq = q;
-    vector<int>::iterator nextq;
+    std::vector<int>::iterator nextq;
     for(nextq = nextqs.begin(); nextq != nextqs.end(); nextq++) {
         recAddToTree(cltree, *nextq, pq, edges);
     }
@@ -182,7 +179,7 @@ cv::Mat ChowLiuTree::buildTree(int root_word, list<info> &edges) {
 }
 
 void ChowLiuTree::recAddToTree(cv::Mat &cltree, int q, int pq,
-                               list<info>& remaining_edges) {
+                               std::list<info>& remaining_edges) {
 
     cltree.at<double>(0, q) = pq;
     cltree.at<double>(1, q) = P(q, true);
@@ -190,19 +187,19 @@ void ChowLiuTree::recAddToTree(cv::Mat &cltree, int q, int pq,
     cltree.at<double>(3, q) = CP(q, true, pq, false);
 
     //find all children and do the same
-    vector<int> nextqs = extractChildren(remaining_edges, q);
+    std::vector<int> nextqs = extractChildren(remaining_edges, q);
 
     pq = q;
-    vector<int>::iterator nextq;
+    std::vector<int>::iterator nextq;
     for(nextq = nextqs.begin(); nextq != nextqs.end(); nextq++) {
         recAddToTree(cltree, *nextq, pq, remaining_edges);
     }
 }
 
-vector<int> ChowLiuTree::extractChildren(list<info> &remaining_edges, int q) {
+std::vector<int> ChowLiuTree::extractChildren(std::list<info> &remaining_edges, int q) {
 
-    vector<int> children;
-    list<info>::iterator edge = remaining_edges.begin();
+    std::vector<int> children;
+    std::list<info>::iterator edge = remaining_edges.begin();
 
     while(edge != remaining_edges.end()) {
         if(edge->word1 == q) {
@@ -243,13 +240,13 @@ double ChowLiuTree::calcMutInfo(int word1, int word2) {
     return accumulation;
 }
 
-void ChowLiuTree::createBaseEdges(list<info>& edges, double infoThreshold) {
+void ChowLiuTree::createBaseEdges(std::list<info>& edges, double infoThreshold) {
 
     int nWords = imgDescriptors[0].cols;
 
 #pragma omp parallel for schedule(dynamic, 500)
     for(int word1 = 0; word1 < nWords; word1++) {
-        list<info> threadEdges;
+        std::list<info> threadEdges;
         info mutInfo;
         for(int word2 = word1 + 1; word2 < nWords; word2++) {
             mutInfo.word1 = word1;
@@ -270,13 +267,13 @@ void ChowLiuTree::createBaseEdges(list<info>& edges, double infoThreshold) {
     edges.sort(sortInfoScores);
 }
 
-bool ChowLiuTree::reduceEdgesToMinSpan(list<info>& edges) {
+bool ChowLiuTree::reduceEdgesToMinSpan(std::list<info>& edges) {
 
-    map<int, int> groups; map<int, int>::iterator groupIt;
+    std::map<int, int> groups; std::map<int, int>::iterator groupIt;
     for(int i = 0; i < imgDescriptors[0].cols; i++) groups[i] = i;
     int group1, group2;
 
-    list<info>::iterator edge = edges.begin();
+    std::list<info>::iterator edge = edges.begin();
     while(edge != edges.end()) {
         if(groups[edge->word1] != groups[edge->word2]) {
             group1 = groups[edge->word1];

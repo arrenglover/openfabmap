@@ -51,29 +51,33 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#ifndef MSCKD_H_
-#define MSCKD_H_
+#ifndef BOWMSCTRAINER_H_
+#define BOWMSCTRAINER_H_
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/features2d/features2d.hpp"
 
-#include <vector>
+namespace of2 {
 
-// Custom implementation of Modified Sequential Clustering
-class BOWMSCTrainer : public cv::BOWTrainer {
- public:
-  BOWMSCTrainer(double clusterSize = 0.4, int minDescriptorsPerCluster = 2,
-                bool shuffleDescriptors = false);
-  virtual ~BOWMSCTrainer();
+///
+/// \brief A custom vocabulary training method based on:
+/// http://www.springerlink.com/content/d1h6j8x552532003/.
+///
+class CV_EXPORTS BOWMSCTrainer: public cv::BOWTrainer {
+public:
+    BOWMSCTrainer(double clusterSize = 0.4);
+    virtual ~BOWMSCTrainer();
 
-  // Returns trained vocabulary (i.e. cluster centers).
-  virtual cv::Mat cluster() const;
-  virtual cv::Mat cluster(const cv::Mat &descriptors) const;
+    // Returns trained vocabulary (i.e. cluster centers).
+    virtual cv::Mat cluster() const;
+    virtual cv::Mat cluster(const cv::Mat& descriptors) const;
 
- protected:
-  double clusterSize;
-  int minDescriptorsPerCluster;
-  bool shuffleDescriptors;
+protected:
+
+    double clusterSize;
+
 };
 
-#endif  // MSCKD_H_
+} // namespace of2
+
+#endif /* BOWMSCTRAINER_H_ */

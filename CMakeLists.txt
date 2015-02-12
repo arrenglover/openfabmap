@@ -71,7 +71,6 @@ if(OpenCV_VERSION VERSION_GREATER "2.3.9")
     add_definitions(-DOPENCV2P4)
 endif()
 
-
 ## openFABMAP library ##########################################################
 
 # List sources
