@@ -5,7 +5,7 @@ Open Source C++ Code for the FAB-MAP Algorithm
 
 version 2.02
 
-OpenFABMAP (Glover et. al. 2012](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1) is an open-source, OpenCV-only dependent, version of the popular Fast Appearance-based Mapping (FAB-MAP) algorithm [Cummins & Newman 2008](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1 Glover et al. 2010). OpenFABMAP was developed from the ground-up following FAB-MAP publications. The original FAB-MAP algorithm is now also [open-source](http://www.robots.ox.ac.uk/~mjc/Software.htm) but requires alternative project dependencies. 
+OpenFABMAP [Glover et. al. 2012](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1) is an open-source, OpenCV-only dependent, version of the popular Fast Appearance-based Mapping (FAB-MAP) algorithm [Cummins & Newman 2008](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1 Glover et al. 2010). OpenFABMAP was developed from the ground-up following FAB-MAP publications. The original FAB-MAP algorithm is now also [open-source](http://www.robots.ox.ac.uk/~mjc/Software.htm) but requires alternative project dependencies. 
 
 FAB-MAP is a Simultaneous Localisation and Mapping algorithm which operates solely in appearance space. FAB-MAP performs location matching between places that have been visited within the world as well as providing a measure of the probability of being at a new, previously unvisited location. Camera images form the sole input to the system, from which OpenCV's feature extraction methods are used to develop bag-of-words representations for the Bayesian comparison technique. 
 
@@ -34,11 +34,11 @@ The original googlecode project page was [here](http://code.google.com/p/openfab
 OPENCV2.4 Compatibility
 
 if using openCV2.4 you will need to replace
-'''
-//\#define OPENCV2P4
+
+>//\#define OPENCV2P4
 with
-\#define OPENCV2P4
-'''
+>\#define OPENCV2P4
+
 at the beggining of openFABMAPcli.cpp
 
 Installation Instructions (using Cmake)
