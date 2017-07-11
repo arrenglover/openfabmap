@@ -3,6 +3,8 @@ openFABMAP
 
 Open Source C++ Code for the FAB-MAP Algorithm
 
+See the [Wiki](https://github.com/arrenglover/openfabmap/wiki) for tips!
+
 version 2.02
 
 OpenFABMAP [Glover et. al. 2012](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1) is an open-source, OpenCV-only dependent, version of the popular Fast Appearance-based Mapping (FAB-MAP) algorithm [Cummins & Newman 2008](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1 Glover et al. 2010). OpenFABMAP was developed from the ground-up following FAB-MAP publications. The original FAB-MAP algorithm is now also [open-source](http://www.robots.ox.ac.uk/~mjc/Software.htm) but requires alternative project dependencies. 
