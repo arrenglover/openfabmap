@@ -56,7 +56,7 @@
 #include <opencv2/core/version.hpp>
 
 #if CV_MAJOR_VERSION == 2
-#if CV_VERSION_MINOR > 4
+#if CV_MINOR_VERSION == 4
 #include <opencv2/nonfree/nonfree.hpp>
 #endif
 #elif CV_MAJOR_VERSION == 3
@@ -690,7 +690,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
 
         } else if(detectorType == "SURF") {
 
-#ifdef OPENCV2P4
+#if CV_MINOR_VERSION == 4
             detector = new cv::SURF(
                         fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
                     fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
@@ -706,7 +706,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                     (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 #endif
         } else if(detectorType == "SIFT") {
-#ifdef OPENCV2P4
+#if CV_MINOR_VERSION == 4
             detector = new cv::SIFT(
                         fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
                     fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
@@ -824,7 +824,7 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
     std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
     cv::Ptr<cv::DescriptorExtractor> extractor = NULL;
     if(extractorType == "SIFT") {
-#ifdef OPENCV2P4
+#if CV_MINOR_VERSION == 4
         extractor = new cv::SIFT(
                     fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
                 fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
@@ -837,7 +837,7 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
 
     } else if(extractorType == "SURF") {
 
-#ifdef OPENCV2P4
+#if CV_MINOR_VERSION == 4
         extractor = new cv::SURF(
                     fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
                 fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
