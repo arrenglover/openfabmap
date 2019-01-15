@@ -51,9 +51,10 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/chowliutree.hpp"
+#include "chowliutree.hpp"
 
 #include <iostream>
+#include <map>
 
 namespace of2 {
 

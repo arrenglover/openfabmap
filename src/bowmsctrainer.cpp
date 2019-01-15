@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/bowmsctrainer.hpp"
+#include "bowmsctrainer.hpp"
 
 #include <iostream>
 #include <vector>

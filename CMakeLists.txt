@@ -85,11 +85,10 @@ add_library(openFABMAP ${OPENFABMAP_FILES}
     ${OPENFABMAP_IMPL_INCS} ${OPENFABMAP_INCS})
 
 # Tell CMake where the headers are
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include ${OpenCV_INCLUDE_DIRS})
 
 # Link against the required libraries in OpenCV >=2.2
-target_link_libraries(openFABMAP ${OpenCV_LIBS})
-
+target_link_libraries(openFABMAP ${OpenCV_LIBRARIES})
 
 ## openFABMAPcli executable ####################################################
 
@@ -107,7 +106,7 @@ add_executable(openFABMAPcli ${CMAKE_SOURCE_DIR}/samples/openFABMAPcli.cpp
     ${SETTINGS_FILE} ${DOXY_FILES} ${README_FILES})
 
 # Tell openFABMAPcli to link against its required libs
-target_link_libraries(openFABMAPcli openFABMAP ${OpenCV_LIBS} )
+target_link_libraries(openFABMAPcli openFABMAP ${OpenCV_LIBRARIES} )
 
 
 ## Doxygen API documentation ###################################################

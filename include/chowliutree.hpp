@@ -54,7 +54,7 @@
 #ifndef CHOWLIUTREE_H_
 #define CHOWLIUTREE_H_
 
-#include "opencv2/core/core.hpp"
+#include <opencv2/core.hpp>
 
 #include <vector>
 #include <list>
