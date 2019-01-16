@@ -65,8 +65,10 @@ else() # Linux
         /usr/share/OpenCV
         )
 endif()
-find_package(OpenCV REQUIRED NO_MODULE
-    PATHS ${OpenCV_PATHS})
+find_package(OpenCV REQUIRED NO_MODULE PATHS ${OpenCV_PATHS})
+
+message("OpenCV version: ${OpenCV_VERSION}")
+
 if(OpenCV_VERSION VERSION_GREATER "2.3.9")
     add_definitions(-DOPENCV2P4)
 endif()

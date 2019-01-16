@@ -57,7 +57,7 @@
 
 #if CV_MAJOR_VERSION == 2
 #if CV_MINOR_VERSION == 4
-#include <opencv2/nonfree/nonfree.hpp>
+    #include <opencv2/nonfree/nonfree.hpp>
 #endif
 #elif CV_MAJOR_VERSION == 3
 
@@ -743,7 +743,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
     return detector;
 
 }
-#elif CV_VERSION_MAJOR == 3
+#elif CV_MAJOR_VERSION == 3
 /*
 generates a feature detector based on options in the settings file
 */
