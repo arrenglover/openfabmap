@@ -4,6 +4,7 @@ compiler:
   - gcc
 
 before_install:
+  - sudo add-apt-repository --yes ppa:xqms/opencv-nonfree
   - sudo apt-get update -qq
 install:
   - sudo apt-get install -qq cmake build-essential libopencv-dev libopencv-nonfree-dev
