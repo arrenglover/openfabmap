@@ -55,12 +55,16 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/version.hpp>
 
-#if CV_MAJOR_VERSION == 2
-#if CV_MINOR_VERSION == 4
-    #include <opencv2/nonfree/nonfree.hpp>
+#if CV_MAJOR_VERSION == 2 and CV_MINOR_VERSION == 3
+
+#elif CV_MAJOR_VERSION == 2 and CV_MINOR_VERSION == 4
+#if USENONFREE
+#include <opencv2/nonfree/nonfree.hpp>
 #endif
 #elif CV_MAJOR_VERSION == 3
-
+#ifdef USENONFREE
+#include <opencv2/xfeatures2d.hpp>
+#endif
 #endif
 
 #include <fstream>
@@ -687,7 +691,19 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                         fs["FeatureOptions"]["FastDetector"]["Threshold"],
                     (int)fs["FeatureOptions"]["FastDetector"]
                     ["NonMaxSuppression"] > 0);
+        } else if(detectorType == "MSER") {
 
+            detector = new cv::MserFeatureDetector(
+                        fs["FeatureOptions"]["MSERDetector"]["Delta"],
+                    fs["FeatureOptions"]["MSERDetector"]["MinArea"],
+                    fs["FeatureOptions"]["MSERDetector"]["MaxArea"],
+                    fs["FeatureOptions"]["MSERDetector"]["MaxVariation"],
+                    fs["FeatureOptions"]["MSERDetector"]["MinDiversity"],
+                    fs["FeatureOptions"]["MSERDetector"]["MaxEvolution"],
+                    fs["FeatureOptions"]["MSERDetector"]["AreaThreshold"],
+                    fs["FeatureOptions"]["MSERDetector"]["MinMargin"],
+                    fs["FeatureOptions"]["MSERDetector"]["EdgeBlurSize"]);
+#if USENONFREE
         } else if(detectorType == "SURF") {
 
 #if CV_MINOR_VERSION == 4
@@ -698,7 +714,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                     (int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
                     (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
-#else
+#elif CV_MINOR_VERSION == 3
             detector = new cv::SurfFeatureDetector(
                         fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
                     fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
@@ -713,23 +729,12 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                     fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
                     fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"],
                     fs["FeatureOptions"]["SiftDetector"]["Sigma"]);
-#else
+#elif CV_MINOR_VERSION == 3
             detector = new cv::SiftFeatureDetector(
                         fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
                     fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"]);
 #endif
-        } else if(detectorType == "MSER") {
-
-            detector = new cv::MserFeatureDetector(
-                        fs["FeatureOptions"]["MSERDetector"]["Delta"],
-                    fs["FeatureOptions"]["MSERDetector"]["MinArea"],
-                    fs["FeatureOptions"]["MSERDetector"]["MaxArea"],
-                    fs["FeatureOptions"]["MSERDetector"]["MaxVariation"],
-                    fs["FeatureOptions"]["MSERDetector"]["MinDiversity"],
-                    fs["FeatureOptions"]["MSERDetector"]["MaxEvolution"],
-                    fs["FeatureOptions"]["MSERDetector"]["AreaThreshold"],
-                    fs["FeatureOptions"]["MSERDetector"]["MinMargin"],
-                    fs["FeatureOptions"]["MSERDetector"]["EdgeBlurSize"]);
+#endif //USENONFREE
 
         } else {
             std::cerr << "Could not create detector class. Specify detector "
@@ -777,10 +782,10 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
     } else if(detectorType == "GFTTDetector") {
         return cv::GFTTDetector::create();
 
-#ifdef OPENCV_CONTRIB_INSTALLED_TOO
+#ifdef USENONFREE
     } else if(detectorType == "STAR") {
 
-        return detector = new cv::StarFeatureDetector(
+        return cv::xfeatures2d::StarDetector::create(
                     fs["FeatureOptions"]["StarDetector"]["MaxSize"],
                 fs["FeatureOptions"]["StarDetector"]["Response"],
                 fs["FeatureOptions"]["StarDetector"]["LineThreshold"],
@@ -788,7 +793,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                 fs["FeatureOptions"]["StarDetector"]["Suppression"]);
 
     } else if(detectorType == "SURF") {
-        return detector = new cv::SURF(
+        return cv::xfeatures2d::SURF::create(
                     fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
                 fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
                 fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
@@ -796,7 +801,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                 (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
     } else if(detectorType == "SIFT") {
-        detector = new cv::SIFT(
+        return cv::xfeatures2d::SIFT::create(
                     fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
                 fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
                 fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
@@ -823,7 +828,10 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
 {
     std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
     cv::Ptr<cv::DescriptorExtractor> extractor = NULL;
-    if(extractorType == "SIFT") {
+    if(extractorType == "DUMMY") {
+
+#ifdef USENONFREE
+    } else if(extractorType == "SIFT") {
 #if CV_MINOR_VERSION == 4
         extractor = new cv::SIFT(
                     fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
@@ -831,7 +839,7 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
                 fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
                 fs["FeatureOptions"]["SiftDetector"]["EdgeThreshold"],
                 fs["FeatureOptions"]["SiftDetector"]["Sigma"]);
-#else
+#elif CV_MINOR_VERSION == 3
         extractor = new cv::SiftDescriptorExtractor();
 #endif
 
@@ -845,12 +853,13 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
                 (int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
                 (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
-#else
+#elif CV_MINOR_VERSION == 3
         extractor = new cv::SurfDescriptorExtractor(
                     fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
                 fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
                 (int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
                 (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
+#endif
 #endif
 
     } else {
@@ -870,26 +879,26 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
     if(extractorType == "FAST") {
         return cv::FastFeatureDetector::create();
 
-#ifdef OPENCV_CONTRIB_INSTALLED_TOO
-    } else if(detectorType == "STAR") {
+#ifdef USENONFREE
+    } else if(extractorType == "STAR") {
 
-        return detector = new cv::StarFeatureDetector(
+        return cv::xfeatures2d::StarDetector::create(
                     fs["FeatureOptions"]["StarDetector"]["MaxSize"],
                 fs["FeatureOptions"]["StarDetector"]["Response"],
                 fs["FeatureOptions"]["StarDetector"]["LineThreshold"],
                 fs["FeatureOptions"]["StarDetector"]["LineBinarized"],
                 fs["FeatureOptions"]["StarDetector"]["Suppression"]);
 
-    } else if(detectorType == "SURF") {
-        return detector = new cv::SURF(
+    } else if(extractorType == "SURF") {
+        return cv::xfeatures2d::SURF::create(
                     fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
                 fs["FeatureOptions"]["SurfDetector"]["NumOctaves"],
                 fs["FeatureOptions"]["SurfDetector"]["NumOctaveLayers"],
                 (int)fs["FeatureOptions"]["SurfDetector"]["Extended"] > 0,
                 (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
-    } else if(detectorType == "SIFT") {
-        detector = new cv::SIFT(
+    } else if(extractorType == "SIFT") {
+        return cv::xfeatures2d::SIFT::create(
                     fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
                 fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
                 fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],

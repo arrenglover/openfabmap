@@ -5,7 +5,8 @@
 
 project(openFABMAP)
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
+include(CheckIncludeFileCXX)
 
 
 ## Cmake setup #################################################################
@@ -44,7 +45,7 @@ find_package(OpenMP)
 if(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    message("FOUND OPENMP")
+    message("Found OpenMP")
 endif(OPENMP_FOUND)
 
 # Find OpenCV.
@@ -69,9 +70,20 @@ find_package(OpenCV REQUIRED NO_MODULE PATHS ${OpenCV_PATHS})
 
 message("OpenCV version: ${OpenCV_VERSION}")
 
-if(OpenCV_VERSION VERSION_GREATER "2.3.9")
-    add_definitions(-DOPENCV2P4)
+if(OpenCV_VERSION VERSION_LESS "2.4.0")
+    add_definitions(-DUSENONFREE)
+elseif(OpenCV_VERSION VERSION_LESS "3.0.0")
+    if("${OpenCV_LIBRARIES}" MATCHES opencv_nonfree)
+        message("Non-free packages found. Using e.g. SIFT/SURF")
+        add_definitions(-DUSENONFREE)
+    endif()
+else()
+    if("${OpenCV_LIBRARIES}" MATCHES opencv_xfeatures2d)
+        message("Non-free packages found. Using e.g. SIFT/SURF")
+        add_definitions(-DUSENONFREE)
+    endif()
 endif()
+
 
 ## openFABMAP library ##########################################################
 
