@@ -1,13 +1,10 @@
-openFABMAP
-==========
+# openFABMAP <img width="100" alt="openfabmap" src="https://user-images.githubusercontent.com/9265237/52215895-5272bc80-2895-11e9-8af5-0a9fca32cf42.PNG">
 
 Open Source C++ Code for the FAB-MAP Algorithm
 
+### *!Now Supporting OpenCV 3.0!*
+
 See the [Wiki](https://github.com/arrenglover/openfabmap/wiki) for tips!
-
-version 2.03
-
-### *Now Supporting OpenCV 3.0*
 
 ```
 @inproceedings{
