@@ -52,6 +52,15 @@ Linux (g++)
 1. view/modify the settings file `gedit ../samples/settings.yml`
 1. run the command line tool `bin/openFABMAPcli -s ../samples/settings.yml`
 
+OpenCV non-free for OpenCV 3.4
+
+1. clone opencv_contrib
+1. clone opencv repository
+1. checkout version 3.4
+1. mkdir build && cd build
+1. cmake .. -DOPENCV_EXTRA_MODULES_PATH='path_to/opencv_contrib/modules' -DBUILD_opencv_xfeatures2d=ON -DOPENCV_ENABLE_NONFREE=ON
+1. make
+
 Windows (Visual Studio 2008) 
 
 1. install [openCV2.3](http://opencv.willowgarage.com/wiki/)
