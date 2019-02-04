@@ -2,6 +2,8 @@
 
 Open Source C++ Code for the FAB-MAP Algorithm
 
+[St. Lucia Multiple Times of Day Dataset](https://wiki.qut.edu.au/display/cyphy/St+Lucia+Multiple+Times+of+Day)
+
 ### *!Now Supporting OpenCV 3.0!*
 
 See the [Wiki](https://github.com/arrenglover/openfabmap/wiki) for tips!
@@ -33,12 +35,11 @@ An overview of OpenFABMAP [Glover et. al. 2012](http://ieeexplore.ieee.org/xpls/
 
 As of the latest version, openFABMAP is dependent solely on [OpenCV 2.3](http://opencv.org/) or higher.  The project has a [CMake](http://www.cmake.org/) build environment for general use on both Linux and Windows systems. OpenFABMAP is also designed to integrate with [ROS](http://www.ros.org/wiki/). See the [CyPhy-ROS](https://wiki.qut.edu.au/display/cyphy/cyphy+ROS+wiki+page) page for a package that has implemented openFABMAP as a ROS node.
 
-Check out the GitHub Wiki for some instructions and tips on running openFABMAP.
-
 The original googlecode project page was [here](http://code.google.com/p/openfabmap/)
 
-#Installation
 
+
+#Installation
 
 Linux (g++)
 
@@ -51,7 +52,7 @@ Linux (g++)
 1. view/modify the settings file `gedit ../samples/settings.yml`
 1. run the command line tool `bin/openFABMAPcli -s ../samples/settings.yml`
 
-Windows (Visual Studio 2008)
+Windows (Visual Studio 2008) 
 
 1. install [openCV2.3](http://opencv.willowgarage.com/wiki/)
 2. install [cmake](www.cmake.org/)
