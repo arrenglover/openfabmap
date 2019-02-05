@@ -76,3 +76,8 @@ Windows (Visual Studio 2008)
 11. Alter the settings file for your data
 12. run exampleopenFABMAP in your build/bin directory (respective debug versions for debug mode).
 
+### Contributors
+
+ - Arren GLover
+ - Will Maddern
+ - Kirk MacTavish
