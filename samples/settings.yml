@@ -66,8 +66,10 @@ FeatureOptions:
    # "SIFT"
    # "SURF"
    # "MSER"
+   # "ORB"
+   # "BRISK"
 
-   DetectorType: "STAR"
+   DetectorType: "SURF"
    
    # Feature Detection Modes
    # "STATIC"
@@ -99,7 +101,7 @@ FeatureOptions:
       EdgeThreshold: 10
       ContrastThreshold: 0.04
       
-      #OPENCV2.4only
+      #OPENCV2.4+only
       NumFeatures: 200
       NumOctaveLayers: 3
       Sigma: 1.6
@@ -121,10 +123,29 @@ FeatureOptions:
       AreaThreshold: 1.01  
       MinMargin: 0.003  
       EdgeBlurSize: 5   
+      
+   ORB:
+      nFeatures: 500
+      scaleFactor: 1.2
+      nLevels: 8
+      edgeThreshold: 31
+      firstLevel: 0
+      patchSize: 31
+      
+   BRISK:
+      Threshold: 30
+      Octaves: 3
+      PatternScale: 1.0
+      
+   AGAST:
+      Threshold: 20
+      NonMaxSuppression: 1
 
    # Descriptor Extraction Options
    # "SIFT"
    # "SURF"
+   # "ORB"
+   # "BRISK"
 
    ExtractorType: "SURF"
 #---------------------------------------------------------------------------

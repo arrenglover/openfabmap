@@ -758,9 +758,20 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
     std::string detectorType = fs["FeatureOptions"]["DetectorType"];
 
     if(detectorType == "BRISK") {
-        return cv::BRISK::create();
+        return cv::BRISK::create(
+                    fs["FeatureOptions"]["BRISK"]["Threshold"],
+                fs["FeatureOptions"]["BRISK"]["Octaves"],
+                fs["FeatureOptions"]["BRISK"]["PatternScale"]);
     } else if(detectorType == "ORB") {
-        return cv::ORB::create();
+        return cv::ORB::create(
+                    fs["FeatureOptions"]["ORB"]["nFeatures"],
+                fs["FeatureOptions"]["ORB"]["scaleFactor"],
+                fs["FeatureOptions"]["ORB"]["nLevels"],
+                fs["FeatureOptions"]["ORB"]["edgeThreshold"],
+                fs["FeatureOptions"]["ORB"]["firstLevel"],
+                2, cv::ORB::HARRIS_SCORE,
+                fs["FeatureOptions"]["ORB"]["patchSize"]);
+
     } else if(detectorType == "MSER") {
         return cv::MSER::create(
                     fs["FeatureOptions"]["MSERDetector"]["Delta"],
@@ -775,13 +786,11 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
     } else if(detectorType == "FAST") {
         return cv::FastFeatureDetector::create(
                     fs["FeatureOptions"]["FastDetector"]["Threshold"],
-                (int)fs["FeatureOptions"]["FastDetector"]
-                ["NonMaxSuppression"] > 0);
+                (int)fs["FeatureOptions"]["FastDetector"]["NonMaxSuppression"] > 0);
     } else if(detectorType == "AGAST") {
-        return cv::AgastFeatureDetector::create();
-    } else if(detectorType == "GFTTDetector") {
-        return cv::GFTTDetector::create();
-
+        return cv::AgastFeatureDetector::create(
+                    fs["FeatureOptions"]["AGAST"]["Threshold"],
+                (int)fs["FeatureOptions"]["AGAST"]["NonMaxSuppression"] > 0);
 #ifdef USENONFREE
     } else if(detectorType == "STAR") {
 
@@ -876,19 +885,21 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
 {
     std::string extractorType = fs["FeatureOptions"]["ExtractorType"];
 
-    if(extractorType == "FAST") {
-        return cv::FastFeatureDetector::create();
-
+    if(extractorType == "BRISK") {
+        return cv::BRISK::create(
+                    fs["FeatureOptions"]["BRISK"]["Threshold"],
+                fs["FeatureOptions"]["BRISK"]["Octaves"],
+                fs["FeatureOptions"]["BRISK"]["PatternScale"]);
+    } else if(extractorType == "ORB") {
+        return cv::ORB::create(
+                    fs["FeatureOptions"]["ORB"]["nFeatures"],
+                fs["FeatureOptions"]["ORB"]["scaleFactor"],
+                fs["FeatureOptions"]["ORB"]["nLevels"],
+                fs["FeatureOptions"]["ORB"]["edgeThreshold"],
+                fs["FeatureOptions"]["ORB"]["firstLevel"],
+                2, cv::ORB::HARRIS_SCORE,
+                fs["FeatureOptions"]["ORB"]["patchSize"]);
 #ifdef USENONFREE
-    } else if(extractorType == "STAR") {
-
-        return cv::xfeatures2d::StarDetector::create(
-                    fs["FeatureOptions"]["StarDetector"]["MaxSize"],
-                fs["FeatureOptions"]["StarDetector"]["Response"],
-                fs["FeatureOptions"]["StarDetector"]["LineThreshold"],
-                fs["FeatureOptions"]["StarDetector"]["LineBinarized"],
-                fs["FeatureOptions"]["StarDetector"]["Suppression"]);
-
     } else if(extractorType == "SURF") {
         return cv::xfeatures2d::SURF::create(
                     fs["FeatureOptions"]["SurfDetector"]["HessianThreshold"],
