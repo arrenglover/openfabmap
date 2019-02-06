@@ -1,11 +1,23 @@
-openFABMAP
-==========
+# openFABMAP <img width="100" alt="openfabmap" src="https://user-images.githubusercontent.com/9265237/52215895-5272bc80-2895-11e9-8af5-0a9fca32cf42.PNG">
 
 Open Source C++ Code for the FAB-MAP Algorithm
 
+[St. Lucia Multiple Times of Day Dataset](https://wiki.qut.edu.au/display/cyphy/St+Lucia+Multiple+Times+of+Day)
+
+### *!Now Supporting OpenCV 3.0!*
+
 See the [Wiki](https://github.com/arrenglover/openfabmap/wiki) for tips!
 
-version 2.02
+```
+@inproceedings{
+   author = {Glover, A. and Maddern, W. and Warren, M. and Reid, S. and Milford, M. and Wyeth, G.},
+   title = {OpenFABMAP: An Open Source Toolbox for Appearance-based Loop Closure Detection},
+   booktitle = {The International Conference on Robotics and Automation},
+   address = {St Paul, Minnesota},
+   publisher = {IEEE},
+   year = {2011}
+}
+```
 
 OpenFABMAP [Glover et. al. 2012](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1) is an open-source, OpenCV-only dependent, version of the popular Fast Appearance-based Mapping (FAB-MAP) algorithm [Cummins & Newman 2008](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1 Glover et al. 2010). OpenFABMAP was developed from the ground-up following FAB-MAP publications. The original FAB-MAP algorithm is now also [open-source](http://www.robots.ox.ac.uk/~mjc/Software.htm) but requires alternative project dependencies. 
 
@@ -21,31 +33,35 @@ The code has implementations of
 
 An overview of OpenFABMAP [Glover et. al. 2012](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5509547&tag=1) or the original implementation/use [Glover et al. 2010](http://eprints.qut.edu.au/50317/1/glover_ICRA2012_final.pdf).
 
-As of the latest version, openFABMAP is dependent solely on [OpenCV 2.3](http://opencv.org/) or higher but is currently underdevelopment for OpenCV 3.0.  The project has a [CMake](http://www.cmake.org/) build environment for general use on both Linux and Windows systems. OpenFABMAP is also designed to integrate with [ROS](http://www.ros.org/wiki/). See the [CyPhy-ROS](https://wiki.qut.edu.au/display/cyphy/cyphy+ROS+wiki+page) page for a package that has implemented openFABMAP as a ROS node.
-
-Check out the GitHub Wiki for some instructions and tips on running openFABMAP.
-
-_Citations_
-[Endnote](http://openfabmap.googlecode.com/files/openFABMAP.enw)
-[BibTex](http://openfabmap.googlecode.com/files/openFABMAP.bib BibTex)
+As of the latest version, openFABMAP is dependent solely on [OpenCV 2.3](http://opencv.org/) or higher.  The project has a [CMake](http://www.cmake.org/) build environment for general use on both Linux and Windows systems. OpenFABMAP is also designed to integrate with [ROS](http://www.ros.org/wiki/). See the [CyPhy-ROS](https://wiki.qut.edu.au/display/cyphy/cyphy+ROS+wiki+page) page for a package that has implemented openFABMAP as a ROS node.
 
 The original googlecode project page was [here](http://code.google.com/p/openfabmap/)
 
-#Installation
 
-OPENCV2.4 Compatibility
 
-if using openCV2.4 you will need to replace
+### Installation
 
->//\#define OPENCV2P4
-with
->\#define OPENCV2P4
+Linux (g++)
 
-at the beggining of openFABMAPcli.cpp
+1. install cmake `sudo apt install cmake`
+1. install opencv `sudo apt install libopencv-dev`
+1. get the openFABMAP code `git clone https://github.com/arrenglover/openfabmap.git`
+1. make the build directory `mkdir openfabmap/build && cd openfabmap/build`
+1. use cmake to compile the makefile `cmake ..`. *note: the output will tell you which version of opencv you are using and if you are using the "non-free" modules*
+1. make the project `make`
+1. view/modify the settings file `gedit ../samples/settings.yml`
+1. run the command line tool `bin/openFABMAPcli -s ../samples/settings.yml`
 
-Installation Instructions (using Cmake)
+OpenCV non-free for OpenCV 3.4
 
-Windows (Visual Studio 2008)
+1. clone opencv_contrib
+1. clone opencv repository
+1. checkout version 3.4
+1. mkdir build && cd build
+1. cmake .. -DOPENCV_EXTRA_MODULES_PATH='path_to/opencv_contrib/modules' -DBUILD_opencv_xfeatures2d=ON -DOPENCV_ENABLE_NONFREE=ON
+1. make
+
+Windows (Visual Studio 2008) 
 
 1. install [openCV2.3](http://opencv.willowgarage.com/wiki/)
 2. install [cmake](www.cmake.org/)
@@ -60,20 +76,8 @@ Windows (Visual Studio 2008)
 11. Alter the settings file for your data
 12. run exampleopenFABMAP in your build/bin directory (respective debug versions for debug mode).
 
+### Contributors
 
-Linux (g++)
-
-1. install openCV2.3
-2. get cmake and install it using your package manager
-3. install cmakecurses using your package manager
-2. make a build directory for your generated code
-3. use the command line to change into this directory
-4. run 'cmake /path/to/your/build/dir'
-5. Hopefully openCV was found. If not, you may have to specify the directory manually using ccmake. Try using the wizard option cmake -i.
-6. run 'make' in your build directory
-5. Alter the settings file for your application
-6. run openFABMAPcli in your build/bin directory
-
-
-
-
+ - Arren GLover
+ - Will Maddern
+ - Kirk MacTavish

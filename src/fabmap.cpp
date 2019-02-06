@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/fabmap.hpp"
+#include "fabmap.hpp"
 
 /*
     Calculate the sum of two log likelihoods

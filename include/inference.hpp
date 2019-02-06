@@ -54,7 +54,7 @@
 #ifndef INFERENCE_H_
 #define INFERENCE_H_
 
-#include "opencv2/core/core.hpp"
+#include <opencv2/core/core.hpp>
 
 namespace of2 {
 

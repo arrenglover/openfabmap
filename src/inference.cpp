@@ -51,7 +51,7 @@
 // possibility of such damage.
 //////////////////////////////////////////////////////////////////////////////*/
 
-#include "../include/inference.hpp"
+#include "inference.hpp"
 
 namespace of2 {
 
