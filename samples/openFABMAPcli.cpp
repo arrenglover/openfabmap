@@ -61,9 +61,15 @@
 #if USENONFREE
 #include <opencv2/nonfree/nonfree.hpp>
 #endif
-#elif CV_MAJOR_VERSION == 3
+#elif CV_MAJOR_VERSION >= 3
 #ifdef USENONFREE
 #include <opencv2/xfeatures2d.hpp>
+#endif
+
+#if CV_MAJOR_VERSION >= 4
+#define CV_CAP_PROP_POS_FRAMES cv::CAP_PROP_POS_FRAMES
+#define CV_CAP_PROP_FRAME_COUNT cv::CAP_PROP_FRAME_COUNT
+#define CV_AA cv::LINE_AA
 #endif
 #endif
 
@@ -748,7 +754,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
     return detector;
 
 }
-#elif CV_MAJOR_VERSION == 3
+#elif CV_MAJOR_VERSION >= 3
 /*
 generates a feature detector based on options in the settings file
 */
@@ -810,7 +816,7 @@ cv::Ptr<cv::FeatureDetector> generateDetector(cv::FileStorage &fs) {
                 (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
     } else if(detectorType == "SIFT") {
-        return cv::xfeatures2d::SIFT::create(
+        return cv::SIFT::create(
                     fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
                 fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
                 fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
@@ -879,7 +885,7 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
     return extractor;
 
 }
-#elif CV_MAJOR_VERSION == 3
+#elif CV_MAJOR_VERSION >= 3
 
 cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
 {
@@ -909,7 +915,7 @@ cv::Ptr<cv::DescriptorExtractor> generateExtractor(cv::FileStorage &fs)
                 (int)fs["FeatureOptions"]["SurfDetector"]["Upright"] > 0);
 
     } else if(extractorType == "SIFT") {
-        return cv::xfeatures2d::SIFT::create(
+        return cv::SIFT::create(
                     fs["FeatureOptions"]["SiftDetector"]["NumFeatures"],
                 fs["FeatureOptions"]["SiftDetector"]["NumOctaveLayers"],
                 fs["FeatureOptions"]["SiftDetector"]["ContrastThreshold"],
@@ -1038,8 +1044,8 @@ draws keypoints to scale with coloring proportional to feature strength
 void drawRichKeypoints(const cv::Mat& src, std::vector<cv::KeyPoint>& kpts, cv::Mat& dst) {
 
     cv::Mat grayFrame;
-    cvtColor(src, grayFrame, CV_RGB2GRAY);
-    cvtColor(grayFrame, dst, CV_GRAY2RGB);
+    cvtColor(src, grayFrame, cv::COLOR_RGB2GRAY);
+    cvtColor(grayFrame, dst, cv::COLOR_GRAY2RGB);
 
     if (kpts.size() == 0) {
         return;
