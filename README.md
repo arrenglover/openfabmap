@@ -4,8 +4,6 @@ Open Source C++ Code for the FAB-MAP Algorithm
 
 [St. Lucia Multiple Times of Day and Other Datasets](https://github.com/arrenglover/openfabmap/wiki/Datasets)
 
-### *!Now Supporting OpenCV 3.0!*
-
 See the [Wiki](https://github.com/arrenglover/openfabmap/wiki) for tips!
 
 ```
